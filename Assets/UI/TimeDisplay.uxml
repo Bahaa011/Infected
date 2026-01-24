@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ui="UnityEngine.UIElements"
+    xmlns:uie="UnityEditor.UIElements"
+    xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd"
+>
+    <ui:VisualElement class="time-panel" style="position: absolute; top: 48px; right: 48px; flex-direction: column; align-items: flex-end; gap: 8px;">
+        <ui:Label class="time-display" text="12:00" style="font-size: 40px; color: rgb(255, 200, 0); -unity-font-style: bold; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);"/>
+        <ui:Label class="day-phase" text="DAY" style="font-size: 24px; color: rgb(255, 200, 0); -unity-font-style: bold;"/>
+    </ui:VisualElement>
+</ui:UXML>

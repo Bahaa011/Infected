@@ -1,0 +1,4 @@
+repository "senior/senior@18968203425542@cloud"
+  path "/"
+    br "/main"
+    co "/main"
