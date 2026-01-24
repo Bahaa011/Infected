@@ -117,7 +117,7 @@ Transform:
   m_GameObject: {fileID: 961365450254731167}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.109, y: 1.263, z: 0.258}
+  m_LocalPosition: {x: 0.9937133, y: 0.12453738, z: 2.6261506}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -142,15 +142,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 144b08105da3e890a84f01ad49d1888e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Gun
+  gunType: 0
   fireMode: 0
   bulletPrefab: {fileID: 786942641619361683, guid: ec96f37a29ac12c39b6a4ba57af7c221, type: 3}
   firePoint: {fileID: 4580170358736697194}
-  fireRate: 0.1
+  fireRate: 0.2
   burstCount: 3
   shotgunPellets: 8
   shotgunSpread: 15
   automaticSpread: 5
   animator: {fileID: 0}
+  animatorLayerIndex: 1
 --- !u!114 &3692775634186972566
 MonoBehaviour:
   m_ObjectHideFlags: 0

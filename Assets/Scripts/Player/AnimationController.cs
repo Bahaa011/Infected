@@ -28,8 +28,7 @@ public class AnimationController : MonoBehaviour
         if (animator == null) return;
 
         animator.SetBool("isPistol", false);
-        animator.SetBool("isAssault", false);
-        animator.SetFloat("aim", 0f);
+        animator.SetBool("isAssaultRifle", false);
         animator.SetBool("isCrouching", false);
         animator.SetFloat("Speed", 0f);
     }
@@ -38,21 +37,19 @@ public class AnimationController : MonoBehaviour
     {
         if (animator == null) return;
 
+        float magnitude = Mathf.Max(0f, inputMagnitude);
         float targetSpeed = 0f;
 
-        if (inputMagnitude > IDLE_THRESHOLD)
+        if (magnitude > IDLE_THRESHOLD)
         {
-            targetSpeed = 1f;
-
-            if (isRunning)
-            {
-                targetSpeed = runSpeedMultiplier;
-            }
+            targetSpeed = isRunning ? runSpeedMultiplier : magnitude;
         }
 
-        float smoothSpeed = Mathf.Lerp(smoothVelocity, targetSpeed, VELOCITY_SMOOTH_TIME / Time.deltaTime * Time.deltaTime);
-        animator.SetFloat("Speed", smoothSpeed);
-        smoothVelocity = smoothSpeed;
+        // Frame-rate independent smoothing toward the target speed without overshooting below 0
+        float dampRate = 1f / Mathf.Max(VELOCITY_SMOOTH_TIME, 0.0001f);
+        smoothVelocity = Mathf.MoveTowards(smoothVelocity, targetSpeed, dampRate * Time.deltaTime);
+        smoothVelocity = Mathf.Max(0f, smoothVelocity);
+        animator.SetFloat("Speed", smoothVelocity);
     }
 
     public void UpdateCrouchAnimation()
@@ -67,27 +64,11 @@ public class AnimationController : MonoBehaviour
         if (animator == null || player == null) return;
 
         Gun.GunType currentWeaponType = player.GetEquipmentManager().GetCurrentGunType();
-        bool isAiming = player.IsAiming();
 
-        if (currentWeaponType != lastWeaponType)
-        {
-            animator.SetBool("isPistol", currentWeaponType == Gun.GunType.Pistol);
-            animator.SetBool("isAssault", currentWeaponType == Gun.GunType.AssaultRifle);
-            lastWeaponType = currentWeaponType;
-        }
-
-        if (isAiming != lastAimingState)
-        {
-            animator.SetFloat("aim", isAiming ? 1f : 0f);
-            lastAimingState = isAiming;
-        }
-    }
-
-    public void SetDeadAnimation(bool isDead)
-    {
-        if (animator == null) return;
-
-        animator.SetBool("isDead", isDead);
+        // Always update the animator parameters
+        animator.SetBool("isPistol", currentWeaponType == Gun.GunType.Pistol);
+        animator.SetBool("isAssaultRifle", currentWeaponType == Gun.GunType.AssaultRifle);
+        lastWeaponType = currentWeaponType;
     }
 
     public float GetSmoothVelocity() => smoothVelocity;

@@ -93,7 +93,6 @@ public class DayNightManager : MonoBehaviour
         if (Mathf.Abs(currentTimeInHours - hour) < tolerance && Time.deltaTime < 0.1f)
         {
             eventToTrigger?.Invoke();
-            Debug.Log($"[DayNightManager] {eventName}!");
         }
     }
 

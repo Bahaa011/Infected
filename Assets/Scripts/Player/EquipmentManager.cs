@@ -70,7 +70,22 @@ public class EquipmentManager : MonoBehaviour
 
     public bool EquipAsPrimary(GunItem gunItem)
     {
-        if (gunItem == null || gunItem.GunPrefab == null)
+        // Handle unequip
+        if (gunItem == null)
+        {
+            if (equippedPrimaryWeapon != null)
+            {
+                equippedPrimaryWeapon.Unequip();
+                equippedPrimaryWeapon.gameObject.SetActive(false);
+                equippedPrimaryWeapon = null;
+                currentWeaponInHand = null;
+                onPrimaryEquipped?.Invoke(null);
+                return true;
+            }
+            return false;
+        }
+
+        if (gunItem.GunPrefab == null)
             return false;
 
         if (equippedPrimaryWeapon != null)
@@ -100,7 +115,6 @@ public class EquipmentManager : MonoBehaviour
             }
 
             onPrimaryEquipped?.Invoke(equippedPrimaryWeapon);
-            Debug.Log($"Equipped primary weapon in hand: {gunItem.ItemName}");
             return true;
         }
 
@@ -109,7 +123,22 @@ public class EquipmentManager : MonoBehaviour
 
     public bool EquipAsSecondary(GunItem gunItem)
     {
-        if (gunItem == null || gunItem.GunPrefab == null)
+        // Handle unequip
+        if (gunItem == null)
+        {
+            if (equippedSecondaryWeapon != null)
+            {
+                equippedSecondaryWeapon.Unequip();
+                equippedSecondaryWeapon.gameObject.SetActive(false);
+                equippedSecondaryWeapon = null;
+                currentWeaponInHand = null;
+                onSecondaryEquipped?.Invoke(null);
+                return true;
+            }
+            return false;
+        }
+
+        if (gunItem.GunPrefab == null)
             return false;
 
         if (equippedSecondaryWeapon != null)
@@ -139,7 +168,6 @@ public class EquipmentManager : MonoBehaviour
             }
 
             onSecondaryEquipped?.Invoke(equippedSecondaryWeapon);
-            Debug.Log($"Equipped secondary weapon in hand: {gunItem.ItemName}");
             return true;
         }
 
@@ -174,7 +202,6 @@ public class EquipmentManager : MonoBehaviour
             SetLayerRecursively(restingWeapon.gameObject, 0);
 
         onWeaponSwitched?.Invoke(currentWeaponInHand);
-        Debug.Log($"Switched to {(nextWeapon == equippedPrimaryWeapon ? "primary" : "secondary")} weapon");
     }
 
     // Recursively set layer for weapon and all children

@@ -17,13 +17,18 @@ public class Gun : MonoBehaviour
     [SerializeField] private float automaticSpread = 5f;
     [SerializeField] private Animator animator;
     [SerializeField] private int animatorLayerIndex = 1;
-    [SerializeField] private InputActionReference fireAction;
+    
+    private InputAction fireAction;
     
     private float lastFireTime = 0f;
     private int burstCounter = 0;
     private Camera mainCamera;
     private bool isEquipped = false;
     private GunItem gunItem;
+
+    private void Awake()
+    {
+    }
 
     void Start()
     {
@@ -34,33 +39,32 @@ public class Gun : MonoBehaviour
         {
             animator = GetComponentInParent<Animator>();
         }
-    }
-
-    private void OnEnable()
-    {
-        if (fireAction != null)
-            fireAction.action.Enable();
-    }
-
-    private void OnDisable()
-    {
-        if (fireAction != null)
-            fireAction.action.Disable();
+        
+        // Get the Attack action from the Player's InputActionMap
+        var playerInput = GetComponentInParent<PlayerInput>();
+        if (playerInput != null)
+        {
+            fireAction = playerInput.actions.FindAction("Attack");
+        }
+        else
+        {
+            Debug.LogError("Could not find PlayerInput component!");
+        }
     }
 
     void Update()
     {
-        if (!isEquipped || fireAction == null)
+        if (!isEquipped || !gameObject.activeInHierarchy || fireAction == null)
             return;
 
         if (fireMode == FireMode.Automatic)
         {
-            if (fireAction.action.IsPressed())
+            if (fireAction.IsPressed())
                 Fire();
         }
         else if (fireMode == FireMode.Burst)
         {
-            if (fireAction.action.WasPerformedThisFrame())
+            if (fireAction.WasPerformedThisFrame())
                 burstCounter = 0;
             
             if (burstCounter < burstCount)
@@ -68,17 +72,17 @@ public class Gun : MonoBehaviour
         }
         else
         {
-            if (fireAction.action.WasPerformedThisFrame())
+            if (fireAction.WasPerformedThisFrame())
                 Fire();
         }
 
-        if (!fireAction.action.IsPressed())
+        if (!fireAction.IsPressed())
             burstCounter = 0;
     }
 
     public void Fire()
     {
-        if (!CanFire())
+        if (!isEquipped || !gameObject.activeInHierarchy || !CanFire())
             return;
 
         switch (fireMode)
@@ -142,10 +146,6 @@ public class Gun : MonoBehaviour
         {
             bullet.Initialize(direction);
         }
-
-        // Debug visualization
-        Debug.DrawRay(firePoint.position, direction * 50f, Color.red, 1f);
-        Debug.Log($"Bullet fired in direction: {direction}");
     }
 
     Vector3 GetSpreadDirection(Vector3 baseDirection, float spread)
@@ -190,6 +190,7 @@ public class Gun : MonoBehaviour
         {
             animator.SetBool("HasWeapon", true);
             animator.SetLayerWeight(animatorLayerIndex, 1f);
+            Debug.Log($"Gun {gameObject.name} Equipped - Setting layer weight index {animatorLayerIndex} to 1f");
             
             // Set weapon-specific animation parameters
             animator.SetBool("isPistol", gunType == GunType.Pistol);
@@ -205,6 +206,7 @@ public class Gun : MonoBehaviour
         {
             animator.SetBool("HasWeapon", false);
             animator.SetLayerWeight(animatorLayerIndex, 0f);
+            Debug.Log($"Gun {gameObject.name} Unequipped - Setting layer weight index {animatorLayerIndex} to 0f");
             
             // Reset weapon-specific animation parameters
             animator.SetBool("isPistol", false);
