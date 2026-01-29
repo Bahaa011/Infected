@@ -74,6 +74,14 @@ public class Bullet : MonoBehaviour
         if (collision.CompareTag("Enemy"))
         {
             Debug.Log($"Bullet hit enemy: {collision.gameObject.name}");
+            
+            // Try to damage the zombie
+            Zombie zombie = collision.GetComponent<Zombie>();
+            if (zombie != null)
+            {
+                zombie.TakeDamage(damage);
+            }
+            
             Destroy(gameObject);
         }
         // Don't collide with bullet source

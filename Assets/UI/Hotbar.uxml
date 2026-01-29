@@ -6,11 +6,11 @@
     xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd"
 >
     <ui:VisualElement class="hotbar-panel" style="width: 300px; height: 120px; border-radius: 16px; padding: 12px; flex-direction: row; align-items: center; justify-content: center; border-width: 0px; position: absolute; left: 50%; bottom: 48px; translate: -50% 0; gap: 12px;">
-        <ui:Button class="weapon-slot primary-slot" style="width: 100px; height: 100px; background-color: rgba(51, 51, 51, 0.67); border-radius: 12px; border-width: 4px; border-color: rgba(100, 180, 255, 0.6); border-style: solid; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; padding: 8px;">
+        <ui:Button class="weapon-slot primary-slot" style="width: 100px; height: 100px; background-color: rgba(51, 51, 51, 0.67); border-radius: 12px; border-width: 2px; border-color: rgba(100, 180, 255, 0.6); border-style: solid; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; padding: 8px;">
             <ui:Image class="weapon-icon primary-icon" style="width: 60px; height: 60px; flex-shrink: 0;"/>
             <ui:Label text="1" style="font-size: 18px; color: rgb(100, 180, 255); -unity-font-style: bold;"/>
         </ui:Button>
-        <ui:Button class="weapon-slot secondary-slot" style="width: 100px; height: 100px; background-color: rgba(51, 51, 51, 0.67); border-radius: 12px; border-width: 4px; border-color: rgba(255, 140, 100, 0.6); border-style: solid; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; padding: 8px;">
+        <ui:Button class="weapon-slot secondary-slot" style="width: 100px; height: 100px; background-color: rgba(51, 51, 51, 0.67); border-radius: 12px; border-width: 2px; border-color: rgba(255, 140, 100, 0.6); border-style: solid; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; padding: 8px;">
             <ui:Image class="weapon-icon secondary-icon" style="width: 60px; height: 60px; flex-shrink: 0;"/>
             <ui:Label text="2" style="font-size: 18px; color: rgb(255, 140, 100); -unity-font-style: bold;"/>
         </ui:Button>

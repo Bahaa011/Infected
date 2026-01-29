@@ -25,6 +25,7 @@ public class Gun : MonoBehaviour
     private Camera mainCamera;
     private bool isEquipped = false;
     private GunItem gunItem;
+    private PlayerSkills playerSkills;
 
     private void Awake()
     {
@@ -49,6 +50,12 @@ public class Gun : MonoBehaviour
         else
         {
             Debug.LogError("Could not find PlayerInput component!");
+        }
+        
+        // Get PlayerSkills reference
+        if (playerSkills == null)
+        {
+            playerSkills = GetComponentInParent<PlayerSkills>();
         }
     }
 
@@ -85,6 +92,17 @@ public class Gun : MonoBehaviour
         if (!isEquipped || !gameObject.activeInHierarchy || !CanFire())
             return;
 
+        // Register shot with skill system
+        if (playerSkills != null)
+        {
+            playerSkills.RegisterShot(gunType, false, false);
+            Debug.Log($"[Gun] Shot registered for {gunType}");
+        }
+        else
+        {
+            Debug.LogWarning("[Gun] PlayerSkills is null, cannot register shot!");
+        }
+
         switch (fireMode)
         {
             case FireMode.Single:
@@ -117,7 +135,8 @@ public class Gun : MonoBehaviour
     void FireAutomatic()
     {
         Vector3 aimDirection = GetAimDirection();
-        Vector3 spreadDirection = GetSpreadDirection(aimDirection, automaticSpread);
+        float spread = GetAdjustedSpread(automaticSpread);
+        Vector3 spreadDirection = GetSpreadDirection(aimDirection, spread);
         SpawnBullet(spreadDirection);
     }
 
@@ -131,9 +150,10 @@ public class Gun : MonoBehaviour
     void FireShotgun()
     {
         Vector3 aimDirection = GetAimDirection();
+        float spread = GetAdjustedSpread(shotgunSpread);
         for (int i = 0; i < shotgunPellets; i++)
         {
-            Vector3 spreadDirection = GetSpreadDirection(aimDirection, shotgunSpread);
+            Vector3 spreadDirection = GetSpreadDirection(aimDirection, spread);
             SpawnBullet(spreadDirection);
         }
     }
@@ -154,6 +174,18 @@ public class Gun : MonoBehaviour
         float randomY = Random.Range(-spread, spread);
         Quaternion spreadRotation = Quaternion.Euler(randomX, randomY, 0);
         return spreadRotation * baseDirection;
+    }
+
+    /// <summary>
+    /// Get the adjusted spread based on player skill level
+    /// </summary>
+    float GetAdjustedSpread(float baseSpread)
+    {
+        if (playerSkills == null)
+            return baseSpread;
+        
+        float accuracyBonus = playerSkills.GetAccuracyImprovement(gunType);
+        return Mathf.Max(0.1f, baseSpread - accuracyBonus); // Minimum 0.1 degree spread
     }
 
     Vector3 GetAimDirection()
@@ -186,6 +218,33 @@ public class Gun : MonoBehaviour
     public void Equip()
     {
         isEquipped = true;
+        
+        // Re-fetch animator if not set (happens when instantiated at runtime)
+        if (animator == null)
+        {
+            animator = GetComponentInParent<Animator>();
+        }
+        
+        // Re-fetch fire action if not set
+        if (fireAction == null)
+        {
+            var playerInput = GetComponentInParent<PlayerInput>();
+            if (playerInput != null)
+            {
+                fireAction = playerInput.actions.FindAction("Attack");
+            }
+        }
+        
+        // Re-fetch PlayerSkills if not set (happens when instantiated at runtime)
+        if (playerSkills == null)
+        {
+            playerSkills = GetComponentInParent<PlayerSkills>();
+            if (playerSkills == null)
+            {
+                Debug.LogWarning($"Gun {gameObject.name} could not find PlayerSkills component!");
+            }
+        }
+        
         if (animator != null)
         {
             animator.SetBool("HasWeapon", true);
@@ -193,9 +252,21 @@ public class Gun : MonoBehaviour
             Debug.Log($"Gun {gameObject.name} Equipped - Setting layer weight index {animatorLayerIndex} to 1f");
             
             // Set weapon-specific animation parameters
-            animator.SetBool("isPistol", gunType == GunType.Pistol);
-            animator.SetBool("isAssault", gunType != GunType.Pistol);
+            bool isPistol = gunType == GunType.Pistol;
+            bool isAssault = gunType == GunType.AssaultRifle;
+            
+            animator.SetBool("isPistol", isPistol);
+            animator.SetBool("isAssault", isAssault);
+            animator.SetBool("isAssaultRifle", isAssault);
+            
+            Debug.Log($"Gun {gameObject.name} - GunType: {gunType}, isPistol: {isPistol}, isAssaultRifle: {isAssault}");
         }
+        else
+        {
+            Debug.LogWarning($"Gun {gameObject.name} has no animator!");
+        }
+        
+        Debug.Log($"Gun {gameObject.name} Equip complete. isEquipped={isEquipped}, fireAction={fireAction != null}");
     }
 
     public void Unequip()
@@ -211,6 +282,7 @@ public class Gun : MonoBehaviour
             // Reset weapon-specific animation parameters
             animator.SetBool("isPistol", false);
             animator.SetBool("isAssault", false);
+            animator.SetBool("isAssaultRifle", false);
         }
     }
 

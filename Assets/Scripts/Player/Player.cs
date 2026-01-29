@@ -17,6 +17,13 @@ public class Player : MonoBehaviour
     [SerializeField] private float currentThirst = 100f;
     [SerializeField] private float thirstDecayRate = 8f; // Thirst points lost per minute
 
+    [Header("Stamina")]
+    [SerializeField] private float maxStamina = 100f;
+    [SerializeField] private float currentStamina = 100f;
+    [SerializeField] private float staminaDrainRate = 30f; // Stamina points lost per second while sprinting
+    [SerializeField] private float staminaRegenRate = 20f; // Stamina points gained per second while not sprinting
+    [SerializeField] private InputActionReference sprintAction;
+
     [SerializeField] private InputActionReference crouchAction;
     [SerializeField] private InputActionReference aimAction;
 
@@ -24,25 +31,33 @@ public class Player : MonoBehaviour
     private bool isAlive = true;
     private bool isCrouching = false;
     private bool isAiming = false;
+    private bool isCurrentlySprinting = false;
+    private bool isSprintInputPressed = false;
 
     public UnityEvent<float, float> onHealthChanged; // Current, Max
     public UnityEvent<float> onDamageReceived; // Damage amount
     public UnityEvent onDeath;
     public UnityEvent<float, float> onHungerChanged; // Current, Max
     public UnityEvent<float, float> onThirstChanged; // Current, Max
+    public UnityEvent<float, float> onStaminaChanged; // Current, Max
 
     private ThirdPersonController thirdPersonController;
     private Animator animator;
     private Inventory inventory;
     private EquipmentManager equipmentManager;
+    private InjurySystem injurySystem;
+    private PlayerSkills playerSkills;
 
     private void Awake()
     {
         currentHealth = maxHealth;
+        currentStamina = maxStamina;
         thirdPersonController = GetComponent<ThirdPersonController>();
         animator = GetComponent<Animator>();
         inventory = GetComponent<Inventory>();
         equipmentManager = GetComponent<EquipmentManager>();
+        injurySystem = GetComponent<InjurySystem>();
+        playerSkills = GetComponent<PlayerSkills>();
     }
 
     private void OnEnable()
@@ -75,18 +90,41 @@ public class Player : MonoBehaviour
 
         // Update hunger and thirst
         UpdateVitals();
+        UpdateStamina();
         UpdateAimInput();
+    }
+
+    private void UpdateStamina()
+    {
+        if (isCurrentlySprinting && currentStamina > 0)
+        {
+            // Drain stamina while sprinting (reduced by Stamina skill)
+            float drainMultiplier = playerSkills != null ? playerSkills.GetStaminaDrainMultiplier() : 1f;
+            currentStamina -= staminaDrainRate * drainMultiplier * Time.deltaTime;
+            if (currentStamina < 0) currentStamina = 0;
+        }
+        else if (!isSprintInputPressed && currentStamina < maxStamina)
+        {
+            // Regenerate stamina only when sprint button is not being held
+            currentStamina += staminaRegenRate * Time.deltaTime;
+            if (currentStamina > maxStamina) currentStamina = maxStamina;
+        }
+
+        onStaminaChanged?.Invoke(currentStamina, maxStamina);
     }
 
     private void UpdateVitals()
     {
-        // Decay hunger
-        currentHunger -= (hungerDecayRate / 60f) * Time.deltaTime; // Convert per-minute to per-second
+        // Get metabolism multiplier from skills (reduces decay rate)
+        float metabolismMultiplier = playerSkills != null ? playerSkills.GetMetabolismMultiplier() : 1f;
+        
+        // Decay hunger (reduced by Metabolism skill)
+        currentHunger -= (hungerDecayRate / 60f) * metabolismMultiplier * Time.deltaTime;
         if (currentHunger < 0) currentHunger = 0;
         onHungerChanged?.Invoke(currentHunger, maxHunger);
 
-        // Decay thirst
-        currentThirst -= (thirstDecayRate / 60f) * Time.deltaTime; // Convert per-minute to per-second
+        // Decay thirst (reduced by Metabolism skill)
+        currentThirst -= (thirstDecayRate / 60f) * metabolismMultiplier * Time.deltaTime;
         if (currentThirst < 0) currentThirst = 0;
         onThirstChanged?.Invoke(currentThirst, maxThirst);
 
@@ -121,9 +159,42 @@ public class Player : MonoBehaviour
         onDamageReceived?.Invoke(damage);
         onHealthChanged?.Invoke(currentHealth, maxHealth);
 
+        // Award Vitality XP for surviving damage
+        if (currentHealth > 0 && playerSkills != null)
+        {
+            playerSkills.RegisterDamageSurvived(damage);
+        }
+
         if (currentHealth <= 0)
         {
             Die();
+        }
+    }
+
+    /// <summary>
+    /// Take damage and apply a random injury
+    /// </summary>
+    public void TakeDamageWithInjury(float baseDamage)
+    {
+        if (!isAlive || injurySystem == null) 
+        {
+            TakeDamage(baseDamage);
+            return;
+        }
+
+        // Apply random injury
+        Injury injury = injurySystem.ApplyRandomInjury();
+        
+        if (injury != null)
+        {
+            // Calculate actual damage based on injury type and body part
+            float actualDamage = injury.GetTotalDamage(baseDamage);
+            TakeDamage(actualDamage);
+        }
+        else
+        {
+            // If no injury was applied (max injuries reached), just take base damage
+            TakeDamage(baseDamage);
         }
     }
 
@@ -163,11 +234,15 @@ public class Player : MonoBehaviour
     public float GetThirst() => currentThirst;
     public float GetMaxThirst() => maxThirst;
     public float GetThirstPercent() => currentThirst / maxThirst;
+    public float GetStamina() => currentStamina;
+    public float GetMaxStamina() => maxStamina;
+    public float GetStaminaPercent() => currentStamina / maxStamina;
     public bool IsAlive() => isAlive;
     public bool IsCrouching() => isCrouching;
     public bool IsAiming() => isAiming;
     public Inventory GetInventory() => inventory;
     public EquipmentManager GetEquipmentManager() => equipmentManager;
+    public InjurySystem GetInjurySystem() => injurySystem;
     
     public bool IsHoldingPistol() => equipmentManager.IsCurrentWeaponPistol();
     public bool IsHoldingAssaultRifle() => equipmentManager.IsCurrentWeaponAssaultRifle();
@@ -183,4 +258,25 @@ public class Player : MonoBehaviour
         currentThirst = Mathf.Min(currentThirst + amount, maxThirst);
         onThirstChanged?.Invoke(currentThirst, maxThirst);
     }
+
+    public void SetIsCurrentlySprinting(bool isSprinting)
+    {
+        isCurrentlySprinting = isSprinting;
+    }
+
+    public bool IsCurrentlySprinting()
+    {
+        return isCurrentlySprinting;
+    }
+
+    public void SetSprintInputPressed(bool pressed)
+    {
+        isSprintInputPressed = pressed;
+    }
+
+    public PlayerSkills GetPlayerSkills()
+    {
+        return playerSkills;
+    }
+
 }

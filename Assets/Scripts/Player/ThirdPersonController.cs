@@ -53,6 +53,7 @@ public class ThirdPersonController : MonoBehaviour
     private Inventory inventory;
     private AnimationController animationController;
     private EquipmentManager equipmentManager;
+    private bool isActuallySprinting = false;
 
     // Camera
     private float yaw;
@@ -129,7 +130,7 @@ public class ThirdPersonController : MonoBehaviour
         UpdateAiming();
         if (animationController != null)
         {
-            animationController.UpdateMovementAnimation(moveInput.sqrMagnitude, sprintAction != null && sprintAction.action.IsPressed(), runSpeedMultiplier);
+            animationController.UpdateMovementAnimation(moveInput.sqrMagnitude, isActuallySprinting, runSpeedMultiplier);
             animationController.UpdateCrouchAnimation();
             animationController.UpdateAimingAnimation();
         }
@@ -207,6 +208,10 @@ public class ThirdPersonController : MonoBehaviour
         Vector3 move = Vector3.zero;
         bool isMoving = moveInput.sqrMagnitude >= IDLE_THRESHOLD;
 
+        // Check if sprint button is being pressed
+        bool sprintInputPressed = sprintAction != null && sprintAction.action.IsPressed();
+        player.SetSprintInputPressed(sprintInputPressed);
+
         // Calculate XZ movement
         if (isMoving)
         {
@@ -219,13 +224,25 @@ public class ThirdPersonController : MonoBehaviour
             Quaternion targetRotation = Quaternion.LookRotation(moveDir);
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
 
-            bool canSprint = sprintAction != null && sprintAction.action.IsPressed();
+            // Check if can sprint (has stamina remaining)
+            bool canSprint = sprintInputPressed && player.GetStamina() > 0.1f;
+            
+            // Update player's sprint state and track actual sprint state
+            player.SetIsCurrentlySprinting(canSprint);
+            isActuallySprinting = canSprint;
+
             float currentSpeed = moveSpeed;
             if (canSprint) currentSpeed *= runSpeedMultiplier;
             if (player.IsCrouching()) currentSpeed *= crouchSpeedMultiplier;
             if (inventory != null) currentSpeed *= inventory.GetSpeedPenalty();
 
             move = moveDir * currentSpeed;
+        }
+        else
+        {
+            // Not moving, stop sprinting
+            player.SetIsCurrentlySprinting(false);
+            isActuallySprinting = false;
         }
 
         // Gravity (Y only)

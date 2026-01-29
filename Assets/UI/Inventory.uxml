@@ -1,5 +1,11 @@
-<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
-    <ui:VisualElement class="inventory-panel" style="width: 440px; height: 560px; background-color: rgba(34, 34, 34, 0.85); border-radius: 20px; padding: 20px; flex-direction: column; align-items: stretch; justify-content: flex-start; border-width: 4px; border-color: rgba(136, 136, 136, 0.67); border-style: solid; position: absolute; right: 48px; bottom: 48px;">
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ui="UnityEngine.UIElements"
+    xmlns:uie="UnityEditor.UIElements"
+    xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd"
+>
+    <ui:VisualElement class="inventory-panel" style="width: 440px; height: 560px; background-color: rgba(30, 30, 30, 0.9); border-radius: 12px; padding: 16px; flex-direction: column; align-items: stretch; justify-content: flex-start; border-width: 2px; border-color: rgba(100, 100, 100, 0.5); border-style: solid; position: absolute; right: 48px; bottom: 48px;">
         <ui:VisualElement style="flex-direction: row; align-items: center; margin-bottom: 12px;">
             <ui:Label text="INVENTORY" class="inventory-title" style="font-size: 32px; color: rgb(255, 255, 255); -unity-font-style: bold; margin-right: 12px; margin-bottom: 0px;"/>
             <ui:Label text="0.0/0.0 kg" class="inventory-weight" style="font-size: 26px; color: rgb(204, 204, 204); margin-bottom: 0px;"/>

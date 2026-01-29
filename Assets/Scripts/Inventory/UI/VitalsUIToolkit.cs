@@ -9,9 +9,11 @@ public class VitalsUIToolkit : MonoBehaviour
     private VisualElement healthBar;
     private VisualElement hungerBar;
     private VisualElement thirstBar;
+    private VisualElement staminaBar;
     private Label healthValue;
     private Label hungerValue;
     private Label thirstValue;
+    private Label staminaValue;
 
     private void Awake()
     {
@@ -22,9 +24,11 @@ public class VitalsUIToolkit : MonoBehaviour
         healthBar = root.Q<VisualElement>(className: "health-bar");
         hungerBar = root.Q<VisualElement>(className: "hunger-bar");
         thirstBar = root.Q<VisualElement>(className: "thirst-bar");
+        staminaBar = root.Q<VisualElement>(className: "stamina-bar");
         healthValue = root.Q<Label>(className: "health-value");
         hungerValue = root.Q<Label>(className: "hunger-value");
         thirstValue = root.Q<Label>(className: "thirst-value");
+        staminaValue = root.Q<Label>(className: "stamina-value");
     }
 
     private void OnEnable()
@@ -37,11 +41,13 @@ public class VitalsUIToolkit : MonoBehaviour
             player.onHealthChanged.AddListener(OnHealthChanged);
             player.onHungerChanged.AddListener(OnHungerChanged);
             player.onThirstChanged.AddListener(OnThirstChanged);
+            player.onStaminaChanged.AddListener(OnStaminaChanged);
             
             // Initial update
             OnHealthChanged(player.GetHealth(), player.GetMaxHealth());
             OnHungerChanged(player.GetHunger(), player.GetMaxHunger());
             OnThirstChanged(player.GetThirst(), player.GetMaxThirst());
+            OnStaminaChanged(player.GetStamina(), player.GetMaxStamina());
         }
     }
 
@@ -52,6 +58,7 @@ public class VitalsUIToolkit : MonoBehaviour
             player.onHealthChanged.RemoveListener(OnHealthChanged);
             player.onHungerChanged.RemoveListener(OnHungerChanged);
             player.onThirstChanged.RemoveListener(OnThirstChanged);
+            player.onStaminaChanged.RemoveListener(OnStaminaChanged);
         }
     }
 
@@ -80,5 +87,14 @@ public class VitalsUIToolkit : MonoBehaviour
             thirstBar.style.width = new Length(percent, LengthUnit.Percent);
         if (thirstValue != null)
             thirstValue.text = $"{current:F0}/{max:F0}";
+    }
+
+    private void OnStaminaChanged(float current, float max)
+    {
+        float percent = Mathf.Clamp01(current / max) * 100f;
+        if (staminaBar != null)
+            staminaBar.style.width = new Length(percent, LengthUnit.Percent);
+        if (staminaValue != null)
+            staminaValue.text = $"{current:F0}/{max:F0}";
     }
 }

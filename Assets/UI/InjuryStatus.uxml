@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ui="UnityEngine.UIElements"
+    xmlns:uie="UnityEditor.UIElements"
+    xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd"
+>
+    <!-- Injury Body Overlay - positioned above skills panel (bottom-left) -->
+    <ui:VisualElement class="injury-panel" style="width: 160px; height: 380px; background-color: rgba(30, 30, 30, 0.9); padding: 16px; border-width: 2px; border-color: rgba(200, 60, 60, 0.6); border-radius: 12px; flex-direction: column; align-items: center; justify-content: flex-start; position: absolute; left: 48px; bottom: 560px; display: none;">
+        
+        <!-- Title -->
+        <ui:Label text="BODY STATUS" style="font-size: 14px; color: rgb(255, 255, 255); -unity-font-style: bold; margin-bottom: 8px;"/>
+        
+        <!-- Body Silhouette - Smaller -->
+        <ui:VisualElement style="width: 100px; height: 300px; position: relative;">
+            
+            <!-- Head -->
+            <ui:Button name="body-head" class="body-part" style="position: absolute; left: 36px; top: 0px; width: 28px; height: 34px; background-color: rgba(100, 200, 100, 0.8); border-radius: 14px; border-width: 2px; border-color: rgba(255, 255, 255, 0.8); transition-duration: 0.2s; cursor: link;">
+            </ui:Button>
+            
+            <!-- Torso -->
+            <ui:Button name="body-torso" class="body-part" style="position: absolute; left: 27px; top: 38px; width: 46px; height: 95px; background-color: rgba(100, 200, 100, 0.8); border-radius: 8px; border-width: 2px; border-color: rgba(255, 255, 255, 0.8); transition-duration: 0.2s; cursor: link;">
+            </ui:Button>
+            
+            <!-- Left Arm -->
+            <ui:Button name="body-leftarm" class="body-part" style="position: absolute; left: 8px; top: 42px; width: 12px; height: 85px; background-color: rgba(100, 200, 100, 0.8); border-radius: 6px; border-width: 2px; border-color: rgba(255, 255, 255, 0.8); transition-duration: 0.2s; cursor: link;">
+            </ui:Button>
+            
+            <!-- Right Arm -->
+            <ui:Button name="body-rightarm" class="body-part" style="position: absolute; left: 80px; top: 42px; width: 12px; height: 85px; background-color: rgba(100, 200, 100, 0.8); border-radius: 6px; border-width: 2px; border-color: rgba(255, 255, 255, 0.8); transition-duration: 0.2s; cursor: link;">
+            </ui:Button>
+            
+            <!-- Left Leg -->
+            <ui:Button name="body-leftleg" class="body-part" style="position: absolute; left: 31px; top: 140px; width: 16px; height: 110px; background-color: rgba(100, 200, 100, 0.8); border-radius: 8px; border-width: 2px; border-color: rgba(255, 255, 255, 0.8); transition-duration: 0.2s; cursor: link;">
+            </ui:Button>
+            
+            <!-- Right Leg -->
+            <ui:Button name="body-rightleg" class="body-part" style="position: absolute; left: 53px; top: 140px; width: 16px; height: 110px; background-color: rgba(100, 200, 100, 0.8); border-radius: 8px; border-width: 2px; border-color: rgba(255, 255, 255, 0.8); transition-duration: 0.2s; cursor: link;">
+            </ui:Button>
+            
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

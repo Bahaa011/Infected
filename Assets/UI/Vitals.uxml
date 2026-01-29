@@ -5,7 +5,7 @@
     xmlns:uie="UnityEditor.UIElements"
     xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd"
 >
-    <ui:VisualElement class="vitals-panel" style="position: absolute; bottom: 48px; left: 48px; width: 400px; flex-direction: column; gap: 6px;">
+    <ui:VisualElement class="vitals-panel" style="position: absolute; bottom: 48px; left: 48px; width: 400px; flex-direction: column; gap: 6px; background-color: rgba(30, 30, 30, 0.9); padding: 16px; border-radius: 12px; border-width: 2px; border-color: rgba(100, 100, 100, 0.5);">
         <!-- Health Bar -->
         <ui:VisualElement style="height: 32px; background-color: rgba(40, 40, 40, 0.8); border-radius: 8px; border-width: 2px; border-color: rgba(200, 60, 60, 0.5); overflow: hidden; position: relative;">
             <ui:VisualElement class="health-bar" style="height: 100%; width: 100%; background-color: rgb(200, 60, 60); border-radius: 6px;"/>
@@ -22,6 +22,12 @@
         <ui:VisualElement style="height: 32px; background-color: rgba(40, 40, 40, 0.8); border-radius: 8px; border-width: 2px; border-color: rgba(60, 150, 200, 0.5); overflow: hidden; position: relative;">
             <ui:VisualElement class="thirst-bar" style="height: 100%; width: 100%; background-color: rgb(60, 150, 200); border-radius: 6px;"/>
             <ui:Label text="THIRST" style="position: absolute; left: 8px; top: 50%; translate: 0 -50%; font-size: 16px; color: rgb(255, 255, 255); -unity-font-style: bold;"/>
+        </ui:VisualElement>
+
+        <!-- Stamina Bar -->
+        <ui:VisualElement style="height: 32px; background-color: rgba(40, 40, 40, 0.8); border-radius: 8px; border-width: 2px; border-color: rgba(150, 200, 60, 0.5); overflow: hidden; position: relative;">
+            <ui:VisualElement class="stamina-bar" style="height: 100%; width: 100%; background-color: rgb(150, 200, 60); border-radius: 6px;"/>
+            <ui:Label text="STAMINA" style="position: absolute; left: 8px; top: 50%; translate: 0 -50%; font-size: 16px; color: rgb(255, 255, 255); -unity-font-style: bold;"/>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

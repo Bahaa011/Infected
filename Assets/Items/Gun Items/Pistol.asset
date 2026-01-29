@@ -18,7 +18,7 @@ MonoBehaviour:
   maxStackSize: 1
   icon: {fileID: 21300000, guid: 415d12f4661d261fd99b1c63ec3c37d7, type: 3}
   id: 0
-  gunPrefab: {fileID: 961365450254731167, guid: a6ecc8346b3abaa8ba8dc65d4f10c9a4, type: 3}
+  gunPrefab: {fileID: 1382342273306362514, guid: 9c140ac775e1caf23b683a7da676f079, type: 3}
   ammoCapacity: 10
   currentAmmo: 10
   gunType: 0

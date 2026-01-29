@@ -1,32 +1,30 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using System.Linq;
 
 public class ItemPickup : MonoBehaviour
 {
+    [Header("Item Settings")]
     [SerializeField] private Item itemToPickup;
     [SerializeField] private int quantity = 1;
     [SerializeField] private float pickupRadius = 2f;
-    [SerializeField] private InputActionReference pickupAction;
     
     private Collider pickupCollider;
     private Player player;
     private ThirdPersonController playerController;
     private bool isPickedUp = false;
-
-    private void OnEnable()
-    {
-        Debug.Log($"[{itemToPickup?.ItemName ?? "Unknown"}] OnEnable called");
-        // Don't disable/enable the action - it's shared and managed elsewhere
-    }
-
-    private void OnDisable()
-    {
-        // Don't disable the action - it's shared and managed elsewhere
-    }
+    private bool playerInRange = false;
 
     private void Start()
     {
         Debug.Log($"[{itemToPickup?.ItemName ?? "Unknown"}] Start called");
+        
+        if (itemToPickup == null)
+        {
+            Debug.LogError("[ItemPickup] itemToPickup is null! Assign an Item in the inspector.");
+            return;
+        }
+        
         // Create a trigger collider for pickup detection if it doesn't exist
         pickupCollider = GetComponent<Collider>();
         if (pickupCollider == null)
@@ -35,17 +33,40 @@ public class ItemPickup : MonoBehaviour
             sphere.radius = pickupRadius;
             sphere.isTrigger = true;
             pickupCollider = sphere;
+            Debug.Log($"[{itemToPickup.ItemName}] Created SphereCollider with radius {pickupRadius}");
         }
         else
         {
             pickupCollider.isTrigger = true;
+            Debug.Log($"[{itemToPickup.ItemName}] Using existing collider: {pickupCollider.GetType().Name}");
         }
 
-        // Try to find player in scene
+        // Try to find player
         player = FindFirstObjectByType<Player>();
-        if (player != null)
+        if (player == null)
         {
-            playerController = player.GetComponent<ThirdPersonController>();
+            Debug.LogError("[ItemPickup] Could not find Player in scene!");
+            return;
+        }
+        
+        Debug.Log($"[{itemToPickup.ItemName}] Found player: {player.gameObject.name}");
+        
+        playerController = player.GetComponent<ThirdPersonController>();
+        if (playerController == null)
+        {
+            Debug.LogWarning($"[{itemToPickup.ItemName}] Player has no ThirdPersonController!");
+        }
+    }
+
+    private void Update()
+    {
+        if (isPickedUp || !playerInRange) return;
+        
+        // Check for E key press
+        if (Keyboard.current.eKey.wasPressedThisFrame)
+        {
+            Debug.Log($"[INPUT] E key pressed!");
+            AttemptPickup();
         }
     }
 
@@ -58,7 +79,9 @@ public class ItemPickup : MonoBehaviour
         if (p != null)
         {
             player = p;
-            Debug.Log($"Player in range of {itemToPickup.ItemName}. Press E to pick up!");
+            playerController = player.GetComponent<ThirdPersonController>();
+            playerInRange = true;
+            Debug.Log($"[TRIGGER] Player entered range of {itemToPickup?.ItemName}");
         }
     }
 
@@ -67,60 +90,68 @@ public class ItemPickup : MonoBehaviour
         Player p = collision.GetComponent<Player>();
         if (p != null && p == player)
         {
-            Debug.Log($"Player out of range of {itemToPickup.ItemName}");
+            playerInRange = false;
+            Debug.Log($"[TRIGGER] Player left range of {itemToPickup?.ItemName}");
         }  
     }
 
-    private void Update()
+    private void AttemptPickup()
     {
-        if (isPickedUp) return;
-        if (pickupAction == null) return;
-        if (!pickupAction.action.WasPerformedThisFrame()) return;
-        
-        Debug.Log($"[{itemToPickup.ItemName}] E pressed!");
-        
-        if (player == null)
-            player = FindFirstObjectByType<Player>();
+        Debug.Log($"[INPUT] Attempting to pick up {itemToPickup?.ItemName}");
         
         if (player == null)
         {
-            Debug.Log($"[{itemToPickup.ItemName}] No player found");
+            Debug.LogError($"[INPUT] Player is null!");
             return;
         }
         
         float distance = Vector3.Distance(transform.position, player.transform.position);
+        Debug.Log($"[INPUT] Distance to player: {distance} (max: {pickupRadius + 1f})");
+        
         if (distance > pickupRadius + 1f)
         {
-            Debug.Log($"[{itemToPickup.ItemName}] Too far: {distance}");
+            Debug.Log($"[INPUT] Player too far away");
             return;
         }
         
         if (playerController == null)
             playerController = player.GetComponent<ThirdPersonController>();
         
-        if (playerController == null || playerController.MainUnityCamera == null)
+        if (playerController == null)
         {
-            Debug.Log($"[{itemToPickup.ItemName}] No camera");
+            Debug.LogError($"[INPUT] No ThirdPersonController found");
+            return;
+        }
+        
+        if (playerController.MainUnityCamera == null)
+        {
+            Debug.LogError($"[INPUT] No camera found");
             return;
         }
         
         Ray ray = new Ray(playerController.MainUnityCamera.transform.position, playerController.MainUnityCamera.transform.forward);
         RaycastHit hit;
         
+        Debug.Log($"[INPUT] Raycasting from camera...");
+        
         if (!Physics.Raycast(ray, out hit, pickupRadius + 1f))
         {
-            Debug.Log($"[{itemToPickup.ItemName}] Raycast hit nothing");
+            Debug.Log($"[INPUT] Raycast hit nothing");
             return;
         }
+        
+        Debug.Log($"[INPUT] Raycast hit: {hit.collider.gameObject.name}");
         
         if (hit.collider != pickupCollider)
         {
-            Debug.Log($"[{itemToPickup.ItemName}] Hit wrong object: {hit.collider.gameObject.name}");
+            Debug.Log($"[INPUT] Hit wrong object: {hit.collider.gameObject.name} (expected {gameObject.name})");
             return;
         }
         
+        Debug.Log($"[INPUT] All checks passed! Picking up item...");
         PickupItem();
     }
+
     private void PickupItem()
     {
         if (player == null)
