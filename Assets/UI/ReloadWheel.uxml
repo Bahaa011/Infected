@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ui="UnityEngine.UIElements"
+    xmlns:uie="UnityEditor.UIElements"
+    xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd"
+>
+    <ui:VisualElement class="reload-wheel-container" style="width: 96px; height: 96px; position: absolute; right: 40px; bottom: 120px; justify-content: center; align-items: center;">
+        <ui:Label text="RELOAD" class="reload-wheel-label" style="position: absolute; unity-text-align: middle-center; color: white; font-size: 18px;" />
+    </ui:VisualElement>
+</ui:UXML>

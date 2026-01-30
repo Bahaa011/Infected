@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.InputSystem;
 
 public class Gun : MonoBehaviour
@@ -17,8 +18,14 @@ public class Gun : MonoBehaviour
     [SerializeField] private float automaticSpread = 5f;
     [SerializeField] private Animator animator;
     [SerializeField] private int animatorLayerIndex = 1;
+    [Header("Ammo & Reload")]
+    [SerializeField] private float reloadTime = 1.6f;
+    [SerializeField] private bool canFireWhileReloading = false;
+    [SerializeField] private string reloadActionName = "Reload";
+    [SerializeField] private bool requireMagazineItem = true;
     
     private InputAction fireAction;
+    private InputAction reloadAction;
     
     private float lastFireTime = 0f;
     private int burstCounter = 0;
@@ -26,6 +33,14 @@ public class Gun : MonoBehaviour
     private bool isEquipped = false;
     private GunItem gunItem;
     private PlayerSkills playerSkills;
+    private Inventory inventory;
+    private bool isReloading = false;
+    private float reloadProgress = 0f;
+
+    [Header("Reload Events")]
+    public UnityEvent onReloadStarted;
+    public UnityEvent<float> onReloadProgress;
+    public UnityEvent onReloadCompleted;
 
     private void Awake()
     {
@@ -46,6 +61,7 @@ public class Gun : MonoBehaviour
         if (playerInput != null)
         {
             fireAction = playerInput.actions.FindAction("Attack");
+            reloadAction = playerInput.actions.FindAction(reloadActionName);
         }
         else
         {
@@ -57,11 +73,24 @@ public class Gun : MonoBehaviour
         {
             playerSkills = GetComponentInParent<PlayerSkills>();
         }
+
+        if (inventory == null)
+        {
+            inventory = GetComponentInParent<Inventory>();
+        }
     }
 
     void Update()
     {
         if (!isEquipped || !gameObject.activeInHierarchy || fireAction == null)
+            return;
+
+        if (reloadAction != null && reloadAction.WasPerformedThisFrame())
+        {
+            Reload();
+        }
+
+        if (isReloading && !canFireWhileReloading)
             return;
 
         if (fireMode == FireMode.Automatic)
@@ -91,6 +120,12 @@ public class Gun : MonoBehaviour
     {
         if (!isEquipped || !gameObject.activeInHierarchy || !CanFire())
             return;
+
+        if (gunItem != null && !gunItem.UseAmmo(1))
+        {
+            // No ammo in magazine
+            return;
+        }
 
         // Register shot with skill system
         if (playerSkills != null)
@@ -232,6 +267,7 @@ public class Gun : MonoBehaviour
             if (playerInput != null)
             {
                 fireAction = playerInput.actions.FindAction("Attack");
+                reloadAction = playerInput.actions.FindAction(reloadActionName);
             }
         }
         
@@ -243,6 +279,11 @@ public class Gun : MonoBehaviour
             {
                 Debug.LogWarning($"Gun {gameObject.name} could not find PlayerSkills component!");
             }
+        }
+
+        if (inventory == null)
+        {
+            inventory = GetComponentInParent<Inventory>();
         }
         
         if (animator != null)
@@ -273,6 +314,7 @@ public class Gun : MonoBehaviour
     {
         isEquipped = false;
         burstCounter = 0;
+        isReloading = false;
         if (animator != null)
         {
             animator.SetBool("HasWeapon", false);
@@ -295,4 +337,87 @@ public class Gun : MonoBehaviour
     {
         return gunItem;
     }
+
+    public void Reload()
+    {
+        if (isReloading)
+            return;
+
+        if (gunItem == null)
+            return;
+
+        if (gunItem.CurrentAmmo >= gunItem.AmmoCapacity)
+            return;
+
+        if (requireMagazineItem)
+        {
+            if (inventory == null)
+                inventory = GetComponentInParent<Inventory>();
+
+            if (!TryConsumeMagazine())
+                return;
+        }
+
+        StartCoroutine(ReloadRoutine());
+    }
+
+    private System.Collections.IEnumerator ReloadRoutine()
+    {
+        isReloading = true;
+        reloadProgress = 0f;
+        onReloadStarted?.Invoke();
+
+        if (animator != null)
+        {
+            animator.SetTrigger("reload");
+        }
+
+        float elapsed = 0f;
+        while (elapsed < reloadTime)
+        {
+            elapsed += Time.deltaTime;
+            reloadProgress = Mathf.Clamp01(elapsed / reloadTime);
+            onReloadProgress?.Invoke(reloadProgress);
+            yield return null;
+        }
+
+        gunItem.SetAmmo(gunItem.AmmoCapacity);
+        isReloading = false;
+        reloadProgress = 1f;
+        onReloadProgress?.Invoke(reloadProgress);
+        onReloadCompleted?.Invoke();
+    }
+
+    private bool TryConsumeMagazine()
+    {
+        if (inventory == null)
+            return false;
+
+        MagazineItem magazine = FindMagazineForGunType();
+        if (magazine == null)
+            return false;
+
+        return inventory.RemoveItem(magazine, 1);
+    }
+
+    private MagazineItem FindMagazineForGunType()
+    {
+        if (inventory == null)
+            return null;
+
+        var slots = inventory.GetAllItems();
+        for (int i = 0; i < slots.Count; i++)
+        {
+            var slot = slots[i];
+            if (slot.item is MagazineItem mag && slot.quantity > 0 && mag.GunType == gunType)
+            {
+                return mag;
+            }
+        }
+
+        return null;
+    }
+
+    public bool IsReloading() => isReloading;
+    public float GetReloadProgress() => reloadProgress;
 }
