@@ -46,6 +46,12 @@ public class PlayerSkills : MonoBehaviour
     [SerializeField] private float vitalityMaxLevel = 10f;
     [SerializeField] private float vitalityXPPerLevel = 100f;
     [SerializeField] private float maxHealthBonus = 50f; // +50 max health at max level
+
+    [Header("Strength Skill Settings")]
+    [SerializeField] private float strengthXPPerMeleeAttack = 1f;
+    [SerializeField] private float strengthMaxLevel = 10f;
+    [SerializeField] private float strengthXPPerLevel = 50f;
+    [SerializeField] private float maxDamageBonus = 0.5f; // 50% damage increase at max level
     
     [Header("Skill Multipliers")]
     [SerializeField] private float headShotBonus = 2f;
@@ -117,6 +123,7 @@ public class PlayerSkills : MonoBehaviour
         // Initialize general skills
         generalSkills[SkillType.Stamina] = new GeneralSkill { skillType = SkillType.Stamina };
         generalSkills[SkillType.Stealth] = new GeneralSkill { skillType = SkillType.Stealth };
+        generalSkills[SkillType.Strength] = new GeneralSkill { skillType = SkillType.Strength };
         generalSkills[SkillType.Metabolism] = new GeneralSkill { skillType = SkillType.Metabolism };
         generalSkills[SkillType.Vitality] = new GeneralSkill { skillType = SkillType.Vitality };
     }
@@ -236,6 +243,7 @@ public class PlayerSkills : MonoBehaviour
         {
             case SkillType.Stamina: return staminaMaxLevel;
             case SkillType.Stealth: return stealthMaxLevel;
+            case SkillType.Strength: return strengthMaxLevel;
             case SkillType.Metabolism: return metabolismMaxLevel;
             case SkillType.Vitality: return vitalityMaxLevel;
             default: return 10f;
@@ -248,6 +256,7 @@ public class PlayerSkills : MonoBehaviour
         {
             case SkillType.Stamina: return staminaXPPerLevel;
             case SkillType.Stealth: return stealthXPPerLevel;
+            case SkillType.Strength: return strengthXPPerLevel;
             case SkillType.Metabolism: return metabolismXPPerLevel;
             case SkillType.Vitality: return vitalityXPPerLevel;
             default: return 100f;
@@ -371,6 +380,23 @@ public class PlayerSkills : MonoBehaviour
     {
         int level = GetGeneralSkillLevel(SkillType.Vitality);
         return (level - 1) / vitalityMaxLevel * maxHealthBonus;
+    }
+
+    /// <summary>
+    /// Get damage multiplier from Strength skill for melee attacks
+    /// </summary>
+    public float GetStrengthDamageBonus()
+    {
+        int level = GetGeneralSkillLevel(SkillType.Strength);
+        return (level - 1) / strengthMaxLevel * maxDamageBonus;
+    }
+
+    /// <summary>
+    /// Register a melee attack for Strength skill XP
+    /// </summary>
+    public void RegisterMeleeAttack()
+    {
+        AddGeneralXP(SkillType.Strength, strengthXPPerMeleeAttack);
     }
 
     // ============ UTILITY ============
