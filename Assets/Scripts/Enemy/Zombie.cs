@@ -2,7 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
-public class Zombie : MonoBehaviour
+public class Zombie : MonoBehaviour, IDamageable
 {
     [Header("Health")]
     [SerializeField] private float maxHealth = 30f;
