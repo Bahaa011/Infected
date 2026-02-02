@@ -16,22 +16,14 @@ public class EquipmentManager : MonoBehaviour
     [Tooltip("Local rotation (in degrees) to apply to weapon when equipped in hand.")]
     [SerializeField] private Vector3 weaponHandRotation = Vector3.zero;
     
-    // Gun equipment
     private Gun equippedPrimaryWeapon;
     private Gun equippedSecondaryWeapon;
     private Gun currentWeaponInHand;
-    
-    // Melee equipment
-    private MeleeWeapon equippedMeleeWeapon;
-    private bool isMeleeEquipped = false;
-    
     private Inventory inventory;
 
     public UnityEvent<Gun> onPrimaryEquipped;
     public UnityEvent<Gun> onSecondaryEquipped;
     public UnityEvent<Gun> onWeaponSwitched;
-    public UnityEvent<MeleeWeapon> onMeleeEquipped;
-    public UnityEvent onMeleeUnequipped;
 
     private void Awake()
     {
@@ -45,7 +37,6 @@ public class EquipmentManager : MonoBehaviour
     {
         if (handSlot == null) return;
 
-        // Check for gun
         Gun gunInHand = handSlot.GetComponentInChildren<Gun>();
         if (gunInHand != null)
         {
@@ -53,15 +44,6 @@ public class EquipmentManager : MonoBehaviour
             equippedPrimaryWeapon = gunInHand;
             gunInHand.Unequip();
             gunInHand.gameObject.SetActive(false);
-        }
-
-        // Check for melee weapon
-        MeleeWeapon meleeInHand = handSlot.GetComponentInChildren<MeleeWeapon>();
-        if (meleeInHand != null)
-        {
-            equippedMeleeWeapon = meleeInHand;
-            meleeInHand.Unequip();
-            meleeInHand.gameObject.SetActive(false);
         }
     }
 
@@ -432,97 +414,4 @@ public class EquipmentManager : MonoBehaviour
     public bool IsCurrentWeaponPistol() => GetCurrentGunType() == Gun.GunType.Pistol;
 
     public bool IsCurrentWeaponAssaultRifle() => GetCurrentGunType() == Gun.GunType.AssaultRifle;
-
-    /// <summary>
-    /// Equip a melee weapon as the active weapon
-    /// </summary>
-    public bool EquipMeleeWeapon(MeleeWeaponItem meleeItem)
-    {
-        Debug.Log($"[EquipmentManager] EquipMeleeWeapon called with: {(meleeItem != null ? meleeItem.ItemName : "null")}");
-
-        // Handle unequip
-        if (meleeItem == null)
-        {
-            if (equippedMeleeWeapon != null)
-            {
-                equippedMeleeWeapon.Unequip();
-                equippedMeleeWeapon.gameObject.SetActive(false);
-                equippedMeleeWeapon = null;
-                isMeleeEquipped = false;
-                onMeleeUnequipped?.Invoke();
-                return true;
-            }
-            return false;
-        }
-
-        if (meleeItem.WeaponPrefab == null)
-        {
-            Debug.LogError($"[EquipmentManager] Cannot equip {meleeItem.ItemName}: WeaponPrefab is null!");
-            return false;
-        }
-
-        if (handSlot == null)
-        {
-            Debug.LogError("[EquipmentManager] Cannot equip: handSlot is not assigned!");
-            return false;
-        }
-
-        // Unequip current weapon if needed
-        if (currentWeaponInHand != null && currentWeaponInHand is Gun)
-        {
-            currentWeaponInHand.Unequip();
-            currentWeaponInHand.gameObject.SetActive(false);
-        }
-
-        // Destroy old melee weapon if exists
-        if (equippedMeleeWeapon != null)
-            Destroy(equippedMeleeWeapon.gameObject);
-
-        // Instantiate new melee weapon
-        GameObject weaponInstance = Instantiate(meleeItem.WeaponPrefab, handSlot);
-        weaponInstance.name = meleeItem.ItemName;
-        weaponInstance.SetActive(true);
-        weaponInstance.transform.localPosition = Vector3.zero;
-        weaponInstance.transform.localRotation = Quaternion.Euler(weaponHandRotation);
-        if (weaponLayer >= 0) SetLayerRecursively(weaponInstance, weaponLayer);
-
-        MeleeWeapon newWeapon = weaponInstance.GetComponent<MeleeWeapon>();
-        if (newWeapon != null)
-        {
-            newWeapon.SetWeaponItem(meleeItem);
-            equippedMeleeWeapon = newWeapon;
-            currentWeaponInHand = null; // Clear gun reference
-            isMeleeEquipped = true;
-
-            // Equip the weapon
-            newWeapon.Equip();
-
-            Debug.Log($"[EquipmentManager] Melee weapon {meleeItem.ItemName} equipped and active!");
-
-            onMeleeEquipped?.Invoke(equippedMeleeWeapon);
-            return true;
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// Check if a melee weapon is currently equipped
-    /// </summary>
-    public bool IsMeleeEquipped() => isMeleeEquipped && equippedMeleeWeapon != null;
-
-    /// <summary>
-    /// Get the currently equipped melee weapon
-    /// </summary>
-    public MeleeWeapon GetMeleeWeapon() => equippedMeleeWeapon;
-
-    /// <summary>
-    /// Get the current weapon in hand (either gun or melee)
-    /// </summary>
-    public object GetCurrentWeaponInHand()
-    {
-        if (isMeleeEquipped)
-            return equippedMeleeWeapon;
-        return currentWeaponInHand;
-    }
 }
