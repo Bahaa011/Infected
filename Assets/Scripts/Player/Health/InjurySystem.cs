@@ -2,9 +2,6 @@ using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.Events;
 
-/// <summary>
-/// Manages the player's injury system including body parts, injury types, and infection
-/// </summary>
 public class InjurySystem : MonoBehaviour
 {
     [Header("Injury Probabilities")]
@@ -30,11 +27,16 @@ public class InjurySystem : MonoBehaviour
     [SerializeField] private float biteFatalDurationMax = 216000f; // 2.5 days in seconds
     [SerializeField] private float bandageSlowdownMultiplier = 0.5f; // Bandages slow fatal progression to 50% speed
 
+    [Header("Bandage Healing")]
+    [SerializeField] private float bandageHealDurationDaysMin = 1f;
+    [SerializeField] private float bandageHealDurationDaysMax = 2f;
+
     [Header("Max Injuries")]
     [SerializeField] private int maxInjuriesPerBodyPart = 3;
 
     private List<Injury> activeInjuries = new List<Injury>();
     private Player player;
+    private DayNightManager dayNightManager;
 
     // Events
     public UnityEvent<Injury> onInjuryReceived;
@@ -44,6 +46,7 @@ public class InjurySystem : MonoBehaviour
     private void Awake()
     {
         player = GetComponent<Player>();
+        dayNightManager = FindFirstObjectByType<DayNightManager>();
     }
 
     private void Update()
@@ -52,11 +55,9 @@ public class InjurySystem : MonoBehaviour
         ProcessInfections();
         ProcessBleeding();
         ProcessBiteFatality();
+        ProcessBandagedHealing();
     }
 
-    /// <summary>
-    /// Apply a random injury to the player
-    /// </summary>
     public Injury ApplyRandomInjury()
     {
         BodyPart bodyPart = SelectRandomBodyPart();
@@ -65,9 +66,6 @@ public class InjurySystem : MonoBehaviour
         return ApplyInjury(bodyPart, injuryType);
     }
 
-    /// <summary>
-    /// Apply a specific injury to a specific body part
-    /// </summary>
     public Injury ApplyInjury(BodyPart bodyPart, InjuryType injuryType)
     {
         // Check if body part already has max injuries
@@ -100,9 +98,6 @@ public class InjurySystem : MonoBehaviour
         return injury;
     }
 
-    /// <summary>
-    /// Select a random body part based on configured probabilities
-    /// </summary>
     private BodyPart SelectRandomBodyPart()
     {
         float roll = Random.value;
@@ -130,9 +125,6 @@ public class InjurySystem : MonoBehaviour
         return BodyPart.Torso;
     }
 
-    /// <summary>
-    /// Select a random injury type based on configured probabilities
-    /// </summary>
     private InjuryType SelectRandomInjuryType()
     {
         float roll = Random.value;
@@ -151,9 +143,6 @@ public class InjurySystem : MonoBehaviour
         return InjuryType.Scratch;
     }
 
-    /// <summary>
-    /// Process all infected injuries, dealing damage and progressing infection
-    /// </summary>
     private void ProcessInfections()
     {
         foreach (Injury injury in activeInjuries)
@@ -174,9 +163,6 @@ public class InjurySystem : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Process bleeding damage from all unbandaged injuries
-    /// </summary>
     private void ProcessBleeding()
     {
         float totalBleedDamage = 0f;
@@ -195,10 +181,6 @@ public class InjurySystem : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Process inevitable death from bitten injuries over the fatal duration
-    /// Bandages slow progression but cannot cure
-    /// </summary>
     private void ProcessBiteFatality()
     {
         if (player == null) return;
@@ -228,36 +210,27 @@ public class InjurySystem : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Bandage a specific injury to stop bleeding
-    /// </summary>
     public void BandageInjury(Injury injury)
     {
         if (activeInjuries.Contains(injury))
         {
-            injury.Bandage();
+            StartHealingForInjury(injury);
             Debug.Log($"Bandaged injury: {injury}");
         }
     }
 
-    /// <summary>
-    /// Bandage all unbandaged injuries
-    /// </summary>
     public void BandageAllInjuries()
     {
         foreach (Injury injury in activeInjuries)
         {
             if (!injury.isBandaged)
             {
-                injury.Bandage();
+                StartHealingForInjury(injury);
             }
         }
         Debug.Log("Bandaged all injuries");
     }
 
-    /// <summary>
-    /// Bandage all injuries on a specific body part
-    /// </summary>
     public void BandageBodyPart(BodyPart bodyPart)
     {
         var injuries = GetInjuriesOnBodyPart(bodyPart);
@@ -265,15 +238,62 @@ public class InjurySystem : MonoBehaviour
         {
             if (!injury.isBandaged)
             {
-                injury.Bandage();
+                StartHealingForInjury(injury);
             }
         }
         Debug.Log($"Bandaged all injuries on {bodyPart}");
     }
 
-    /// <summary>
-    /// Heal a specific injury (bites cannot be healed)
-    /// </summary>
+    private void StartHealingForInjury(Injury injury)
+    {
+        float durationDays = Random.Range(bandageHealDurationDaysMin, bandageHealDurationDaysMax);
+        injury.StartHealing(durationDays);
+    }
+
+    private void ProcessBandagedHealing()
+    {
+        if (activeInjuries.Count == 0)
+            return;
+
+        float deltaDays;
+        if (dayNightManager != null)
+        {
+            deltaDays = dayNightManager.GetGameDaysPerSecond() * Time.deltaTime;
+        }
+        else
+        {
+            // Fallback assumes 1 in-game day is 20 real minutes
+            deltaDays = Time.deltaTime / 1200f;
+        }
+
+        List<Injury> healedInjuries = null;
+
+        foreach (Injury injury in activeInjuries)
+        {
+            if (!injury.isBandaged || !injury.isHealing)
+                continue;
+
+            injury.ProgressHealing(deltaDays);
+            if (injury.IsFullyHealed())
+            {
+                if (healedInjuries == null)
+                    healedInjuries = new List<Injury>();
+
+                healedInjuries.Add(injury);
+            }
+        }
+
+        if (healedInjuries == null)
+            return;
+
+        foreach (Injury healed in healedInjuries)
+        {
+            activeInjuries.Remove(healed);
+            onInjuryHealed?.Invoke(healed);
+            Debug.Log($"Injury fully healed over time: {healed}");
+        }
+    }
+
     public void HealInjury(Injury injury)
     {
         if (activeInjuries.Contains(injury))
@@ -291,9 +311,6 @@ public class InjurySystem : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Heal all injuries of a specific type (bites cannot be healed)
-    /// </summary>
     public void HealInjuriesByType(InjuryType injuryType)
     {
         // Bites cannot be healed
@@ -318,9 +335,6 @@ public class InjurySystem : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Heal all injuries on a specific body part
-    /// </summary>
     public void HealInjuriesOnBodyPart(BodyPart bodyPart)
     {
         List<Injury> toRemove = new List<Injury>();
@@ -338,9 +352,6 @@ public class InjurySystem : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Heal all injuries
-    /// </summary>
     public void HealAllInjuries()
     {
         List<Injury> toRemove = new List<Injury>(activeInjuries);
@@ -350,9 +361,6 @@ public class InjurySystem : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Cure infection on a specific injury
-    /// </summary>
     public void CureInfection(Injury injury)
     {
         if (injury.isInfected)
@@ -363,9 +371,6 @@ public class InjurySystem : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Get count of injuries on a specific body part
-    /// </summary>
     public int GetInjuryCountOnBodyPart(BodyPart bodyPart)
     {
         int count = 0;
@@ -377,25 +382,16 @@ public class InjurySystem : MonoBehaviour
         return count;
     }
 
-    /// <summary>
-    /// Get all active injuries
-    /// </summary>
     public List<Injury> GetActiveInjuries()
     {
         return new List<Injury>(activeInjuries);
     }
 
-    /// <summary>
-    /// Get total number of active injuries
-    /// </summary>
     public int GetTotalInjuryCount()
     {
         return activeInjuries.Count;
     }
 
-    /// <summary>
-    /// Get number of infected injuries
-    /// </summary>
     public int GetInfectedInjuryCount()
     {
         int count = 0;
@@ -407,17 +403,11 @@ public class InjurySystem : MonoBehaviour
         return count;
     }
 
-    /// <summary>
-    /// Check if player has any infected injuries
-    /// </summary>
     public bool HasInfection()
     {
         return GetInfectedInjuryCount() > 0;
     }
 
-    /// <summary>
-    /// Get number of bleeding (unbandaged) injuries
-    /// </summary>
     public int GetBleedingInjuryCount()
     {
         int count = 0;
@@ -429,17 +419,11 @@ public class InjurySystem : MonoBehaviour
         return count;
     }
 
-    /// <summary>
-    /// Check if player has any bleeding injuries
-    /// </summary>
     public bool IsBleeding()
     {
         return GetBleedingInjuryCount() > 0;
     }
 
-    /// <summary>
-    /// Get total bleeding damage per second from all injuries
-    /// </summary>
     public float GetTotalBleedingDamage()
     {
         float total = 0f;
@@ -450,9 +434,6 @@ public class InjurySystem : MonoBehaviour
         return total;
     }
 
-    /// <summary>
-    /// Get injuries on a specific body part
-    /// </summary>
     public List<Injury> GetInjuriesOnBodyPart(BodyPart bodyPart)
     {
         List<Injury> injuries = new List<Injury>();

@@ -47,6 +47,7 @@ public class Player : MonoBehaviour
     private EquipmentManager equipmentManager;
     private InjurySystem injurySystem;
     private PlayerSkills playerSkills;
+    private DayNightManager dayNightManager;
 
     private void Awake()
     {
@@ -58,6 +59,7 @@ public class Player : MonoBehaviour
         equipmentManager = GetComponent<EquipmentManager>();
         injurySystem = GetComponent<InjurySystem>();
         playerSkills = GetComponent<PlayerSkills>();
+        dayNightManager = FindFirstObjectByType<DayNightManager>();
     }
 
     private void OnEnable()
@@ -118,13 +120,17 @@ public class Player : MonoBehaviour
         // Get metabolism multiplier from skills (reduces decay rate)
         float metabolismMultiplier = playerSkills != null ? playerSkills.GetMetabolismMultiplier() : 1f;
         
-        // Decay hunger (reduced by Metabolism skill)
-        currentHunger -= (hungerDecayRate / 60f) * metabolismMultiplier * Time.deltaTime;
+        // Get game days per second from DayNightManager to scale hunger/thirst with game time speed
+        // This accounts for both timeScale and dayLengthInSeconds
+        float gameSpeedMultiplier = dayNightManager != null ? dayNightManager.GetGameDaysPerSecond() * dayNightManager.GetDayLengthInSeconds() : 1f;
+        
+        // Decay hunger (reduced by Metabolism skill, scaled by game time speed)
+        currentHunger -= (hungerDecayRate / 60f) * metabolismMultiplier * gameSpeedMultiplier * Time.deltaTime;
         if (currentHunger < 0) currentHunger = 0;
         onHungerChanged?.Invoke(currentHunger, maxHunger);
 
-        // Decay thirst (reduced by Metabolism skill)
-        currentThirst -= (thirstDecayRate / 60f) * metabolismMultiplier * Time.deltaTime;
+        // Decay thirst (reduced by Metabolism skill, scaled by game time speed)
+        currentThirst -= (thirstDecayRate / 60f) * metabolismMultiplier * gameSpeedMultiplier * Time.deltaTime;
         if (currentThirst < 0) currentThirst = 0;
         onThirstChanged?.Invoke(currentThirst, maxThirst);
 
@@ -171,9 +177,6 @@ public class Player : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Take damage and apply a random injury
-    /// </summary>
     public void TakeDamageWithInjury(float baseDamage)
     {
         if (!isAlive || injurySystem == null) 

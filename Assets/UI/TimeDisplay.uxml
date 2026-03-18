@@ -5,8 +5,8 @@
     xmlns:uie="UnityEditor.UIElements"
     xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd"
 >
-    <ui:VisualElement class="time-panel" style="position: absolute; top: 48px; right: 48px; flex-direction: column; align-items: flex-end; gap: 8px;">
-        <ui:Label class="time-display" text="12:00" style="font-size: 40px; color: rgb(255, 200, 0); -unity-font-style: bold; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);"/>
-        <ui:Label class="day-phase" text="DAY" style="font-size: 24px; color: rgb(255, 200, 0); -unity-font-style: bold;"/>
+    <ui:VisualElement class="time-panel" style="position: absolute; top: 20px; right: 24px; min-width: 128px; padding-top: 10px; padding-right: 12px; padding-bottom: 10px; padding-left: 12px; background-color: rgba(16, 20, 28, 0.72); border-radius: 12px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(255, 220, 120, 0.25); border-right-color: rgba(255, 220, 120, 0.25); border-bottom-color: rgba(255, 220, 120, 0.25); border-left-color: rgba(255, 220, 120, 0.25); flex-direction: column; align-items: flex-end; gap: 2px;">
+        <ui:Label class="time-display" text="12:00" style="font-size: 42px; color: rgb(255, 208, 78); -unity-font-style: bold;"/>
+        <ui:Label class="day-phase" text="DAY" style="font-size: 18px; color: rgb(245, 225, 106); -unity-font-style: bold; letter-spacing: 1px;"/>
     </ui:VisualElement>
 </ui:UXML>

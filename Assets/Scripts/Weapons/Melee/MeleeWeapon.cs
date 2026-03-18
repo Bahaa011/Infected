@@ -104,9 +104,6 @@ public class MeleeWeapon : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Attempts to perform an attack, handling cooldown and combo system
-    /// </summary>
     private void TryAttack()
     {
         if (!CanAttack())
@@ -125,9 +122,6 @@ public class MeleeWeapon : MonoBehaviour
         currentComboCount = (currentComboCount + 1) % numberOfAttackCombos;
     }
 
-    /// <summary>
-    /// Checks if the weapon can currently attack
-    /// </summary>
     private bool CanAttack()
     {
         // Check if player can act
@@ -145,9 +139,6 @@ public class MeleeWeapon : MonoBehaviour
         return true;
     }
 
-    /// <summary>
-    /// Executes the attack animation and sets up hit detection
-    /// </summary>
     private void PerformAttack()
     {
         // Clear previous frame's hits
@@ -177,9 +168,6 @@ public class MeleeWeapon : MonoBehaviour
         Debug.Log($"[MeleeWeapon] Attack performed! Combo: {currentComboCount + 1}/{numberOfAttackCombos}");
     }
 
-    /// <summary>
-    /// Coroutine that detects hits during the attack window
-    /// </summary>
     private System.Collections.IEnumerator DamageDetectionRoutine()
     {
         float attackDuration = 0.5f; // Duration of the attack hitbox
@@ -195,9 +183,6 @@ public class MeleeWeapon : MonoBehaviour
         onAttackEnded?.Invoke();
     }
 
-    /// <summary>
-    /// Detects enemies in attack range and deals damage
-    /// </summary>
     private void DetectHitsInRange()
     {
         if (damageOrigin == null)
@@ -226,9 +211,6 @@ public class MeleeWeapon : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Deals damage to a target with knockback
-    /// </summary>
     private void DealDamageToTarget(GameObject targetObject, IDamageable damageable)
     {
         float finalDamage = baseDamage;
@@ -264,9 +246,6 @@ public class MeleeWeapon : MonoBehaviour
         Debug.Log($"[MeleeWeapon] Hit {targetObject.name} for {finalDamage} damage!");
     }
 
-    /// <summary>
-    /// Equip the weapon
-    /// </summary>
     public void Equip()
     {
         isEquipped = true;
@@ -311,9 +290,6 @@ public class MeleeWeapon : MonoBehaviour
         Debug.Log($"[MeleeWeapon] {weaponType} equipped successfully!");
     }
 
-    /// <summary>
-    /// Unequip the weapon
-    /// </summary>
     public void Unequip()
     {
         isEquipped = false;
@@ -333,9 +309,6 @@ public class MeleeWeapon : MonoBehaviour
         Debug.Log($"[MeleeWeapon] {weaponType} unequipped");
     }
 
-    /// <summary>
-    /// Set the weapon item reference
-    /// </summary>
     public void SetWeaponItem(MeleeWeaponItem item)
     {
         weaponItem = item;
@@ -355,9 +328,6 @@ public class MeleeWeapon : MonoBehaviour
     public float GetAttackRange() => attackRange;
     public int GetCurrentCombo() => currentComboCount + 1;
 
-    /// <summary>
-    /// Recursively set layer for weapon and all children
-    /// </summary>
     private void SetLayerRecursively(GameObject obj, int newLayer)
     {
         if (obj == null) return;
@@ -369,9 +339,6 @@ public class MeleeWeapon : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Visualization of attack range in scene view
-    /// </summary>
     private void OnDrawGizmosSelected()
     {
         if (damageOrigin != null)
@@ -382,9 +349,6 @@ public class MeleeWeapon : MonoBehaviour
     }
 }
 
-/// <summary>
-/// Interface for damageable objects (enemies, etc)
-/// </summary>
 public interface IDamageable
 {
     void TakeDamage(float damage);

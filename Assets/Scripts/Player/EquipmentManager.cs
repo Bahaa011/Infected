@@ -433,9 +433,6 @@ public class EquipmentManager : MonoBehaviour
 
     public bool IsCurrentWeaponAssaultRifle() => GetCurrentGunType() == Gun.GunType.AssaultRifle;
 
-    /// <summary>
-    /// Equip a melee weapon as the active weapon
-    /// </summary>
     public bool EquipMeleeWeapon(MeleeWeaponItem meleeItem)
     {
         Debug.Log($"[EquipmentManager] EquipMeleeWeapon called with: {(meleeItem != null ? meleeItem.ItemName : "null")}");
@@ -506,19 +503,10 @@ public class EquipmentManager : MonoBehaviour
         return false;
     }
 
-    /// <summary>
-    /// Check if a melee weapon is currently equipped
-    /// </summary>
     public bool IsMeleeEquipped() => isMeleeEquipped && equippedMeleeWeapon != null;
 
-    /// <summary>
-    /// Get the currently equipped melee weapon
-    /// </summary>
     public MeleeWeapon GetMeleeWeapon() => equippedMeleeWeapon;
 
-    /// <summary>
-    /// Get the current weapon in hand (either gun or melee)
-    /// </summary>
     public object GetCurrentWeaponInHand()
     {
         if (isMeleeEquipped)

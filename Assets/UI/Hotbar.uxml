@@ -5,14 +5,14 @@
     xmlns:uie="UnityEditor.UIElements"
     xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd"
 >
-    <ui:VisualElement class="hotbar-panel" style="width: 300px; height: 120px; border-radius: 16px; padding: 12px; flex-direction: row; align-items: center; justify-content: center; border-width: 0px; position: absolute; left: 50%; bottom: 48px; translate: -50% 0; gap: 12px;">
-        <ui:Button class="weapon-slot primary-slot" style="width: 100px; height: 100px; background-color: rgba(51, 51, 51, 0.67); border-radius: 12px; border-width: 2px; border-color: rgba(100, 180, 255, 0.6); border-style: solid; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; padding: 8px;">
+    <ui:VisualElement class="hotbar-panel" style="width: 336px; height: 128px; border-radius: 14px; padding: 12px; flex-direction: row; align-items: center; justify-content: center; background-color: rgba(16, 20, 28, 0.74); border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(255, 255, 255, 0.1); border-right-color: rgba(255, 255, 255, 0.1); border-bottom-color: rgba(255, 255, 255, 0.1); border-left-color: rgba(255, 255, 255, 0.1); position: absolute; left: 50%; bottom: 20px; translate: -50% 0; gap: 12px;">
+        <ui:Button class="weapon-slot primary-slot" style="width: 106px; height: 106px; background-color: rgba(32, 40, 55, 0.82); border-radius: 12px; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-top-color: rgba(100, 180, 255, 0.8); border-right-color: rgba(100, 180, 255, 0.8); border-bottom-color: rgba(62, 120, 175, 0.7); border-left-color: rgba(62, 120, 175, 0.7); border-style: solid; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; padding: 8px;">
             <ui:Image class="weapon-icon primary-icon" style="width: 60px; height: 60px; flex-shrink: 0;"/>
-            <ui:Label text="1" style="font-size: 18px; color: rgb(100, 180, 255); -unity-font-style: bold;"/>
+            <ui:Label text="1" style="font-size: 16px; color: rgb(145, 210, 255); -unity-font-style: bold;"/>
         </ui:Button>
-        <ui:Button class="weapon-slot secondary-slot" style="width: 100px; height: 100px; background-color: rgba(51, 51, 51, 0.67); border-radius: 12px; border-width: 2px; border-color: rgba(255, 140, 100, 0.6); border-style: solid; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; padding: 8px;">
+        <ui:Button class="weapon-slot secondary-slot" style="width: 106px; height: 106px; background-color: rgba(32, 40, 55, 0.82); border-radius: 12px; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-top-color: rgba(255, 155, 118, 0.8); border-right-color: rgba(255, 155, 118, 0.8); border-bottom-color: rgba(188, 103, 74, 0.75); border-left-color: rgba(188, 103, 74, 0.75); border-style: solid; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; padding: 8px;">
             <ui:Image class="weapon-icon secondary-icon" style="width: 60px; height: 60px; flex-shrink: 0;"/>
-            <ui:Label text="2" style="font-size: 18px; color: rgb(255, 140, 100); -unity-font-style: bold;"/>
+            <ui:Label text="2" style="font-size: 16px; color: rgb(255, 180, 140); -unity-font-style: bold;"/>
         </ui:Button>
     </ui:VisualElement>
 </ui:UXML>

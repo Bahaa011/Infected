@@ -1,9 +1,6 @@
 using UnityEngine;
 using System;
 
-/// <summary>
-/// Represents a single injury on the player
-/// </summary>
 [System.Serializable]
 public class Injury
 {
@@ -15,6 +12,9 @@ public class Injury
     public bool isBandaged; // Whether the injury has been bandaged
     public float biteFatalElapsed; // Time elapsed for fatal bite countdown
     public float biteFatalDuration; // Random duration until death for this bite
+    public bool isHealing; // Whether this injury is currently healing over time
+    public float healingElapsedDays; // In-game days elapsed since treatment started
+    public float healingDurationDays; // In-game days needed to fully heal this injury
 
     public Injury(BodyPart bodyPart, InjuryType injuryType)
     {
@@ -26,11 +26,11 @@ public class Injury
         this.isBandaged = false;
         this.biteFatalElapsed = 0f;
         this.biteFatalDuration = 0f;
+        this.isHealing = false;
+        this.healingElapsedDays = 0f;
+        this.healingDurationDays = 0f;
     }
 
-    /// <summary>
-    /// Gets the base damage multiplier for this injury type
-    /// </summary>
     public float GetDamageMultiplier()
     {
         switch (injuryType)
@@ -46,9 +46,6 @@ public class Injury
         }
     }
 
-    /// <summary>
-    /// Gets additional damage multiplier based on body part
-    /// </summary>
     public float GetBodyPartMultiplier()
     {
         switch (bodyPart)
@@ -68,9 +65,6 @@ public class Injury
         }
     }
 
-    /// <summary>
-    /// Gets the total damage for this injury
-    /// </summary>
     public float GetTotalDamage(float baseDamage)
     {
         float totalMultiplier = GetDamageMultiplier() * GetBodyPartMultiplier();
@@ -80,9 +74,6 @@ public class Injury
         return baseDamage * totalMultiplier;
     }
 
-    /// <summary>
-    /// Gets the bleeding damage per second for unbandaged injuries
-    /// </summary>
     public float GetBleedingDamage()
     {
         if (isBandaged)
@@ -112,17 +103,40 @@ public class Injury
         return bleedDamage;
     }
 
-    /// <summary>
-    /// Bandage this injury to stop bleeding
-    /// </summary>
     public void Bandage()
     {
         isBandaged = true;
     }
 
-    /// <summary>
-    /// Check if this injury is currently bleeding
-    /// </summary>
+    public void StartHealing(float durationDays)
+    {
+        isBandaged = true;
+        isHealing = true;
+        healingElapsedDays = 0f;
+        healingDurationDays = Mathf.Max(0.0001f, durationDays);
+    }
+
+    public void ProgressHealing(float deltaDays)
+    {
+        if (!isHealing)
+            return;
+
+        healingElapsedDays += Mathf.Max(0f, deltaDays);
+    }
+
+    public float GetHealingProgress01()
+    {
+        if (!isHealing || healingDurationDays <= 0f)
+            return 0f;
+
+        return Mathf.Clamp01(healingElapsedDays / healingDurationDays);
+    }
+
+    public bool IsFullyHealed()
+    {
+        return isHealing && healingElapsedDays >= healingDurationDays;
+    }
+
     public bool IsBleeding()
     {
         return !isBandaged;
@@ -132,6 +146,7 @@ public class Injury
     {
         string infection = isInfected ? " (INFECTED)" : "";
         string bandaged = isBandaged ? " [Bandaged]" : " [BLEEDING]";
-        return $"{injuryType} on {bodyPart}{infection}{bandaged}";
+        string healing = isHealing ? $" [Healing {Mathf.RoundToInt(GetHealingProgress01() * 100f)}%]" : "";
+        return $"{injuryType} on {bodyPart}{infection}{bandaged}{healing}";
     }
 }

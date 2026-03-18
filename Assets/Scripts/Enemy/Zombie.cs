@@ -21,6 +21,7 @@ public class Zombie : MonoBehaviour, IDamageable
     [SerializeField] private float attackDamage = 10f;
     [SerializeField] private float attackCooldown = 1.5f;
     [SerializeField] private float attackWindup = 1f; // time the zombie must stay near the player before damage lands
+    [SerializeField] private float attackDistancePadding = 0.4f; // extra spacing so zombie doesn't overlap player
     private float lastAttackTime = 0f;
     private Coroutine attackRoutine;
 
@@ -29,6 +30,7 @@ public class Zombie : MonoBehaviour, IDamageable
 
     private Transform playerTransform;
     private bool isChasing = false;
+    private bool isAttacking = false;
     private bool isDead = false;
 
     private void Awake()
@@ -53,12 +55,25 @@ public class Zombie : MonoBehaviour, IDamageable
         if (navMeshAgent != null)
         {
             navMeshAgent.speed = walkSpeed;
-            navMeshAgent.stoppingDistance = attackRange;
+            navMeshAgent.stoppingDistance = attackRange + attackDistancePadding;
         }
     }
 
     private void Update()
     {
+        // Update animator movement values every frame
+        if (animator != null)
+        {
+            float velocity = 0f;
+            if (navMeshAgent != null && navMeshAgent.isOnNavMesh)
+            {
+                velocity = navMeshAgent.velocity.magnitude;
+            }
+
+            animator.SetFloat("velocity", velocity);
+            animator.SetFloat("speed", velocity);
+        }
+
         if (isDead || playerTransform == null) return;
 
         float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
@@ -67,24 +82,32 @@ public class Zombie : MonoBehaviour, IDamageable
         if (distanceToPlayer <= sightRange)
         {
             isChasing = true;
-            ChasePlayer();
+            float attackTriggerRange = GetAttackTriggerRange();
 
             // Try to attack if in range
-            if (distanceToPlayer <= attackRange)
+            if (distanceToPlayer <= attackTriggerRange)
+            {
+                StopMovingForAttack();
                 AttackPlayer();
+            }
+            else
+            {
+                ResumeMovement();
+                ChasePlayer();
+            }
         }
         else
         {
             isChasing = false;
+            ResumeMovement();
             Wander();
         }
 
-        // Update animator
+        // Update animator state
         if (animator != null)
         {
             animator.SetBool("isChasing", isChasing);
-            float speed = navMeshAgent.velocity.magnitude;
-            animator.SetFloat("speed", speed);
+            animator.SetBool("attack", isAttacking);
         }
     }
 
@@ -95,9 +118,14 @@ public class Zombie : MonoBehaviour, IDamageable
             navMeshAgent.speed = chaseSpeed;
             navMeshAgent.SetDestination(playerTransform.position);
             
-            // Face the player
-            Vector3 directionToPlayer = (playerTransform.position - transform.position).normalized;
-            transform.rotation = Quaternion.LookRotation(directionToPlayer);
+            // Face the player only on horizontal plane (avoid pitch/roll tipping)
+            Vector3 directionToPlayer = playerTransform.position - transform.position;
+            directionToPlayer.y = 0f;
+            if (directionToPlayer.sqrMagnitude > 0.0001f)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(directionToPlayer.normalized);
+                transform.rotation = targetRotation;
+            }
         }
     }
 
@@ -133,9 +161,35 @@ public class Zombie : MonoBehaviour, IDamageable
         attackRoutine = StartCoroutine(AttackAfterWindup());
     }
 
+    private float GetAttackTriggerRange()
+    {
+        if (navMeshAgent != null)
+            return Mathf.Max(attackRange, navMeshAgent.stoppingDistance);
+
+        return attackRange;
+    }
+
+    private void StopMovingForAttack()
+    {
+        if (navMeshAgent != null && navMeshAgent.isOnNavMesh)
+        {
+            navMeshAgent.isStopped = true;
+            navMeshAgent.ResetPath();
+        }
+    }
+
+    private void ResumeMovement()
+    {
+        if (navMeshAgent != null && navMeshAgent.isOnNavMesh)
+        {
+            navMeshAgent.isStopped = false;
+        }
+    }
+
     private IEnumerator AttackAfterWindup()
     {
         lastAttackTime = Time.time; // start cooldown when attack is declared
+        isAttacking = true;
 
         // Optional: pause movement during wind-up to mimic bite/swing prep
         bool wasStopped = false;
@@ -152,16 +206,18 @@ public class Zombie : MonoBehaviour, IDamageable
             {
                 if (navMeshAgent != null && navMeshAgent.isOnNavMesh)
                     navMeshAgent.isStopped = wasStopped;
+                isAttacking = false;
                 attackRoutine = null;
                 yield break;
             }
 
             float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
-            if (distanceToPlayer > attackRange)
+            if (distanceToPlayer > GetAttackTriggerRange())
             {
                 // Player moved away; attack fails
                 if (navMeshAgent != null && navMeshAgent.isOnNavMesh)
                     navMeshAgent.isStopped = wasStopped;
+                isAttacking = false;
                 attackRoutine = null;
                 yield break;
             }
@@ -179,21 +235,19 @@ public class Zombie : MonoBehaviour, IDamageable
         if (!isDead && playerTransform != null)
         {
             float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
-            if (distanceToPlayer <= attackRange)
+            if (distanceToPlayer <= GetAttackTriggerRange())
             {
                 Player player = playerTransform.GetComponent<Player>();
                 if (player != null)
                 {
                     player.TakeDamageWithInjury(attackDamage);
 
-                    if (animator != null)
-                        animator.SetTrigger("attack");
-
                     Debug.Log($"Zombie attacking player for {attackDamage} damage!");
                 }
             }
         }
 
+        isAttacking = false;
         attackRoutine = null;
     }
 
@@ -218,6 +272,7 @@ public class Zombie : MonoBehaviour, IDamageable
     private void Die()
     {
         isDead = true;
+        isAttacking = false;
         
         // Stop movement
         if (navMeshAgent != null && navMeshAgent.isOnNavMesh)
@@ -228,7 +283,7 @@ public class Zombie : MonoBehaviour, IDamageable
         // Play death animation
         if (animator != null)
         {
-            animator.SetBool("isDead", true);
+            animator.SetBool("dead", true);
         }
 
         // Disable colliders

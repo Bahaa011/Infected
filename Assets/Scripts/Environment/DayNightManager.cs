@@ -109,6 +109,14 @@ public class DayNightManager : MonoBehaviour
 
     public bool IsDay() => currentTimeInHours >= 6f && currentTimeInHours < 18f;
     public bool IsNight() => !IsDay();
+    public float GetDayLengthInSeconds() => Mathf.Max(0.01f, dayLengthInSeconds);
+    public float GetTimeScale() => timeScale;
+
+    // In-game days progressed per real second at current settings
+    public float GetGameDaysPerSecond()
+    {
+        return Mathf.Max(0f, timeScale) / GetDayLengthInSeconds();
+    }
 
     // Setters
     public void SetTime(float hourOfDay)

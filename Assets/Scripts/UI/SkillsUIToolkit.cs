@@ -1,10 +1,12 @@
 using UnityEngine;
 using UnityEngine.UIElements;
+using UnityEngine.InputSystem;
 
 public class SkillsUIToolkit : MonoBehaviour
 {
     [SerializeField] private UIDocument uiDocument;
     [SerializeField] private PlayerSkills playerSkills;
+    [SerializeField] private InputActionReference toggleSkillsAction;
 
     // Weapon skill UI elements
     private VisualElement skillBar;
@@ -36,6 +38,7 @@ public class SkillsUIToolkit : MonoBehaviour
     private EquipmentManager equipmentManager;
     private Gun.GunType currentDisplayedGunType = Gun.GunType.Pistol;
     private bool isOpen = false;
+    private InputAction runtimeToggleAction;
 
     private void Awake()
     {
@@ -84,6 +87,8 @@ public class SkillsUIToolkit : MonoBehaviour
         
         if (equipmentManager == null)
             equipmentManager = FindFirstObjectByType<EquipmentManager>();
+
+        BindToggleInput();
         
         if (playerSkills != null)
         {
@@ -96,6 +101,8 @@ public class SkillsUIToolkit : MonoBehaviour
 
     private void OnDisable()
     {
+        UnbindToggleInput();
+
         if (playerSkills != null)
         {
             playerSkills.onSkillLevelUp.RemoveListener(OnSkillLevelUp);
@@ -103,6 +110,52 @@ public class SkillsUIToolkit : MonoBehaviour
             playerSkills.onGeneralSkillLevelUp.RemoveListener(OnGeneralSkillLevelUp);
             playerSkills.onGeneralSkillProgressChanged.RemoveListener(OnGeneralSkillProgressChanged);
         }
+    }
+
+    private void BindToggleInput()
+    {
+        if (toggleSkillsAction != null)
+        {
+            runtimeToggleAction = toggleSkillsAction.action;
+        }
+        else
+        {
+            var playerInput = FindFirstObjectByType<PlayerInput>();
+            if (playerInput != null)
+            {
+                runtimeToggleAction = playerInput.actions.FindAction("ToggleSkills");
+            }
+        }
+
+        if (runtimeToggleAction != null)
+        {
+            runtimeToggleAction.performed += OnToggleSkills;
+            runtimeToggleAction.Enable();
+        }
+        else
+        {
+            Debug.LogWarning("[SkillsUIToolkit] ToggleSkills action not found. Assign toggleSkillsAction or add 'ToggleSkills' action to PlayerInput.");
+        }
+    }
+
+    private void UnbindToggleInput()
+    {
+        if (runtimeToggleAction == null)
+            return;
+
+        runtimeToggleAction.performed -= OnToggleSkills;
+
+        if (toggleSkillsAction != null && runtimeToggleAction == toggleSkillsAction.action)
+        {
+            runtimeToggleAction.Disable();
+        }
+
+        runtimeToggleAction = null;
+    }
+
+    private void OnToggleSkills(InputAction.CallbackContext context)
+    {
+        SetUIOpen(!isOpen);
     }
 
     private void SetUIOpen(bool open)
@@ -122,16 +175,17 @@ public class SkillsUIToolkit : MonoBehaviour
         
         if (equipmentManager == null)
             equipmentManager = FindFirstObjectByType<EquipmentManager>();
-        
-        // Sync with inventory open/close state
-        if (InventoryUIToolkit.IsInventoryOpen)
-        {
-            SetUIOpen(true);
-            UpdateAllSkills();
-        }
-        else
+
+        // Keep HUD clean: close skills if inventory is opened
+        if (InventoryUIToolkit.IsInventoryOpen && isOpen)
         {
             SetUIOpen(false);
+            return;
+        }
+
+        if (isOpen)
+        {
+            UpdateAllSkills();
         }
     }
 

@@ -163,17 +163,11 @@ public class PlayerSkills : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Call this when player takes damage but survives
-    /// </summary>
     public void RegisterDamageSurvived(float damage)
     {
         AddGeneralXP(SkillType.Vitality, damage * vitalityXPPerDamageSurvived);
     }
 
-    /// <summary>
-    /// Call this when the player fires a shot
-    /// </summary>
     public void RegisterShot(Gun.GunType gunType, bool hitTarget = false, bool headShot = false)
     {
         if (!gunSkills.ContainsKey(gunType))
@@ -207,9 +201,6 @@ public class PlayerSkills : MonoBehaviour
         onSkillProgressChanged?.Invoke(gunType, skill.currentXP, skill.GetXPNeeded(shotsPerLevel));
     }
 
-    /// <summary>
-    /// Add XP to a general skill
-    /// </summary>
     public void AddGeneralXP(SkillType skillType, float amount)
     {
         if (!generalSkills.ContainsKey(skillType))
@@ -353,9 +344,6 @@ public class PlayerSkills : MonoBehaviour
 
     // ============ SKILL BONUSES ============
     
-    /// <summary>
-    /// Get stamina drain multiplier (1.0 = normal, 0.5 = 50% drain)
-    /// </summary>
     public float GetStaminaDrainMultiplier()
     {
         int level = GetGeneralSkillLevel(SkillType.Stamina);
@@ -363,9 +351,6 @@ public class PlayerSkills : MonoBehaviour
         return 1f - reduction;
     }
 
-    /// <summary>
-    /// Get hunger/thirst decay multiplier (1.0 = normal, 0.5 = 50% decay)
-    /// </summary>
     public float GetMetabolismMultiplier()
     {
         int level = GetGeneralSkillLevel(SkillType.Metabolism);
@@ -373,27 +358,18 @@ public class PlayerSkills : MonoBehaviour
         return 1f - reduction;
     }
 
-    /// <summary>
-    /// Get bonus max health from Vitality skill
-    /// </summary>
     public float GetVitalityHealthBonus()
     {
         int level = GetGeneralSkillLevel(SkillType.Vitality);
         return (level - 1) / vitalityMaxLevel * maxHealthBonus;
     }
 
-    /// <summary>
-    /// Get damage multiplier from Strength skill for melee attacks
-    /// </summary>
     public float GetStrengthDamageBonus()
     {
         int level = GetGeneralSkillLevel(SkillType.Strength);
         return (level - 1) / strengthMaxLevel * maxDamageBonus;
     }
 
-    /// <summary>
-    /// Register a melee attack for Strength skill XP
-    /// </summary>
     public void RegisterMeleeAttack()
     {
         AddGeneralXP(SkillType.Strength, strengthXPPerMeleeAttack);

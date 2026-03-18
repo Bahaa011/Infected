@@ -211,9 +211,6 @@ public class Gun : MonoBehaviour
         return spreadRotation * baseDirection;
     }
 
-    /// <summary>
-    /// Get the adjusted spread based on player skill level
-    /// </summary>
     float GetAdjustedSpread(float baseSpread)
     {
         if (playerSkills == null)
