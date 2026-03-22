@@ -230,8 +230,12 @@ public class MeleeWeapon : MonoBehaviour
             targetRB.AddForce(knockbackDirection * knockbackForce, ForceMode.Impulse);
         }
 
-        // Deal damage
-        damageable.TakeDamage(finalDamage);
+        // Deal damage (zombies get melee-specific stun timing)
+        Zombie zombie = targetObject.GetComponent<Zombie>();
+        if (zombie != null)
+            zombie.OnMeleeHit(finalDamage);
+        else
+            damageable.TakeDamage(finalDamage);
 
         // Invoke events
         onAttackDealt?.Invoke(finalDamage);

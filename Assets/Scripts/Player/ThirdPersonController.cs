@@ -16,6 +16,8 @@ public class ThirdPersonController : MonoBehaviour
     [SerializeField] private float runSpeedMultiplier = 2f;
     [SerializeField] private float crouchSpeedMultiplier = 0.5f;
     [SerializeField] private float rotationSpeed = 10f;
+    [SerializeField] private float aimTurnSpeed = 14f;
+    [SerializeField] private float aimTurnDeadZone = 1f;
     [SerializeField] private float gravity = -9.81f;
     [SerializeField] private float crouchHeight = 1f;
     [SerializeField] private float normalHeight = 2f;
@@ -128,6 +130,7 @@ public class ThirdPersonController : MonoBehaviour
         HandleMovementAndGravity();
         UpdateCrouch();
         UpdateAiming();
+        UpdateAimFacing();
         if (animationController != null)
         {
             animationController.UpdateMovementAnimation(moveInput.sqrMagnitude, isActuallySprinting, runSpeedMultiplier);
@@ -221,8 +224,16 @@ public class ThirdPersonController : MonoBehaviour
             Vector3 moveDir = (camForward * moveInput.y) + (camRight * moveInput.x);
             moveDir.Normalize();
 
-            Quaternion targetRotation = Quaternion.LookRotation(moveDir);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+            if (player != null && player.IsAiming() && equipmentManager != null && equipmentManager.GetCurrentWeapon() != null)
+            {
+                Quaternion targetAimRotation = Quaternion.Euler(0f, yaw, 0f);
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetAimRotation, aimTurnSpeed * Time.deltaTime);
+            }
+            else
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(moveDir);
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+            }
 
             // Check if can sprint (has stamina remaining)
             bool canSprint = sprintInputPressed && player.GetStamina() > 0.1f;
@@ -300,6 +311,22 @@ public class ThirdPersonController : MonoBehaviour
         Vector3 newCenter = controller.center;
         newCenter.y = Mathf.Lerp(newCenter.y, targetCenterY, Time.deltaTime * 5f);
         controller.center = newCenter;
+    }
+
+    void UpdateAimFacing()
+    {
+        if (player == null || !player.IsAiming())
+            return;
+
+        if (equipmentManager == null || equipmentManager.GetCurrentWeapon() == null)
+            return;
+
+        Quaternion targetRotation = Quaternion.Euler(0f, yaw, 0f);
+        float angle = Quaternion.Angle(transform.rotation, targetRotation);
+        if (angle <= aimTurnDeadZone)
+            return;
+
+        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, aimTurnSpeed * Time.deltaTime);
     }
 
     // ═══════════════════════════════════════════════════════════════

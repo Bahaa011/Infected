@@ -283,6 +283,63 @@ MonoBehaviour:
   onMidnight:
     m_PersistentCalls:
       m_Calls: []
+--- !u!1001 &178370564
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 9117918934322404414, guid: 1a3588c093ba8e74fa25f9822468fdb2, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 3.3613875
+      objectReference: {fileID: 0}
+    - target: {fileID: 9117918934322404414, guid: 1a3588c093ba8e74fa25f9822468fdb2, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.000000023281459
+      objectReference: {fileID: 0}
+    - target: {fileID: 9117918934322404414, guid: 1a3588c093ba8e74fa25f9822468fdb2, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 3.4919786
+      objectReference: {fileID: 0}
+    - target: {fileID: 9117918934322404414, guid: 1a3588c093ba8e74fa25f9822468fdb2, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9117918934322404414, guid: 1a3588c093ba8e74fa25f9822468fdb2, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9117918934322404414, guid: 1a3588c093ba8e74fa25f9822468fdb2, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9117918934322404414, guid: 1a3588c093ba8e74fa25f9822468fdb2, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9117918934322404414, guid: 1a3588c093ba8e74fa25f9822468fdb2, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9117918934322404414, guid: 1a3588c093ba8e74fa25f9822468fdb2, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9117918934322404414, guid: 1a3588c093ba8e74fa25f9822468fdb2, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9123681797893705362, guid: 1a3588c093ba8e74fa25f9822468fdb2, type: 3}
+      propertyPath: m_Name
+      value: Baseball_Bat_03
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 1a3588c093ba8e74fa25f9822468fdb2, type: 3}
 --- !u!114 &276001691
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -833,7 +890,7 @@ GameObject:
   m_Component:
   - component: {fileID: 566520816}
   m_Layer: 0
-  m_Name: GunSlot
+  m_Name: AssaultSlot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -847,13 +904,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 566520815}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.9220186, y: -0.033001408, z: -0.37720764, w: -0.080666214}
+  m_LocalRotation: {x: 0.36477238, y: -0.6395579, z: -0.6320332, w: -0.24174544}
   m_LocalPosition: {x: -0.002, y: 0.09, z: 0.022}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2151599506704037385}
-  m_LocalEulerAnglesHint: {x: 190, y: 44.5, z: 0}
+  m_LocalEulerAnglesHint: {x: 260, y: 61, z: 68}
 --- !u!1 &608738809
 GameObject:
   m_ObjectHideFlags: 0
@@ -1491,6 +1548,9 @@ MonoBehaviour:
   attackCooldown: 1.5
   attackWindup: 0.7
   attackDistancePadding: 0.4
+  rangedHitStunDuration: 0.1
+  meleeHitStunDuration: 1
+  refreshStunOnHit: 1
   animator: {fileID: 7822753204066650043}
 --- !u!1001 &1027147447
 PrefabInstance:
@@ -1630,6 +1690,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SkillsUIToolkit
   uiDocument: {fileID: 1039747552}
   playerSkills: {fileID: 6125807236218664025}
+  toggleSkillsAction: {fileID: 0}
 --- !u!114 &1039747552
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2229,6 +2290,39 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::InjuryStatusUIToolkit
   uiDocument: {fileID: 1679872413}
   player: {fileID: 6125807236218664019}
+  bandageUseDuration: 2
+  bandageItemKeyword: bandage
+--- !u!1 &1682942467
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1682942468}
+  m_Layer: 0
+  m_Name: PistolSlot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1682942468
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1682942467}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.5029937, y: -0.48866916, z: -0.4936887, w: -0.51426774}
+  m_LocalPosition: {x: -0.06, y: 0.09, z: 0.05}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2151599506704037385}
+  m_LocalEulerAnglesHint: {x: 271, y: 20, z: 68}
 --- !u!1001 &1685539311
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2286,6 +2380,63 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 61f296a59253890d09ad19e027fb19c0, type: 3}
+--- !u!1001 &1746943047
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 6828216149075512420, guid: 271342a706fc64842ae387e3e5d5bcc8, type: 3}
+      propertyPath: m_Name
+      value: Baseball_Bat_09
+      objectReference: {fileID: 0}
+    - target: {fileID: 7157503157652252052, guid: 271342a706fc64842ae387e3e5d5bcc8, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 2.544763
+      objectReference: {fileID: 0}
+    - target: {fileID: 7157503157652252052, guid: 271342a706fc64842ae387e3e5d5bcc8, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.0000000142940735
+      objectReference: {fileID: 0}
+    - target: {fileID: 7157503157652252052, guid: 271342a706fc64842ae387e3e5d5bcc8, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 3.4941962
+      objectReference: {fileID: 0}
+    - target: {fileID: 7157503157652252052, guid: 271342a706fc64842ae387e3e5d5bcc8, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7157503157652252052, guid: 271342a706fc64842ae387e3e5d5bcc8, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7157503157652252052, guid: 271342a706fc64842ae387e3e5d5bcc8, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7157503157652252052, guid: 271342a706fc64842ae387e3e5d5bcc8, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7157503157652252052, guid: 271342a706fc64842ae387e3e5d5bcc8, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7157503157652252052, guid: 271342a706fc64842ae387e3e5d5bcc8, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7157503157652252052, guid: 271342a706fc64842ae387e3e5d5bcc8, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 271342a706fc64842ae387e3e5d5bcc8, type: 3}
 --- !u!1 &1777189448
 GameObject:
   m_ObjectHideFlags: 0
@@ -2489,6 +2640,63 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 61f296a59253890d09ad19e027fb19c0, type: 3}
+--- !u!1001 &1856709813
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 6705367872142520749, guid: b2c2eaa77adbe704690e52a50768f2a8, type: 3}
+      propertyPath: m_Name
+      value: Baseball_Bat_12
+      objectReference: {fileID: 0}
+    - target: {fileID: 6825982229930850383, guid: b2c2eaa77adbe704690e52a50768f2a8, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 2.0452597
+      objectReference: {fileID: 0}
+    - target: {fileID: 6825982229930850383, guid: b2c2eaa77adbe704690e52a50768f2a8, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.000000062129395
+      objectReference: {fileID: 0}
+    - target: {fileID: 6825982229930850383, guid: b2c2eaa77adbe704690e52a50768f2a8, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 3.292616
+      objectReference: {fileID: 0}
+    - target: {fileID: 6825982229930850383, guid: b2c2eaa77adbe704690e52a50768f2a8, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6825982229930850383, guid: b2c2eaa77adbe704690e52a50768f2a8, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6825982229930850383, guid: b2c2eaa77adbe704690e52a50768f2a8, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6825982229930850383, guid: b2c2eaa77adbe704690e52a50768f2a8, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6825982229930850383, guid: b2c2eaa77adbe704690e52a50768f2a8, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6825982229930850383, guid: b2c2eaa77adbe704690e52a50768f2a8, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6825982229930850383, guid: b2c2eaa77adbe704690e52a50768f2a8, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: b2c2eaa77adbe704690e52a50768f2a8, type: 3}
 --- !u!1 &1976058559
 GameObject:
   m_ObjectHideFlags: 0
@@ -4336,6 +4544,7 @@ Transform:
   - {fileID: 8855728528623873741}
   - {fileID: 8166074665358990655}
   - {fileID: 566520816}
+  - {fileID: 1682942468}
   m_Father: {fileID: 2880885912277122153}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2182843294425520559
@@ -5563,7 +5772,7 @@ Transform:
   m_GameObject: {fileID: 3547707238036309883}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 15.69, y: 0.00000011114349, z: 3.239}
+  m_LocalPosition: {x: 23.81, y: 0.00000011114349, z: 3.239}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -7081,6 +7290,8 @@ MonoBehaviour:
   runSpeedMultiplier: 2
   crouchSpeedMultiplier: 0.5
   rotationSpeed: 10
+  aimTurnSpeed: 14
+  aimTurnDeadZone: 1
   gravity: -9.81
   crouchHeight: 1
   normalHeight: 2
@@ -7177,7 +7388,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EquipmentManager
   weaponLayerName: Weapon
-  handSlot: {fileID: 566520816}
+  assaultHandSlot: {fileID: 566520816}
+  pistolHandSlot: {fileID: 1682942468}
   primaryRestingSlot: {fileID: 513045844}
   secondaryRestingSlot: {fileID: 920453523}
   switchWeaponAction: {fileID: 0}
@@ -7209,6 +7421,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a99d7d2872e43ef79b754c795152735, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AnimationController
+  enableAimIK: 1
+  ikLookAtWeight: 0.65
+  ikBodyWeight: 0.35
+  ikHeadWeight: 0.8
+  ikEyesWeight: 0.8
+  ikClampWeight: 0.5
+  ikAimDistance: 120
 --- !u!114 &6125807236218664023
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7252,6 +7471,8 @@ MonoBehaviour:
   biteFatalDurationMin: 129600
   biteFatalDurationMax: 216000
   bandageSlowdownMultiplier: 0.5
+  bandageHealDurationDaysMin: 1
+  bandageHealDurationDaysMax: 2
   maxInjuriesPerBodyPart: 3
   onInjuryReceived:
     m_PersistentCalls:
@@ -9414,3 +9635,6 @@ SceneRoots:
   - {fileID: 2082698937}
   - {fileID: 1827621868}
   - {fileID: 1125392112}
+  - {fileID: 1746943047}
+  - {fileID: 1856709813}
+  - {fileID: 178370564}

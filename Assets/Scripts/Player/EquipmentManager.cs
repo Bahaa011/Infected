@@ -8,7 +8,8 @@ public class EquipmentManager : MonoBehaviour
     [Header("Weapon Layer Switching")]
     [SerializeField] private string weaponLayerName = "Weapon";
     private int weaponLayer = -1;
-    [SerializeField] private Transform handSlot;
+    [SerializeField] private Transform assaultHandSlot;
+    [SerializeField] private Transform pistolHandSlot;
     [SerializeField] private Transform primaryRestingSlot;
     [SerializeField] private Transform secondaryRestingSlot;
     [SerializeField] private InputActionReference switchWeaponAction;
@@ -43,10 +44,15 @@ public class EquipmentManager : MonoBehaviour
 
     private void InitializeEquipment()
     {
-        if (handSlot == null) return;
+        if (assaultHandSlot == null && pistolHandSlot == null) return;
 
-        // Check for gun
-        Gun gunInHand = handSlot.GetComponentInChildren<Gun>();
+        // Check for gun in either hand slot
+        Gun gunInHand = null;
+        if (pistolHandSlot != null)
+            gunInHand = pistolHandSlot.GetComponentInChildren<Gun>();
+        if (gunInHand == null && assaultHandSlot != null)
+            gunInHand = assaultHandSlot.GetComponentInChildren<Gun>();
+
         if (gunInHand != null)
         {
             currentWeaponInHand = gunInHand;
@@ -55,8 +61,13 @@ public class EquipmentManager : MonoBehaviour
             gunInHand.gameObject.SetActive(false);
         }
 
-        // Check for melee weapon
-        MeleeWeapon meleeInHand = handSlot.GetComponentInChildren<MeleeWeapon>();
+        // Check for melee weapon in either hand slot
+        MeleeWeapon meleeInHand = null;
+        if (pistolHandSlot != null)
+            meleeInHand = pistolHandSlot.GetComponentInChildren<MeleeWeapon>();
+        if (meleeInHand == null && assaultHandSlot != null)
+            meleeInHand = assaultHandSlot.GetComponentInChildren<MeleeWeapon>();
+
         if (meleeInHand != null)
         {
             equippedMeleeWeapon = meleeInHand;
@@ -114,7 +125,8 @@ public class EquipmentManager : MonoBehaviour
                 equippedPrimaryWeapon = null;
                 if (currentWeaponInHand == null && equippedSecondaryWeapon != null)
                 {
-                    equippedSecondaryWeapon.transform.SetParent(handSlot);
+                    Transform secondaryHandSlot = GetHandSlotForGun(equippedSecondaryWeapon);
+                    equippedSecondaryWeapon.transform.SetParent(secondaryHandSlot);
                     equippedSecondaryWeapon.transform.localPosition = Vector3.zero;
                     equippedSecondaryWeapon.transform.localRotation = Quaternion.Euler(weaponHandRotation);
                     equippedSecondaryWeapon.Equip();
@@ -135,10 +147,12 @@ public class EquipmentManager : MonoBehaviour
             Debug.LogError($"[EquipmentManager] Cannot equip {gunItem.ItemName}: GunPrefab is null! Make sure the GunItem asset has a prefab assigned.");
             return false;
         }
+
+        Transform targetHandSlot = GetHandSlotForGunItem(gunItem);
         
-        if (handSlot == null)
+        if (targetHandSlot == null)
         {
-            Debug.LogError("[EquipmentManager] Cannot equip: handSlot is not assigned!");
+            Debug.LogError("[EquipmentManager] Cannot equip: no hand slot is assigned!");
             return false;
         }
         
@@ -163,7 +177,7 @@ public class EquipmentManager : MonoBehaviour
         }
 
         // Instantiate new primary weapon in hand slot (not resting slot)
-        GameObject weaponInstance = Instantiate(gunItem.GunPrefab, handSlot);
+        GameObject weaponInstance = Instantiate(gunItem.GunPrefab, targetHandSlot);
         weaponInstance.name = gunItem.ItemName;
         weaponInstance.SetActive(true);
         weaponInstance.transform.localPosition = Vector3.zero;
@@ -208,7 +222,8 @@ public class EquipmentManager : MonoBehaviour
                 equippedSecondaryWeapon = null;
                 if (currentWeaponInHand == null && equippedPrimaryWeapon != null)
                 {
-                    equippedPrimaryWeapon.transform.SetParent(handSlot);
+                    Transform primaryHandSlot = GetHandSlotForGun(equippedPrimaryWeapon);
+                    equippedPrimaryWeapon.transform.SetParent(primaryHandSlot);
                     equippedPrimaryWeapon.transform.localPosition = Vector3.zero;
                     equippedPrimaryWeapon.transform.localRotation = Quaternion.Euler(weaponHandRotation);
                     equippedPrimaryWeapon.Equip();
@@ -229,10 +244,12 @@ public class EquipmentManager : MonoBehaviour
             Debug.LogError($"[EquipmentManager] Cannot equip {gunItem.ItemName}: GunPrefab is null! Make sure the GunItem asset has a prefab assigned.");
             return false;
         }
+
+        Transform targetHandSlot = GetHandSlotForGunItem(gunItem);
         
-        if (handSlot == null)
+        if (targetHandSlot == null)
         {
-            Debug.LogError("[EquipmentManager] Cannot equip: handSlot is not assigned!");
+            Debug.LogError("[EquipmentManager] Cannot equip: no hand slot is assigned!");
             return false;
         }
         
@@ -257,7 +274,7 @@ public class EquipmentManager : MonoBehaviour
         }
 
         // Instantiate new secondary weapon in hand slot (not resting slot)
-        GameObject weaponInstance = Instantiate(gunItem.GunPrefab, handSlot);
+        GameObject weaponInstance = Instantiate(gunItem.GunPrefab, targetHandSlot);
         weaponInstance.name = gunItem.ItemName;
         weaponInstance.SetActive(true);
         weaponInstance.transform.localPosition = Vector3.zero;
@@ -306,7 +323,7 @@ public class EquipmentManager : MonoBehaviour
         restingWeapon.gameObject.SetActive(true);
         restingWeapon.Unequip();
 
-        nextWeapon.transform.SetParent(handSlot);
+        nextWeapon.transform.SetParent(GetHandSlotForGun(nextWeapon));
         // Force correct local position and rotation in hand
         nextWeapon.transform.localPosition = Vector3.zero;
         nextWeapon.transform.localRotation = Quaternion.Euler(weaponHandRotation);
@@ -342,7 +359,7 @@ public class EquipmentManager : MonoBehaviour
         }
 
         // Equip primary
-        equippedPrimaryWeapon.transform.SetParent(handSlot);
+        equippedPrimaryWeapon.transform.SetParent(GetHandSlotForGun(equippedPrimaryWeapon));
         equippedPrimaryWeapon.transform.localPosition = Vector3.zero;
         equippedPrimaryWeapon.transform.localRotation = Quaternion.Euler(weaponHandRotation);
         if (weaponLayer >= 0) SetLayerRecursively(equippedPrimaryWeapon.gameObject, weaponLayer);
@@ -373,7 +390,7 @@ public class EquipmentManager : MonoBehaviour
         }
 
         // Equip secondary
-        equippedSecondaryWeapon.transform.SetParent(handSlot);
+        equippedSecondaryWeapon.transform.SetParent(GetHandSlotForGun(equippedSecondaryWeapon));
         equippedSecondaryWeapon.transform.localPosition = Vector3.zero;
         equippedSecondaryWeapon.transform.localRotation = Quaternion.Euler(weaponHandRotation);
         if (weaponLayer >= 0) SetLayerRecursively(equippedSecondaryWeapon.gameObject, weaponLayer);
@@ -410,6 +427,41 @@ public class EquipmentManager : MonoBehaviour
             if (child == null) continue;
             SetLayerRecursively(child.gameObject, newLayer);
         }
+    }
+
+    private Transform GetDefaultHandSlot()
+    {
+        if (pistolHandSlot != null) return pistolHandSlot;
+        if (assaultHandSlot != null) return assaultHandSlot;
+        return null;
+    }
+
+    private Transform GetHandSlotForGunType(Gun.GunType gunType)
+    {
+        if (gunType == Gun.GunType.AssaultRifle)
+            return assaultHandSlot != null ? assaultHandSlot : pistolHandSlot;
+
+        return pistolHandSlot != null ? pistolHandSlot : assaultHandSlot;
+    }
+
+    private Transform GetHandSlotForGun(Gun gun)
+    {
+        if (gun == null)
+            return GetDefaultHandSlot();
+
+        return GetHandSlotForGunType(gun.GetGunType());
+    }
+
+    private Transform GetHandSlotForGunItem(GunItem gunItem)
+    {
+        if (gunItem == null || gunItem.GunPrefab == null)
+            return GetDefaultHandSlot();
+
+        Gun gunPrefabComponent = gunItem.GunPrefab.GetComponent<Gun>();
+        if (gunPrefabComponent == null)
+            return GetDefaultHandSlot();
+
+        return GetHandSlotForGunType(gunPrefabComponent.GetGunType());
     }
 
     public Gun GetCurrentWeapon() => currentWeaponInHand;
@@ -458,9 +510,10 @@ public class EquipmentManager : MonoBehaviour
             return false;
         }
 
-        if (handSlot == null)
+        Transform meleeHandSlot = GetDefaultHandSlot();
+        if (meleeHandSlot == null)
         {
-            Debug.LogError("[EquipmentManager] Cannot equip: handSlot is not assigned!");
+            Debug.LogError("[EquipmentManager] Cannot equip: no hand slot is assigned!");
             return false;
         }
 
@@ -476,7 +529,7 @@ public class EquipmentManager : MonoBehaviour
             Destroy(equippedMeleeWeapon.gameObject);
 
         // Instantiate new melee weapon
-        GameObject weaponInstance = Instantiate(meleeItem.WeaponPrefab, handSlot);
+        GameObject weaponInstance = Instantiate(meleeItem.WeaponPrefab, meleeHandSlot);
         weaponInstance.name = meleeItem.ItemName;
         weaponInstance.SetActive(true);
         weaponInstance.transform.localPosition = Vector3.zero;

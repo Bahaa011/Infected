@@ -4,6 +4,8 @@ public class AnimationController : MonoBehaviour
 {
     private Animator animator;
     private Player player;
+    private Camera mainCamera;
+    private EquipmentManager equipmentManager;
 
     private float smoothVelocity = 0f;
     private float smoothAimBlend = 0f;
@@ -14,10 +16,21 @@ public class AnimationController : MonoBehaviour
     private Gun.GunType lastWeaponType = Gun.GunType.Pistol;
     private bool lastAimingState = false;
 
+    [Header("Aim IK")]
+    [SerializeField] private bool enableAimIK = true;
+    [SerializeField] private float ikLookAtWeight = 0.65f;
+    [SerializeField] private float ikBodyWeight = 0.35f;
+    [SerializeField] private float ikHeadWeight = 0.8f;
+    [SerializeField] private float ikEyesWeight = 0.8f;
+    [SerializeField] private float ikClampWeight = 0.5f;
+    [SerializeField] private float ikAimDistance = 120f;
+
     private void Awake()
     {
         animator = GetComponent<Animator>();
         player = GetComponent<Player>();
+        equipmentManager = GetComponent<EquipmentManager>();
+        mainCamera = Camera.main;
     }
 
     private void Start()
@@ -87,4 +100,34 @@ public class AnimationController : MonoBehaviour
 
     public float GetSmoothVelocity() => smoothVelocity;
     public float GetAimBlend() => smoothAimBlend;
+
+    private void OnAnimatorIK(int layerIndex)
+    {
+        if (animator == null || player == null || !enableAimIK)
+            return;
+
+        if (mainCamera == null)
+            mainCamera = Camera.main;
+
+        if (mainCamera == null)
+            return;
+
+        if (equipmentManager == null)
+            equipmentManager = player.GetEquipmentManager();
+
+        bool hasGunInHand = equipmentManager != null && equipmentManager.GetCurrentWeapon() != null;
+        bool shouldAimIK = player.IsAiming() && hasGunInHand;
+
+        if (!shouldAimIK)
+        {
+            animator.SetLookAtWeight(0f);
+            return;
+        }
+
+        Ray ray = mainCamera.ScreenPointToRay(new Vector3(Screen.width * 0.5f, Screen.height * 0.5f, 0f));
+        Vector3 lookTarget = ray.origin + ray.direction * ikAimDistance;
+
+        animator.SetLookAtWeight(ikLookAtWeight, ikBodyWeight, ikHeadWeight, ikEyesWeight, ikClampWeight);
+        animator.SetLookAtPosition(lookTarget);
+    }
 }

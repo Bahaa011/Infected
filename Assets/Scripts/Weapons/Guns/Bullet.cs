@@ -79,7 +79,7 @@ public class Bullet : MonoBehaviour
             Zombie zombie = collision.GetComponent<Zombie>();
             if (zombie != null)
             {
-                zombie.TakeDamage(damage);
+                zombie.OnBulletHit(damage);
             }
             
             Destroy(gameObject);

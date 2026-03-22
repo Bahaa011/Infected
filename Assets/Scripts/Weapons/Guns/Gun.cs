@@ -23,6 +23,16 @@ public class Gun : MonoBehaviour
     [SerializeField] private bool canFireWhileReloading = false;
     [SerializeField] private string reloadActionName = "Reload";
     [SerializeField] private bool requireMagazineItem = true;
+    [Header("Aim Alignment")]
+    [Tooltip("Rotate weapon visuals to point toward aim point while aiming.")]
+    [SerializeField] private bool rotateWeaponToAim = true;
+    [Tooltip("Transform to rotate for visual aiming. Leave empty to rotate this gun transform.")]
+    [SerializeField] private Transform aimRotationTransform;
+    [Tooltip("Extra euler offset after LookRotation to match prefab forward axis.")]
+    [SerializeField] private Vector3 aimRotationOffset = Vector3.zero;
+    [SerializeField] private float aimRotationSpeed = 20f;
+    [SerializeField] private float maxAimDistance = 250f;
+    [SerializeField] private LayerMask aimLayers = ~0;
     
     private InputAction fireAction;
     private InputAction reloadAction;
@@ -36,6 +46,9 @@ public class Gun : MonoBehaviour
     private Inventory inventory;
     private bool isReloading = false;
     private float reloadProgress = 0f;
+    private Player ownerPlayer;
+    private Quaternion defaultAimLocalRotation;
+    private bool hasDefaultAimRotation;
 
     [Header("Reload Events")]
     public UnityEvent onReloadStarted;
@@ -49,6 +62,10 @@ public class Gun : MonoBehaviour
     void Start()
     {
         mainCamera = Camera.main;
+        ownerPlayer = GetComponentInParent<Player>();
+
+        if (aimRotationTransform == null)
+            aimRotationTransform = transform;
         
         // If animator is not set in inspector, try to find it on the parent (player)
         if (animator == null)
@@ -114,6 +131,11 @@ public class Gun : MonoBehaviour
 
         if (!fireAction.IsPressed())
             burstCounter = 0;
+    }
+
+    private void LateUpdate()
+    {
+        UpdateVisualAimRotation();
     }
 
     public void Fire()
@@ -222,8 +244,70 @@ public class Gun : MonoBehaviour
 
     Vector3 GetAimDirection()
     {
-        Ray ray = mainCamera.ScreenPointToRay(new Vector3(Screen.width / 2f, Screen.height / 2f, 0));
-        return ray.direction;
+        Vector3 aimPoint = GetAimPoint();
+        Vector3 origin = firePoint != null ? firePoint.position : transform.position;
+        Vector3 direction = (aimPoint - origin).normalized;
+        if (direction.sqrMagnitude < 0.0001f)
+            return transform.forward;
+        return direction;
+    }
+
+    Vector3 GetAimPoint()
+    {
+        if (mainCamera == null)
+            mainCamera = Camera.main;
+
+        if (mainCamera == null)
+            return transform.position + transform.forward * maxAimDistance;
+
+        Ray ray = mainCamera.ScreenPointToRay(new Vector3(Screen.width * 0.5f, Screen.height * 0.5f, 0f));
+        if (Physics.Raycast(ray, out RaycastHit hit, maxAimDistance, aimLayers, QueryTriggerInteraction.Ignore))
+            return hit.point;
+
+        return ray.origin + ray.direction * maxAimDistance;
+    }
+
+    void UpdateVisualAimRotation()
+    {
+        if (!rotateWeaponToAim || !isEquipped || !gameObject.activeInHierarchy)
+            return;
+
+        if (aimRotationTransform == null)
+            aimRotationTransform = transform;
+
+        if (!hasDefaultAimRotation)
+        {
+            defaultAimLocalRotation = aimRotationTransform.localRotation;
+            hasDefaultAimRotation = true;
+        }
+
+        if (ownerPlayer == null)
+            ownerPlayer = GetComponentInParent<Player>();
+
+        bool shouldAim = ownerPlayer != null && ownerPlayer.IsAiming();
+        if (!shouldAim)
+        {
+            aimRotationTransform.localRotation = Quaternion.Slerp(
+                aimRotationTransform.localRotation,
+                defaultAimLocalRotation,
+                aimRotationSpeed * Time.deltaTime
+            );
+            return;
+        }
+
+        Vector3 aimPoint = GetAimPoint();
+        Vector3 lookDirection = aimPoint - aimRotationTransform.position;
+        if (lookDirection.sqrMagnitude < 0.0001f)
+            return;
+
+        Quaternion targetWorldRotation = Quaternion.LookRotation(lookDirection.normalized, Vector3.up)
+                                         * Quaternion.Euler(aimRotationOffset);
+
+        aimRotationTransform.rotation = Quaternion.Slerp(
+            aimRotationTransform.rotation,
+            targetWorldRotation,
+            aimRotationSpeed * Time.deltaTime
+        );
     }
 
     public void SetFireMode(FireMode mode)
@@ -250,6 +334,11 @@ public class Gun : MonoBehaviour
     public void Equip()
     {
         isEquipped = true;
+
+        if (aimRotationTransform == null)
+            aimRotationTransform = transform;
+        defaultAimLocalRotation = aimRotationTransform.localRotation;
+        hasDefaultAimRotation = true;
         
         // Re-fetch animator if not set (happens when instantiated at runtime)
         if (animator == null)
@@ -312,6 +401,8 @@ public class Gun : MonoBehaviour
         isEquipped = false;
         burstCounter = 0;
         isReloading = false;
+        if (aimRotationTransform != null && hasDefaultAimRotation)
+            aimRotationTransform.localRotation = defaultAimLocalRotation;
         if (animator != null)
         {
             animator.SetBool("HasWeapon", false);

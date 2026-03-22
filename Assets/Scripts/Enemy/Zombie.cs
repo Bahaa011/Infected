@@ -22,6 +22,10 @@ public class Zombie : MonoBehaviour, IDamageable
     [SerializeField] private float attackCooldown = 1.5f;
     [SerializeField] private float attackWindup = 1f; // time the zombie must stay near the player before damage lands
     [SerializeField] private float attackDistancePadding = 0.4f; // extra spacing so zombie doesn't overlap player
+    [Header("Hit Stun")]
+    [SerializeField] private float rangedHitStunDuration = 0.1f;
+    [SerializeField] private float meleeHitStunDuration = 1f;
+    [SerializeField] private bool refreshStunOnHit = true;
     private float lastAttackTime = 0f;
     private Coroutine attackRoutine;
 
@@ -32,6 +36,7 @@ public class Zombie : MonoBehaviour, IDamageable
     private bool isChasing = false;
     private bool isAttacking = false;
     private bool isDead = false;
+    private float stunnedUntilTime = 0f;
 
     private void Awake()
     {
@@ -75,6 +80,21 @@ public class Zombie : MonoBehaviour, IDamageable
         }
 
         if (isDead || playerTransform == null) return;
+
+        if (IsStunned())
+        {
+            isChasing = false;
+            isAttacking = false;
+            StopAllAttackAndMovement();
+
+            if (animator != null)
+            {
+                animator.SetBool("isChasing", false);
+                animator.SetBool("attack", false);
+            }
+
+            return;
+        }
 
         float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
 
@@ -211,6 +231,15 @@ public class Zombie : MonoBehaviour, IDamageable
                 yield break;
             }
 
+            if (IsStunned())
+            {
+                if (navMeshAgent != null && navMeshAgent.isOnNavMesh)
+                    navMeshAgent.isStopped = true;
+                isAttacking = false;
+                attackRoutine = null;
+                yield break;
+            }
+
             float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
             if (distanceToPlayer > GetAttackTriggerRange())
             {
@@ -256,6 +285,7 @@ public class Zombie : MonoBehaviour, IDamageable
         if (isDead) return;
 
         currentHealth -= damage;
+        ApplyHitStun(rangedHitStunDuration);
         
         // Play hit animation
         if (animator != null)
@@ -273,6 +303,12 @@ public class Zombie : MonoBehaviour, IDamageable
     {
         isDead = true;
         isAttacking = false;
+
+        if (attackRoutine != null)
+        {
+            StopCoroutine(attackRoutine);
+            attackRoutine = null;
+        }
         
         // Stop movement
         if (navMeshAgent != null && navMeshAgent.isOnNavMesh)
@@ -302,6 +338,61 @@ public class Zombie : MonoBehaviour, IDamageable
     // Call this from the Bullet script when it hits
     public void OnBulletHit(float bulletDamage)
     {
-        TakeDamage(bulletDamage);
+        TakeDamageWithStun(bulletDamage, rangedHitStunDuration);
+    }
+
+    // Call this from melee hits
+    public void OnMeleeHit(float meleeDamage)
+    {
+        TakeDamageWithStun(meleeDamage, meleeHitStunDuration);
+    }
+
+    private bool IsStunned()
+    {
+        return Time.time < stunnedUntilTime;
+    }
+
+    private void ApplyHitStun(float duration)
+    {
+        if (duration <= 0f)
+            return;
+
+        float targetStunEnd = Time.time + duration;
+
+        if (refreshStunOnHit)
+            stunnedUntilTime = Mathf.Max(stunnedUntilTime, targetStunEnd);
+        else if (!IsStunned())
+            stunnedUntilTime = targetStunEnd;
+
+        StopAllAttackAndMovement();
+    }
+
+    private void TakeDamageWithStun(float damage, float stunDuration)
+    {
+        if (isDead) return;
+
+        currentHealth -= damage;
+        ApplyHitStun(stunDuration);
+
+        if (animator != null)
+            animator.SetTrigger("hit");
+
+        if (currentHealth <= 0)
+            Die();
+    }
+
+    private void StopAllAttackAndMovement()
+    {
+        if (attackRoutine != null)
+        {
+            StopCoroutine(attackRoutine);
+            attackRoutine = null;
+        }
+
+        if (navMeshAgent != null && navMeshAgent.isOnNavMesh)
+        {
+            navMeshAgent.isStopped = true;
+            navMeshAgent.ResetPath();
+        }
     }
 }
