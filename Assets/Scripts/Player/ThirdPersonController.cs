@@ -10,11 +10,19 @@ public class ThirdPersonController : MonoBehaviour
     [SerializeField] private float mouseSensitivity = 2f;
     [SerializeField] private float minPitch = -40f;
     [SerializeField] private float maxPitch = 70f;
+    [Header("Running Camera Shake")]
+    [SerializeField] private float runShakeAmplitude = 0.06f;
+    [SerializeField] private float runShakeFrequency = 10f;
+    [SerializeField] private float runShakeSmooth = 10f;
+    [Header("Crouch Camera")]
+    [SerializeField] private float crouchCameraDrop = 0.45f;
+    [SerializeField] private float crouchCameraSmooth = 8f;
 
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 3f;
     [SerializeField] private float runSpeedMultiplier = 2f;
     [SerializeField] private float crouchSpeedMultiplier = 0.5f;
+    [SerializeField] private float brawlSpeedMultiplier = 0.45f;
     [SerializeField] private float rotationSpeed = 10f;
     [SerializeField] private float aimTurnSpeed = 14f;
     [SerializeField] private float aimTurnDeadZone = 1f;
@@ -63,6 +71,11 @@ public class ThirdPersonController : MonoBehaviour
     private float lockedYaw;
     private bool cameraYawLocked = false;
     private Vector3 cameraLocalPosition;
+    private float baseCameraHeight;
+    private float runShakeTimer;
+    private float currentShakeAmplitude;
+    private float currentShakeOffsetY;
+    private float currentCrouchCameraOffsetY;
 
     private void Awake()
     {
@@ -79,6 +92,9 @@ public class ThirdPersonController : MonoBehaviour
     {
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+
+        if (cameraTarget != null)
+            baseCameraHeight = cameraTarget.localPosition.y;
     }
 
 
@@ -131,6 +147,7 @@ public class ThirdPersonController : MonoBehaviour
         UpdateCrouch();
         UpdateAiming();
         UpdateAimFacing();
+        UpdateRunCameraShake();
         if (animationController != null)
         {
             animationController.UpdateMovementAnimation(moveInput.sqrMagnitude, isActuallySprinting, runSpeedMultiplier);
@@ -185,6 +202,7 @@ public class ThirdPersonController : MonoBehaviour
         Vector3 targetPos = cameraTarget.position;
         targetPos.x = transform.position.x;
         targetPos.z = transform.position.z;
+        targetPos.y = transform.position.y + baseCameraHeight + currentCrouchCameraOffsetY + currentShakeOffsetY;
         cameraTarget.position = targetPos;
         
         // Only rotate camera target on both axes (independent of player rotation)
@@ -214,6 +232,7 @@ public class ThirdPersonController : MonoBehaviour
         // Check if sprint button is being pressed
         bool sprintInputPressed = sprintAction != null && sprintAction.action.IsPressed();
         player.SetSprintInputPressed(sprintInputPressed);
+        bool isBrawling = player != null && player.IsBrawling();
 
         // Calculate XZ movement
         if (isMoving)
@@ -224,7 +243,8 @@ public class ThirdPersonController : MonoBehaviour
             Vector3 moveDir = (camForward * moveInput.y) + (camRight * moveInput.x);
             moveDir.Normalize();
 
-            if (player != null && player.IsAiming() && equipmentManager != null && equipmentManager.GetCurrentWeapon() != null)
+            bool shouldFaceCamera = player != null && (player.IsAiming() || player.IsBrawling());
+            if (shouldFaceCamera)
             {
                 Quaternion targetAimRotation = Quaternion.Euler(0f, yaw, 0f);
                 transform.rotation = Quaternion.Slerp(transform.rotation, targetAimRotation, aimTurnSpeed * Time.deltaTime);
@@ -236,7 +256,7 @@ public class ThirdPersonController : MonoBehaviour
             }
 
             // Check if can sprint (has stamina remaining)
-            bool canSprint = sprintInputPressed && player.GetStamina() > 0.1f;
+            bool canSprint = !isBrawling && sprintInputPressed && player.GetStamina() > 0.1f;
             
             // Update player's sprint state and track actual sprint state
             player.SetIsCurrentlySprinting(canSprint);
@@ -245,7 +265,7 @@ public class ThirdPersonController : MonoBehaviour
             float currentSpeed = moveSpeed;
             if (canSprint) currentSpeed *= runSpeedMultiplier;
             if (player.IsCrouching()) currentSpeed *= crouchSpeedMultiplier;
-            if (inventory != null) currentSpeed *= inventory.GetSpeedPenalty();
+            if (isBrawling) currentSpeed *= brawlSpeedMultiplier;
 
             move = moveDir * currentSpeed;
         }
@@ -306,6 +326,9 @@ public class ThirdPersonController : MonoBehaviour
         float targetHeight = player.IsCrouching() ? crouchHeight : normalHeight;
         controller.height = Mathf.Lerp(controller.height, targetHeight, Time.deltaTime * 5f);
 
+        float targetCameraOffset = player.IsCrouching() ? -Mathf.Abs(crouchCameraDrop) : 0f;
+        currentCrouchCameraOffsetY = Mathf.Lerp(currentCrouchCameraOffsetY, targetCameraOffset, Time.deltaTime * crouchCameraSmooth);
+
         float heightDifference = normalHeight - targetHeight;
         float targetCenterY = normalHeight / 2f - heightDifference / 2f;
         Vector3 newCenter = controller.center;
@@ -315,10 +338,11 @@ public class ThirdPersonController : MonoBehaviour
 
     void UpdateAimFacing()
     {
-        if (player == null || !player.IsAiming())
+        if (player == null)
             return;
 
-        if (equipmentManager == null || equipmentManager.GetCurrentWeapon() == null)
+        bool shouldFaceCamera = player.IsAiming() || player.IsBrawling();
+        if (!shouldFaceCamera)
             return;
 
         Quaternion targetRotation = Quaternion.Euler(0f, yaw, 0f);
@@ -327,6 +351,24 @@ public class ThirdPersonController : MonoBehaviour
             return;
 
         transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, aimTurnSpeed * Time.deltaTime);
+    }
+
+    void UpdateRunCameraShake()
+    {
+        bool shouldShake = isActuallySprinting && controller != null && controller.isGrounded;
+        float targetAmplitude = shouldShake ? runShakeAmplitude : 0f;
+        currentShakeAmplitude = Mathf.Lerp(currentShakeAmplitude, targetAmplitude, runShakeSmooth * Time.deltaTime);
+
+        if (currentShakeAmplitude > 0.0001f)
+        {
+            runShakeTimer += Time.deltaTime * runShakeFrequency;
+            currentShakeOffsetY = Mathf.Sin(runShakeTimer) * currentShakeAmplitude;
+        }
+        else
+        {
+            currentShakeOffsetY = Mathf.Lerp(currentShakeOffsetY, 0f, runShakeSmooth * Time.deltaTime);
+            runShakeTimer = 0f;
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════

@@ -8,7 +8,7 @@ public class MeleeWeaponItem : Item
     [SerializeField] private float attackSpeed = 1f; // Attacks per second
     [SerializeField] private float attackRange = 2f;
     [SerializeField] private float knockbackForce = 10f;
-    [SerializeField] private MeleeWeapon.WeaponType weaponType = MeleeWeapon.WeaponType.Sword;
+    [SerializeField] private MeleeWeapon.WeaponType weaponType = MeleeWeapon.WeaponType.Bat;
 
     public override int MaxStackSize => 1;
 

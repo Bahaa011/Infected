@@ -41,6 +41,7 @@ public class Gun : MonoBehaviour
     private int burstCounter = 0;
     private Camera mainCamera;
     private bool isEquipped = false;
+    private bool isBurstFiring = false;
     private GunItem gunItem;
     private PlayerSkills playerSkills;
     private Inventory inventory;
@@ -117,11 +118,22 @@ public class Gun : MonoBehaviour
         }
         else if (fireMode == FireMode.Burst)
         {
-            if (fireAction.WasPerformedThisFrame())
+            if (fireAction.WasPerformedThisFrame() && !isBurstFiring)
+            {
                 burstCounter = 0;
-            
-            if (burstCounter < burstCount)
-                Fire();
+                isBurstFiring = true;
+            }
+
+            if (isBurstFiring)
+            {
+                if (burstCounter < burstCount)
+                    Fire();
+                else
+                {
+                    isBurstFiring = false;
+                    burstCounter = 0;
+                }
+            }
         }
         else
         {
@@ -129,7 +141,7 @@ public class Gun : MonoBehaviour
                 Fire();
         }
 
-        if (!fireAction.IsPressed())
+        if (fireMode != FireMode.Burst && !fireAction.IsPressed())
             burstCounter = 0;
     }
 
@@ -314,6 +326,7 @@ public class Gun : MonoBehaviour
     {
         fireMode = mode;
         burstCounter = 0;
+        isBurstFiring = false;
     }
 
     public FireMode GetFireMode()
@@ -400,6 +413,7 @@ public class Gun : MonoBehaviour
     {
         isEquipped = false;
         burstCounter = 0;
+        isBurstFiring = false;
         isReloading = false;
         if (aimRotationTransform != null && hasDefaultAimRotation)
             aimRotationTransform.localRotation = defaultAimLocalRotation;

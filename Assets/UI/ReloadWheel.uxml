@@ -5,7 +5,7 @@
     xmlns:uie="UnityEditor.UIElements"
     xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd"
 >
-    <ui:VisualElement class="reload-wheel-container" style="width: 96px; height: 96px; position: absolute; right: 40px; bottom: 120px; justify-content: center; align-items: center;">
-        <ui:Label text="RELOAD" class="reload-wheel-label" style="position: absolute; unity-text-align: middle-center; color: white; font-size: 18px;" />
+    <ui:VisualElement class="reload-wheel-container" style="width: 98px; height: 98px; position: absolute; right: 34px; bottom: 112px; justify-content: center; align-items: center; background-color: rgba(12, 16, 22, 0.72); border-radius: 49px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(190, 205, 230, 0.16); border-right-color: rgba(190, 205, 230, 0.16); border-bottom-color: rgba(120, 135, 165, 0.1); border-left-color: rgba(120, 135, 165, 0.1);">
+        <ui:Label text="Reload" class="reload-wheel-label" style="position: absolute; unity-text-align: middle-center; color: rgb(223, 230, 242); font-size: 10px; -unity-font-style: bold;" />
     </ui:VisualElement>
 </ui:UXML>

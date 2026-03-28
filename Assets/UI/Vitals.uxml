@@ -5,31 +5,35 @@
     xmlns:uie="UnityEditor.UIElements"
     xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd"
 >
-    <ui:VisualElement class="vitals-panel" style="position: absolute; left: 24px; bottom: 24px; width: 400px; flex-direction: column; background-color: rgba(14, 18, 25, 0.9); padding: 14px; border-radius: 14px; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-top-color: rgba(170, 190, 220, 0.25); border-right-color: rgba(170, 190, 220, 0.25); border-bottom-color: rgba(34, 42, 58, 0.9); border-left-color: rgba(34, 42, 58, 0.9);">
-        <ui:Label text="VITALS" style="font-size: 14px; color: rgba(210, 225, 245, 0.95); -unity-font-style: bold; margin-bottom: 8px; letter-spacing: 1px;" />
+    <ui:VisualElement class="vitals-panel" style="position: absolute; left: 34px; bottom: 20px; width: 300px; flex-direction: column; background-color: rgba(14, 18, 24, 0.9); padding: 12px; border-radius: 12px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(190, 205, 230, 0.24); border-right-color: rgba(190, 205, 230, 0.24); border-bottom-color: rgba(120, 135, 165, 0.14); border-left-color: rgba(120, 135, 165, 0.14);">
+        <ui:Label text="Vitals" style="font-size: 13px; color: rgba(223, 230, 242, 0.98); -unity-font-style: bold; margin-bottom: 8px;" />
 
         <!-- Health Bar -->
-        <ui:VisualElement style="height: 30px; margin-bottom: 6px; background-color: rgba(30, 35, 45, 0.95); border-radius: 8px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(255, 110, 110, 0.4); border-right-color: rgba(255, 110, 110, 0.4); border-bottom-color: rgba(255, 110, 110, 0.4); border-left-color: rgba(255, 110, 110, 0.4); overflow: hidden; position: relative;">
-            <ui:VisualElement class="health-bar" style="height: 100%; width: 100%; background-color: rgb(210, 68, 68); border-radius: 7px;"/>
-            <ui:Label text="HEALTH" style="position: absolute; left: 10px; top: 50%; translate: 0 -50%; font-size: 14px; color: rgb(255, 255, 255); -unity-font-style: bold;"/>
+        <ui:VisualElement style="height: 27px; margin-bottom: 6px; background-color: rgba(26, 32, 42, 0.96); border-radius: 8px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(190, 205, 230, 0.12); border-right-color: rgba(190, 205, 230, 0.12); border-bottom-color: rgba(190, 205, 230, 0.08); border-left-color: rgba(190, 205, 230, 0.08); overflow: hidden; position: relative;">
+            <ui:VisualElement class="health-bar" style="height: 100%; width: 100%; background-color: rgb(224, 84, 107); border-radius: 7px;"/>
+            <ui:Label text="Health" style="position: absolute; left: 10px; top: 50%; translate: 0 -50%; font-size: 12px; color: rgb(255, 255, 255); -unity-font-style: bold;"/>
+            <ui:Label class="health-value" text="100/100" style="position: absolute; right: 10px; top: 50%; translate: 0 -50%; font-size: 11px; color: rgb(244, 248, 255); -unity-font-style: bold;"/>
         </ui:VisualElement>
 
         <!-- Hunger Bar -->
-        <ui:VisualElement style="height: 30px; margin-bottom: 6px; background-color: rgba(30, 35, 45, 0.95); border-radius: 8px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(255, 190, 95, 0.45); border-right-color: rgba(255, 190, 95, 0.45); border-bottom-color: rgba(255, 190, 95, 0.45); border-left-color: rgba(255, 190, 95, 0.45); overflow: hidden; position: relative;">
-            <ui:VisualElement class="hunger-bar" style="height: 100%; width: 100%; background-color: rgb(214, 158, 72); border-radius: 7px;"/>
-            <ui:Label text="HUNGER" style="position: absolute; left: 10px; top: 50%; translate: 0 -50%; font-size: 14px; color: rgb(255, 255, 255); -unity-font-style: bold;"/>
+        <ui:VisualElement style="height: 27px; margin-bottom: 6px; background-color: rgba(26, 32, 42, 0.96); border-radius: 8px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(190, 205, 230, 0.12); border-right-color: rgba(190, 205, 230, 0.12); border-bottom-color: rgba(190, 205, 230, 0.08); border-left-color: rgba(190, 205, 230, 0.08); overflow: hidden; position: relative;">
+            <ui:VisualElement class="hunger-bar" style="height: 100%; width: 100%; background-color: rgb(170, 227, 98); border-radius: 7px;"/>
+            <ui:Label text="Hunger" style="position: absolute; left: 10px; top: 50%; translate: 0 -50%; font-size: 12px; color: rgb(255, 255, 255); -unity-font-style: bold;"/>
+            <ui:Label class="hunger-value" text="100/100" style="position: absolute; right: 10px; top: 50%; translate: 0 -50%; font-size: 11px; color: rgb(244, 248, 255); -unity-font-style: bold;"/>
         </ui:VisualElement>
 
         <!-- Thirst Bar -->
-        <ui:VisualElement style="height: 30px; margin-bottom: 6px; background-color: rgba(30, 35, 45, 0.95); border-radius: 8px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(90, 185, 235, 0.45); border-right-color: rgba(90, 185, 235, 0.45); border-bottom-color: rgba(90, 185, 235, 0.45); border-left-color: rgba(90, 185, 235, 0.45); overflow: hidden; position: relative;">
-            <ui:VisualElement class="thirst-bar" style="height: 100%; width: 100%; background-color: rgb(76, 165, 220); border-radius: 7px;"/>
-            <ui:Label text="THIRST" style="position: absolute; left: 10px; top: 50%; translate: 0 -50%; font-size: 14px; color: rgb(255, 255, 255); -unity-font-style: bold;"/>
+        <ui:VisualElement style="height: 27px; margin-bottom: 6px; background-color: rgba(26, 32, 42, 0.96); border-radius: 8px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(190, 205, 230, 0.12); border-right-color: rgba(190, 205, 230, 0.12); border-bottom-color: rgba(190, 205, 230, 0.08); border-left-color: rgba(190, 205, 230, 0.08); overflow: hidden; position: relative;">
+            <ui:VisualElement class="thirst-bar" style="height: 100%; width: 100%; background-color: rgb(108, 187, 255); border-radius: 7px;"/>
+            <ui:Label text="Thirst" style="position: absolute; left: 10px; top: 50%; translate: 0 -50%; font-size: 12px; color: rgb(255, 255, 255); -unity-font-style: bold;"/>
+            <ui:Label class="thirst-value" text="100/100" style="position: absolute; right: 10px; top: 50%; translate: 0 -50%; font-size: 11px; color: rgb(244, 248, 255); -unity-font-style: bold;"/>
         </ui:VisualElement>
 
         <!-- Stamina Bar -->
-        <ui:VisualElement style="height: 30px; background-color: rgba(30, 35, 45, 0.95); border-radius: 8px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(166, 220, 86, 0.45); border-right-color: rgba(166, 220, 86, 0.45); border-bottom-color: rgba(166, 220, 86, 0.45); border-left-color: rgba(166, 220, 86, 0.45); overflow: hidden; position: relative;">
-            <ui:VisualElement class="stamina-bar" style="height: 100%; width: 100%; background-color: rgb(156, 206, 70); border-radius: 7px;"/>
-            <ui:Label text="STAMINA" style="position: absolute; left: 10px; top: 50%; translate: 0 -50%; font-size: 14px; color: rgb(255, 255, 255); -unity-font-style: bold;"/>
+        <ui:VisualElement style="height: 27px; background-color: rgba(26, 32, 42, 0.96); border-radius: 8px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(190, 205, 230, 0.12); border-right-color: rgba(190, 205, 230, 0.12); border-bottom-color: rgba(190, 205, 230, 0.08); border-left-color: rgba(190, 205, 230, 0.08); overflow: hidden; position: relative;">
+            <ui:VisualElement class="stamina-bar" style="height: 100%; width: 100%; background-color: rgb(186, 127, 255); border-radius: 7px;"/>
+            <ui:Label text="Stamina" style="position: absolute; left: 10px; top: 50%; translate: 0 -50%; font-size: 12px; color: rgb(255, 255, 255); -unity-font-style: bold;"/>
+            <ui:Label class="stamina-value" text="100/100" style="position: absolute; right: 10px; top: 50%; translate: 0 -50%; font-size: 11px; color: rgb(244, 248, 255); -unity-font-style: bold;"/>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

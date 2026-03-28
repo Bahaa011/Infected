@@ -8,13 +8,13 @@ public class ReloadWheelUIToolkit : MonoBehaviour
     [SerializeField] private EquipmentManager equipmentManager;
 
     [Header("Wheel Settings")]
-    [SerializeField] private Vector2 wheelSize = new Vector2(96, 96);
-    [SerializeField] private Vector2 screenOffset = new Vector2(40, 120);
-    [SerializeField] private float thickness = 8f;
-    [SerializeField] private Color trackColor = new Color(0f, 0f, 0f, 0.5f);
-    [SerializeField] private Color fillColor = new Color(0.2f, 0.8f, 1f, 1f);
+    [SerializeField] private Vector2 wheelSize = new Vector2(88, 88);
+    [SerializeField] private Vector2 screenOffset = new Vector2(36, 116);
+    [SerializeField] private float thickness = 7f;
+    [SerializeField] private Color trackColor = new Color(0.15f, 0.19f, 0.26f, 0.95f);
+    [SerializeField] private Color fillColor = new Color(0.67f, 0.92f, 0.49f, 1f);
     [SerializeField] private bool showLabel = true;
-    [SerializeField] private string labelText = "RELOAD";
+    [SerializeField] private string labelText = "Reload";
     [SerializeField] private bool centerOnScreen = true;
 
     private VisualElement container;

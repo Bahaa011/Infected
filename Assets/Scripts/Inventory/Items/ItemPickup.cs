@@ -15,6 +15,13 @@ public class ItemPickup : MonoBehaviour
     private bool isPickedUp = false;
     private bool playerInRange = false;
 
+    public void Initialize(Item item, int stackQuantity, float radius = 2f)
+    {
+        itemToPickup = item;
+        quantity = Mathf.Max(1, stackQuantity);
+        pickupRadius = Mathf.Max(0.25f, radius);
+    }
+
     private void Start()
     {
         Debug.Log($"[{itemToPickup?.ItemName ?? "Unknown"}] Start called");
@@ -179,7 +186,6 @@ public class ItemPickup : MonoBehaviour
         else
         {
             Debug.LogWarning($"Could not add {itemToPickup.ItemName} to inventory - inventory full or item cannot be added!");
-            Debug.LogWarning($"Current weight: {inventory.GetCurrentWeight()}/{inventory.GetMaxWeight()}");
             inventory.PrintInventory();
         }
     }

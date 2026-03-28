@@ -16,6 +16,9 @@ public class AnimationController : MonoBehaviour
     private Gun.GunType lastWeaponType = Gun.GunType.Pistol;
     private bool lastAimingState = false;
 
+    [Header("Animation Layers")]
+    [SerializeField] private int weaponLayerIndex = 1;
+
     [Header("Aim IK")]
     [SerializeField] private bool enableAimIK = true;
     [SerializeField] private float ikLookAtWeight = 0.65f;
@@ -45,6 +48,7 @@ public class AnimationController : MonoBehaviour
         animator.SetBool("isPistol", false);
         animator.SetBool("isAssaultRifle", false);
         animator.SetBool("isCrouching", false);
+        animator.SetBool("isBrawling", false);
         animator.SetFloat("Speed", 0f);
         animator.SetFloat("AimBlend", 0f);
     }
@@ -81,12 +85,25 @@ public class AnimationController : MonoBehaviour
 
         var equipmentManager = player.GetEquipmentManager();
         Gun.GunType currentWeaponType = equipmentManager.GetCurrentGunType();
-        bool hasWeaponInHand = equipmentManager.GetCurrentWeapon() != null;
+        bool hasGunInHand = equipmentManager.GetCurrentWeapon() != null;
+        bool hasMeleeInHand = equipmentManager.IsMeleeEquipped();
+        bool hasWeaponInHand = hasGunInHand || hasMeleeInHand;
         bool isAiming = player.IsAiming() && hasWeaponInHand;
+        bool isBrawling = player.IsBrawling();
+
+        animator.SetBool("isBrawling", isBrawling);
+
+        // Keep upper-body/weapon layer active while brawling so unarmed animations are visible.
+        if (weaponLayerIndex >= 0)
+        {
+            float targetLayerWeight = (hasWeaponInHand || isBrawling) ? 1f : 0f;
+            animator.SetLayerWeight(weaponLayerIndex, targetLayerWeight);
+        }
 
         // Update weapon type booleans
-        animator.SetBool("isPistol", currentWeaponType == Gun.GunType.Pistol && hasWeaponInHand);
-        animator.SetBool("isAssaultRifle", currentWeaponType == Gun.GunType.AssaultRifle && hasWeaponInHand);
+        bool allowWeaponPose = !isBrawling && hasGunInHand;
+        animator.SetBool("isPistol", currentWeaponType == Gun.GunType.Pistol && allowWeaponPose);
+        animator.SetBool("isAssaultRifle", currentWeaponType == Gun.GunType.AssaultRifle && allowWeaponPose);
         
         // Update aim blend for 1D blend tree (0 = idle, 1 = aiming)
         float targetAimBlend = isAiming ? 1f : 0f;
@@ -100,6 +117,14 @@ public class AnimationController : MonoBehaviour
 
     public float GetSmoothVelocity() => smoothVelocity;
     public float GetAimBlend() => smoothAimBlend;
+
+    public void TriggerBrawlPunch()
+    {
+        if (animator == null || player == null || !player.IsBrawling())
+            return;
+
+        animator.SetTrigger("Punch");
+    }
 
     private void OnAnimatorIK(int layerIndex)
     {

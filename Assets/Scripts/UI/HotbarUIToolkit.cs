@@ -8,6 +8,7 @@ public class HotbarUIToolkit : MonoBehaviour
 
     private VisualElement primarySlot;
     private VisualElement secondarySlot;
+    private VisualElement meleeSlot;
 
     private void Awake()
     {
@@ -17,6 +18,7 @@ public class HotbarUIToolkit : MonoBehaviour
         var root = uiDocument.rootVisualElement;
         primarySlot = root.Q<VisualElement>(className: "primary-slot");
         secondarySlot = root.Q<VisualElement>(className: "secondary-slot");
+        meleeSlot = root.Q<VisualElement>(className: "melee-slot");
     }
 
     private void OnEnable()
@@ -28,6 +30,13 @@ public class HotbarUIToolkit : MonoBehaviour
         {
             equipmentManager.onPrimaryEquipped.AddListener(OnPrimaryEquipped);
             equipmentManager.onSecondaryEquipped.AddListener(OnSecondaryEquipped);
+            equipmentManager.onMeleeEquipped.AddListener(OnMeleeEquipped);
+            equipmentManager.onMeleeUnequipped.AddListener(OnMeleeUnequipped);
+
+            // Initialize current state
+            OnPrimaryEquipped(equipmentManager.GetPrimaryWeapon());
+            OnSecondaryEquipped(equipmentManager.GetSecondaryWeapon());
+            OnMeleeEquipped(equipmentManager.GetMeleeWeapon());
         }
     }
 
@@ -37,6 +46,8 @@ public class HotbarUIToolkit : MonoBehaviour
         {
             equipmentManager.onPrimaryEquipped.RemoveListener(OnPrimaryEquipped);
             equipmentManager.onSecondaryEquipped.RemoveListener(OnSecondaryEquipped);
+            equipmentManager.onMeleeEquipped.RemoveListener(OnMeleeEquipped);
+            equipmentManager.onMeleeUnequipped.RemoveListener(OnMeleeUnequipped);
         }
     }
 
@@ -86,5 +97,38 @@ public class HotbarUIToolkit : MonoBehaviour
             Image icon = secondarySlot.Q<Image>(className: "secondary-icon");
             icon.style.display = DisplayStyle.None;
         }
+    }
+
+    private void OnMeleeEquipped(MeleeWeapon melee)
+    {
+        if (meleeSlot == null)
+            return;
+
+        Image icon = meleeSlot.Q<Image>(className: "melee-icon");
+        if (icon == null)
+            return;
+
+        if (melee != null)
+        {
+            MeleeWeaponItem meleeItem = melee.GetWeaponItem();
+            if (meleeItem != null && meleeItem.Icon != null)
+            {
+                icon.sprite = meleeItem.Icon;
+                icon.style.display = DisplayStyle.Flex;
+                return;
+            }
+        }
+
+        icon.style.display = DisplayStyle.None;
+    }
+
+    private void OnMeleeUnequipped()
+    {
+        if (meleeSlot == null)
+            return;
+
+        Image icon = meleeSlot.Q<Image>(className: "melee-icon");
+        if (icon != null)
+            icon.style.display = DisplayStyle.None;
     }
 }

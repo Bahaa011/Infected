@@ -93,6 +93,11 @@ public class InjuryStatusUIToolkit : MonoBehaviour
             player = FindFirstObjectByType<Player>();
 
         bool shouldBeOpen = InventoryUIToolkit.IsInventoryOpen;
+
+        // The tabbed inventory now owns the Injury view.
+        if (InventoryUIToolkit.UseTabbedInventoryUI)
+            shouldBeOpen = false;
+
         if (shouldBeOpen != isUIOpen)
             SetUIOpen(shouldBeOpen);
 

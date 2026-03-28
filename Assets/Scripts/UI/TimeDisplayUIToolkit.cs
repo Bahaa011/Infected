@@ -35,8 +35,8 @@ public class TimeDisplayUIToolkit : MonoBehaviour
         {
             dayPhaseLabel.text = dayNightManager.IsDay() ? "DAY" : "NIGHT";
             dayPhaseLabel.style.color = dayNightManager.IsDay() ? 
-                new StyleColor(new Color(255, 200, 0)) : 
-                new StyleColor(new Color(100, 100, 150));
+                new StyleColor(new Color(0.67f, 0.92f, 0.49f, 1f)) : 
+                new StyleColor(new Color(0.72f, 0.58f, 1f, 1f));
         }
     }
 }

@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Events;
+using System.Collections.Generic;
 
 public class Player : MonoBehaviour
 {
@@ -27,12 +28,23 @@ public class Player : MonoBehaviour
     [SerializeField] private InputActionReference crouchAction;
     [SerializeField] private InputActionReference aimAction;
 
+    [Header("Brawl (Unarmed)")]
+    [SerializeField] private float punchDamage = 12f;
+    [SerializeField] private float punchRange = 1.6f;
+    [SerializeField] private float punchHitRadius = 0.55f;
+    [SerializeField] private float punchCooldown = 0.45f;
+    [SerializeField] private Transform punchOrigin;
+    [SerializeField] private LayerMask punchHitLayers = ~0;
+
     private float timeSinceDamage = 0f;
     private bool isAlive = true;
     private bool isCrouching = false;
     private bool isAiming = false;
+    private bool isBrawling = false;
     private bool isCurrentlySprinting = false;
     private bool isSprintInputPressed = false;
+    private float lastPunchTime = -999f;
+    private InputAction attackAction;
 
     public UnityEvent<float, float> onHealthChanged; // Current, Max
     public UnityEvent<float> onDamageReceived; // Damage amount
@@ -42,6 +54,7 @@ public class Player : MonoBehaviour
     public UnityEvent<float, float> onStaminaChanged; // Current, Max
 
     private ThirdPersonController thirdPersonController;
+    private AnimationController animationController;
     private Animator animator;
     private Inventory inventory;
     private EquipmentManager equipmentManager;
@@ -54,12 +67,17 @@ public class Player : MonoBehaviour
         currentHealth = maxHealth;
         currentStamina = maxStamina;
         thirdPersonController = GetComponent<ThirdPersonController>();
+        animationController = GetComponent<AnimationController>();
         animator = GetComponent<Animator>();
         inventory = GetComponent<Inventory>();
         equipmentManager = GetComponent<EquipmentManager>();
         injurySystem = GetComponent<InjurySystem>();
         playerSkills = GetComponent<PlayerSkills>();
         dayNightManager = FindFirstObjectByType<DayNightManager>();
+
+        var playerInput = GetComponent<PlayerInput>();
+        if (playerInput != null)
+            attackAction = playerInput.actions.FindAction("Attack");
     }
 
     private void OnEnable()
@@ -94,6 +112,7 @@ public class Player : MonoBehaviour
         UpdateVitals();
         UpdateStamina();
         UpdateAimInput();
+        UpdateBrawlInput();
     }
 
     private void UpdateStamina()
@@ -149,9 +168,80 @@ public class Player : MonoBehaviour
 
     private void UpdateAimInput()
     {
-        if (aimAction != null)
+        bool aimPressed = aimAction != null && aimAction.action.IsPressed();
+        bool hasWeaponInHand = HasWeaponInHand();
+
+        if (hasWeaponInHand)
         {
-            isAiming = aimAction.action.IsPressed();
+            isAiming = aimPressed;
+            isBrawling = false;
+        }
+        else
+        {
+            isAiming = false;
+            isBrawling = aimPressed;
+        }
+    }
+
+    private bool HasWeaponInHand()
+    {
+        if (equipmentManager == null)
+            return false;
+
+        return equipmentManager.GetCurrentWeapon() != null || equipmentManager.IsMeleeEquipped();
+    }
+
+    private void UpdateBrawlInput()
+    {
+        if (!isBrawling || attackAction == null)
+            return;
+
+        if (Time.time - lastPunchTime < punchCooldown)
+            return;
+
+        if (attackAction.WasPerformedThisFrame())
+        {
+            PerformPunch();
+            lastPunchTime = Time.time;
+        }
+    }
+
+    private void PerformPunch()
+    {
+        if (animationController != null)
+            animationController.TriggerBrawlPunch();
+
+        Vector3 origin = punchOrigin != null
+            ? punchOrigin.position
+            : transform.position + Vector3.up * 1.1f;
+
+        Vector3 center = origin + transform.forward * punchRange;
+        Collider[] hitColliders = Physics.OverlapSphere(center, punchHitRadius, punchHitLayers, QueryTriggerInteraction.Ignore);
+
+        HashSet<int> hitTargets = new HashSet<int>();
+        foreach (Collider col in hitColliders)
+        {
+            if (col == null)
+                continue;
+            if (col.CompareTag("Player") || col.transform.IsChildOf(transform))
+                continue;
+
+            GameObject target = col.attachedRigidbody != null ? col.attachedRigidbody.gameObject : col.gameObject;
+            int id = target.GetInstanceID();
+            if (hitTargets.Contains(id))
+                continue;
+            hitTargets.Add(id);
+
+            Zombie zombie = target.GetComponent<Zombie>();
+            if (zombie != null)
+            {
+                zombie.OnMeleeHit(punchDamage);
+                continue;
+            }
+
+            IDamageable damageable = target.GetComponent<IDamageable>();
+            if (damageable != null)
+                damageable.TakeDamage(punchDamage);
         }
     }
 
@@ -243,6 +333,7 @@ public class Player : MonoBehaviour
     public bool IsAlive() => isAlive;
     public bool IsCrouching() => isCrouching;
     public bool IsAiming() => isAiming;
+    public bool IsBrawling() => isBrawling;
     public Inventory GetInventory() => inventory;
     public EquipmentManager GetEquipmentManager() => equipmentManager;
     public InjurySystem GetInjurySystem() => injurySystem;
@@ -275,6 +366,20 @@ public class Player : MonoBehaviour
     public void SetSprintInputPressed(bool pressed)
     {
         isSprintInputPressed = pressed;
+    }
+
+    public bool ConsumeStamina(float amount)
+    {
+        if (amount <= 0f)
+            return true;
+
+        if (currentStamina < amount)
+            return false;
+
+        currentStamina -= amount;
+        currentStamina = Mathf.Max(0f, currentStamina);
+        onStaminaChanged?.Invoke(currentStamina, maxStamina);
+        return true;
     }
 
     public PlayerSkills GetPlayerSkills()

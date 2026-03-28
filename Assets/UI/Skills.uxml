@@ -5,69 +5,69 @@
     xmlns:uie="UnityEditor.UIElements"
     xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd"
 >
-    <ui:VisualElement class="skills-panel" style="position: absolute; top: 96px; right: 24px; width: 440px; flex-direction: column; gap: 12px; background-color: rgba(16, 20, 28, 0.94); padding-top: 16px; padding-right: 16px; padding-bottom: 16px; padding-left: 16px; border-radius: 14px; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-top-color: rgba(170, 190, 220, 0.26); border-right-color: rgba(170, 190, 220, 0.26); border-bottom-color: rgba(34, 42, 58, 0.9); border-left-color: rgba(34, 42, 58, 0.9);">
+    <ui:VisualElement class="skills-panel" style="position: absolute; top: 96px; right: 24px; width: 420px; flex-direction: column; gap: 10px; background-color: rgba(14, 18, 24, 0.92); padding-top: 12px; padding-right: 12px; padding-bottom: 12px; padding-left: 12px; border-radius: 12px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(190, 205, 230, 0.24); border-right-color: rgba(190, 205, 230, 0.24); border-bottom-color: rgba(120, 135, 165, 0.14); border-left-color: rgba(120, 135, 165, 0.14);">
         
         <!-- Panel Title -->
-        <ui:Label text="SKILLS" style="font-size: 24px; color: rgb(240, 245, 255); -unity-font-style: bold; margin-bottom: 6px; -unity-text-align: middle-center; letter-spacing: 1px;"/>
+        <ui:Label text="Skills" style="font-size: 16px; color: rgb(240, 245, 255); -unity-font-style: bold; margin-bottom: 4px; -unity-text-align: middle-center;"/>
         <ui:VisualElement style="height: 1px; background-color: rgba(255, 255, 255, 0.12); margin-bottom: 8px;" />
         
         <!-- Weapon Skill (Current Gun) -->
-        <ui:VisualElement class="weapon-skill-section" style="flex-direction: column; gap: 5px; background-color: rgba(28, 34, 46, 0.8); border-radius: 10px; padding-top: 8px; padding-right: 10px; padding-bottom: 8px; padding-left: 10px;">
+        <ui:VisualElement class="weapon-skill-section" style="flex-direction: column; gap: 5px; background-color: rgba(30, 37, 49, 0.92); border-radius: 8px; padding-top: 8px; padding-right: 10px; padding-bottom: 8px; padding-left: 10px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(177, 191, 214, 0.2); border-right-color: rgba(177, 191, 214, 0.2); border-bottom-color: rgba(177, 191, 214, 0.12); border-left-color: rgba(177, 191, 214, 0.12);">
             <ui:VisualElement style="flex-direction: row; justify-content: space-between; align-items: center;">
-                <ui:Label class="skill-name" text="Pistol Accuracy" style="font-size: 14px; color: rgb(255, 200, 100); -unity-font-style: bold;"/>
-                <ui:Label class="skill-level" text="Lvl 1" style="font-size: 14px; color: rgb(200, 200, 100); -unity-font-style: bold;"/>
+                <ui:Label class="skill-name" text="Pistol Accuracy" style="font-size: 12px; color: rgb(170, 235, 125); -unity-font-style: bold;"/>
+                <ui:Label class="skill-level" text="Lvl 1" style="font-size: 12px; color: rgb(230, 235, 245); -unity-font-style: bold;"/>
             </ui:VisualElement>
-            <ui:VisualElement style="height: 20px; background-color: rgba(40, 40, 40, 0.8); border-radius: 4px; border-width: 1px; border-color: rgba(255, 200, 100, 0.5); overflow: hidden; position: relative;">
-                <ui:VisualElement class="skill-bar" style="height: 100%; width: 0%; background-color: rgb(255, 200, 100); border-radius: 3px;"/>
-                <ui:Label class="skill-xp" text="0 / 100" style="position: absolute; right: 8px; top: 50%; translate: 0 -50%; font-size: 10px; color: rgb(255, 255, 255); -unity-font-style: bold;"/>
+            <ui:VisualElement style="height: 16px; background-color: rgba(16, 20, 28, 0.95); border-radius: 4px; border-width: 1px; border-color: rgba(177, 191, 214, 0.25); overflow: hidden; position: relative;">
+                <ui:VisualElement class="skill-bar" style="height: 100%; width: 0%; background-color: rgb(170, 235, 125); border-radius: 3px;"/>
+                <ui:Label class="skill-xp" text="0 / 100" style="position: absolute; right: 8px; top: 50%; translate: 0 -50%; font-size: 9px; color: rgb(255, 255, 255); -unity-font-style: bold;"/>
             </ui:VisualElement>
         </ui:VisualElement>
         
         <!-- Stamina Skill -->
-        <ui:VisualElement class="stamina-skill-section" style="flex-direction: column; gap: 5px; background-color: rgba(28, 34, 46, 0.8); border-radius: 10px; padding-top: 8px; padding-right: 10px; padding-bottom: 8px; padding-left: 10px;">
+        <ui:VisualElement class="stamina-skill-section" style="flex-direction: column; gap: 5px; background-color: rgba(30, 37, 49, 0.92); border-radius: 8px; padding-top: 8px; padding-right: 10px; padding-bottom: 8px; padding-left: 10px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(177, 191, 214, 0.2); border-right-color: rgba(177, 191, 214, 0.2); border-bottom-color: rgba(177, 191, 214, 0.12); border-left-color: rgba(177, 191, 214, 0.12);">
             <ui:VisualElement style="flex-direction: row; justify-content: space-between; align-items: center;">
-                <ui:Label text="Stamina" style="font-size: 14px; color: rgb(100, 200, 255); -unity-font-style: bold;"/>
-                <ui:Label class="stamina-level" text="Lvl 1" style="font-size: 14px; color: rgb(100, 200, 255); -unity-font-style: bold;"/>
+                <ui:Label text="Stamina" style="font-size: 12px; color: rgb(170, 235, 125); -unity-font-style: bold;"/>
+                <ui:Label class="stamina-level" text="Lvl 1" style="font-size: 12px; color: rgb(230, 235, 245); -unity-font-style: bold;"/>
             </ui:VisualElement>
-            <ui:VisualElement style="height: 20px; background-color: rgba(40, 40, 40, 0.8); border-radius: 4px; border-width: 1px; border-color: rgba(100, 200, 255, 0.5); overflow: hidden; position: relative;">
-                <ui:VisualElement class="stamina-bar" style="height: 100%; width: 0%; background-color: rgb(100, 200, 255); border-radius: 3px;"/>
-                <ui:Label class="stamina-xp" text="0 / 60" style="position: absolute; right: 8px; top: 50%; translate: 0 -50%; font-size: 10px; color: rgb(255, 255, 255); -unity-font-style: bold;"/>
+            <ui:VisualElement style="height: 16px; background-color: rgba(16, 20, 28, 0.95); border-radius: 4px; border-width: 1px; border-color: rgba(177, 191, 214, 0.25); overflow: hidden; position: relative;">
+                <ui:VisualElement class="stamina-bar" style="height: 100%; width: 0%; background-color: rgb(170, 235, 125); border-radius: 3px;"/>
+                <ui:Label class="stamina-xp" text="0 / 60" style="position: absolute; right: 8px; top: 50%; translate: 0 -50%; font-size: 9px; color: rgb(255, 255, 255); -unity-font-style: bold;"/>
             </ui:VisualElement>
         </ui:VisualElement>
         
         <!-- Metabolism Skill -->
-        <ui:VisualElement class="metabolism-skill-section" style="flex-direction: column; gap: 5px; background-color: rgba(28, 34, 46, 0.8); border-radius: 10px; padding-top: 8px; padding-right: 10px; padding-bottom: 8px; padding-left: 10px;">
+        <ui:VisualElement class="metabolism-skill-section" style="flex-direction: column; gap: 5px; background-color: rgba(30, 37, 49, 0.92); border-radius: 8px; padding-top: 8px; padding-right: 10px; padding-bottom: 8px; padding-left: 10px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(177, 191, 214, 0.2); border-right-color: rgba(177, 191, 214, 0.2); border-bottom-color: rgba(177, 191, 214, 0.12); border-left-color: rgba(177, 191, 214, 0.12);">
             <ui:VisualElement style="flex-direction: row; justify-content: space-between; align-items: center;">
                 <ui:Label text="Metabolism" style="font-size: 14px; color: rgb(255, 150, 100); -unity-font-style: bold;"/>
                 <ui:Label class="metabolism-level" text="Lvl 1" style="font-size: 14px; color: rgb(255, 150, 100); -unity-font-style: bold;"/>
             </ui:VisualElement>
-            <ui:VisualElement style="height: 20px; background-color: rgba(40, 40, 40, 0.8); border-radius: 4px; border-width: 1px; border-color: rgba(255, 150, 100, 0.5); overflow: hidden; position: relative;">
-                <ui:VisualElement class="metabolism-bar" style="height: 100%; width: 0%; background-color: rgb(255, 150, 100); border-radius: 3px;"/>
-                <ui:Label class="metabolism-xp" text="0 / 10" style="position: absolute; right: 8px; top: 50%; translate: 0 -50%; font-size: 10px; color: rgb(255, 255, 255); -unity-font-style: bold;"/>
+            <ui:VisualElement style="height: 16px; background-color: rgba(16, 20, 28, 0.95); border-radius: 4px; border-width: 1px; border-color: rgba(177, 191, 214, 0.25); overflow: hidden; position: relative;">
+                <ui:VisualElement class="metabolism-bar" style="height: 100%; width: 0%; background-color: rgb(129, 210, 255); border-radius: 3px;"/>
+                <ui:Label class="metabolism-xp" text="0 / 10" style="position: absolute; right: 8px; top: 50%; translate: 0 -50%; font-size: 9px; color: rgb(255, 255, 255); -unity-font-style: bold;"/>
             </ui:VisualElement>
         </ui:VisualElement>
         
         <!-- Vitality Skill -->
-        <ui:VisualElement class="vitality-skill-section" style="flex-direction: column; gap: 5px; background-color: rgba(28, 34, 46, 0.8); border-radius: 10px; padding-top: 8px; padding-right: 10px; padding-bottom: 8px; padding-left: 10px;">
+        <ui:VisualElement class="vitality-skill-section" style="flex-direction: column; gap: 5px; background-color: rgba(30, 37, 49, 0.92); border-radius: 8px; padding-top: 8px; padding-right: 10px; padding-bottom: 8px; padding-left: 10px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(177, 191, 214, 0.2); border-right-color: rgba(177, 191, 214, 0.2); border-bottom-color: rgba(177, 191, 214, 0.12); border-left-color: rgba(177, 191, 214, 0.12);">
             <ui:VisualElement style="flex-direction: row; justify-content: space-between; align-items: center;">
                 <ui:Label text="Vitality" style="font-size: 14px; color: rgb(255, 100, 100); -unity-font-style: bold;"/>
                 <ui:Label class="vitality-level" text="Lvl 1" style="font-size: 14px; color: rgb(255, 100, 100); -unity-font-style: bold;"/>
             </ui:VisualElement>
-            <ui:VisualElement style="height: 20px; background-color: rgba(40, 40, 40, 0.8); border-radius: 4px; border-width: 1px; border-color: rgba(255, 100, 100, 0.5); overflow: hidden; position: relative;">
-                <ui:VisualElement class="vitality-bar" style="height: 100%; width: 0%; background-color: rgb(255, 100, 100); border-radius: 3px;"/>
-                <ui:Label class="vitality-xp" text="0 / 100" style="position: absolute; right: 8px; top: 50%; translate: 0 -50%; font-size: 10px; color: rgb(255, 255, 255); -unity-font-style: bold;"/>
+            <ui:VisualElement style="height: 16px; background-color: rgba(16, 20, 28, 0.95); border-radius: 4px; border-width: 1px; border-color: rgba(177, 191, 214, 0.25); overflow: hidden; position: relative;">
+                <ui:VisualElement class="vitality-bar" style="height: 100%; width: 0%; background-color: rgb(245, 108, 148); border-radius: 3px;"/>
+                <ui:Label class="vitality-xp" text="0 / 100" style="position: absolute; right: 8px; top: 50%; translate: 0 -50%; font-size: 9px; color: rgb(255, 255, 255); -unity-font-style: bold;"/>
             </ui:VisualElement>
         </ui:VisualElement>
         
         <!-- Stealth Skill -->
-        <ui:VisualElement class="stealth-skill-section" style="flex-direction: column; gap: 5px; background-color: rgba(28, 34, 46, 0.8); border-radius: 10px; padding-top: 8px; padding-right: 10px; padding-bottom: 8px; padding-left: 10px;">
+        <ui:VisualElement class="stealth-skill-section" style="flex-direction: column; gap: 5px; background-color: rgba(30, 37, 49, 0.92); border-radius: 8px; padding-top: 8px; padding-right: 10px; padding-bottom: 8px; padding-left: 10px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(177, 191, 214, 0.2); border-right-color: rgba(177, 191, 214, 0.2); border-bottom-color: rgba(177, 191, 214, 0.12); border-left-color: rgba(177, 191, 214, 0.12);">
             <ui:VisualElement style="flex-direction: row; justify-content: space-between; align-items: center;">
                 <ui:Label text="Stealth" style="font-size: 14px; color: rgb(150, 100, 200); -unity-font-style: bold;"/>
                 <ui:Label class="stealth-level" text="Lvl 1" style="font-size: 14px; color: rgb(150, 100, 200); -unity-font-style: bold;"/>
             </ui:VisualElement>
-            <ui:VisualElement style="height: 20px; background-color: rgba(40, 40, 40, 0.8); border-radius: 4px; border-width: 1px; border-color: rgba(150, 100, 200, 0.5); overflow: hidden; position: relative;">
-                <ui:VisualElement class="stealth-bar" style="height: 100%; width: 0%; background-color: rgb(150, 100, 200); border-radius: 3px;"/>
-                <ui:Label class="stealth-xp" text="0 / 120" style="position: absolute; right: 8px; top: 50%; translate: 0 -50%; font-size: 10px; color: rgb(255, 255, 255); -unity-font-style: bold;"/>
+            <ui:VisualElement style="height: 16px; background-color: rgba(16, 20, 28, 0.95); border-radius: 4px; border-width: 1px; border-color: rgba(177, 191, 214, 0.25); overflow: hidden; position: relative;">
+                <ui:VisualElement class="stealth-bar" style="height: 100%; width: 0%; background-color: rgb(186, 127, 255); border-radius: 3px;"/>
+                <ui:Label class="stealth-xp" text="0 / 120" style="position: absolute; right: 8px; top: 50%; translate: 0 -50%; font-size: 9px; color: rgb(255, 255, 255); -unity-font-style: bold;"/>
             </ui:VisualElement>
         </ui:VisualElement>
         

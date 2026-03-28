@@ -6,35 +6,29 @@ public class VitalsUIToolkit : MonoBehaviour
     [SerializeField] private UIDocument uiDocument;
     [SerializeField] private Player player;
 
-    private VisualElement healthBar;
-    private VisualElement hungerBar;
-    private VisualElement thirstBar;
-    private VisualElement staminaBar;
-    private Label healthValue;
-    private Label hungerValue;
-    private Label thirstValue;
-    private Label staminaValue;
+    private RadialProgressElement healthWheel;
+    private RadialProgressElement hungerWheel;
+    private RadialProgressElement thirstWheel;
+    private RadialProgressElement staminaWheel;
 
     private void Awake()
     {
         if (uiDocument == null)
             uiDocument = GetComponent<UIDocument>();
-        
+
         var root = uiDocument.rootVisualElement;
-        healthBar = root.Q<VisualElement>(className: "health-bar");
-        hungerBar = root.Q<VisualElement>(className: "hunger-bar");
-        thirstBar = root.Q<VisualElement>(className: "thirst-bar");
-        staminaBar = root.Q<VisualElement>(className: "stamina-bar");
-        healthValue = root.Q<Label>(className: "health-value");
-        hungerValue = root.Q<Label>(className: "hunger-value");
-        thirstValue = root.Q<Label>(className: "thirst-value");
-        staminaValue = root.Q<Label>(className: "stamina-value");
+
+        var panel = root.Q<VisualElement>(className: "vitals-panel");
+        if (panel == null)
+            panel = root;
+
+        BuildCircularVitals(panel);
     }
 
     private void OnEnable()
     {
         if (player == null)
-            player = FindFirstObjectByType<Player>();
+            player = FindAnyObjectByType<Player>();
         
         if (player != null)
         {
@@ -64,37 +58,190 @@ public class VitalsUIToolkit : MonoBehaviour
 
     private void OnHealthChanged(float current, float max)
     {
-        float percent = Mathf.Clamp01(current / max) * 100f;
-        if (healthBar != null)
-            healthBar.style.width = new Length(percent, LengthUnit.Percent);
-        if (healthValue != null)
-            healthValue.text = $"{current:F0}/{max:F0}";
+        float progress = max <= 0f ? 0f : Mathf.Clamp01(current / max);
+        if (healthWheel != null)
+            healthWheel.SetProgress(progress);
     }
 
     private void OnHungerChanged(float current, float max)
     {
-        float percent = Mathf.Clamp01(current / max) * 100f;
-        if (hungerBar != null)
-            hungerBar.style.width = new Length(percent, LengthUnit.Percent);
-        if (hungerValue != null)
-            hungerValue.text = $"{current:F0}/{max:F0}";
+        float progress = max <= 0f ? 0f : Mathf.Clamp01(current / max);
+        if (hungerWheel != null)
+            hungerWheel.SetProgress(progress);
     }
 
     private void OnThirstChanged(float current, float max)
     {
-        float percent = Mathf.Clamp01(current / max) * 100f;
-        if (thirstBar != null)
-            thirstBar.style.width = new Length(percent, LengthUnit.Percent);
-        if (thirstValue != null)
-            thirstValue.text = $"{current:F0}/{max:F0}";
+        float progress = max <= 0f ? 0f : Mathf.Clamp01(current / max);
+        if (thirstWheel != null)
+            thirstWheel.SetProgress(progress);
     }
 
     private void OnStaminaChanged(float current, float max)
     {
-        float percent = Mathf.Clamp01(current / max) * 100f;
-        if (staminaBar != null)
-            staminaBar.style.width = new Length(percent, LengthUnit.Percent);
-        if (staminaValue != null)
-            staminaValue.text = $"{current:F0}/{max:F0}";
+        float progress = max <= 0f ? 0f : Mathf.Clamp01(current / max);
+        if (staminaWheel != null)
+            staminaWheel.SetProgress(progress);
+    }
+
+    private void BuildCircularVitals(VisualElement panel)
+    {
+        panel.Clear();
+
+        // Keep vitals floating, no background card.
+        panel.style.backgroundColor = new StyleColor(new Color(0f, 0f, 0f, 0f));
+        panel.style.borderTopWidth = 0;
+        panel.style.borderRightWidth = 0;
+        panel.style.borderBottomWidth = 0;
+        panel.style.borderLeftWidth = 0;
+        panel.style.paddingTop = 0;
+        panel.style.paddingRight = 0;
+        panel.style.paddingBottom = 0;
+        panel.style.paddingLeft = 0;
+        panel.style.width = 286;
+        panel.style.height = 202;
+
+        var cluster = new VisualElement();
+        cluster.style.position = Position.Relative;
+        cluster.style.width = 286;
+        cluster.style.height = 202;
+        panel.Add(cluster);
+
+        var healthNode = CreateVitalCircle("HP", new Color(0.88f, 0.33f, 0.42f, 1f), 112f, 8f, 12, 13);
+        var hungerNode = CreateVitalCircle("HU", new Color(0.67f, 0.89f, 0.38f, 1f), 58f, 5f, 9, 10);
+        var thirstNode = CreateVitalCircle("TH", new Color(0.42f, 0.73f, 1f, 1f), 58f, 5f, 9, 10);
+        var staminaNode = CreateVitalCircle("ST", new Color(0.73f, 0.5f, 1f, 1f), 58f, 5f, 9, 10);
+
+        healthWheel = healthNode.wheel;
+        hungerWheel = hungerNode.wheel;
+        thirstWheel = thirstNode.wheel;
+        staminaWheel = staminaNode.wheel;
+
+        // Subnautica-like shape: large top-right with three smaller around lower-left arc.
+        PlaceNode(cluster, healthNode.container, 104, 12);
+        PlaceNode(cluster, hungerNode.container, 36, 36);
+        PlaceNode(cluster, thirstNode.container, 25, 112);
+        PlaceNode(cluster, staminaNode.container, 98, 129);
+    }
+
+    private void PlaceNode(VisualElement parent, VisualElement node, float left, float top)
+    {
+        node.style.position = Position.Absolute;
+        node.style.left = left;
+        node.style.top = top;
+        parent.Add(node);
+    }
+
+    private (VisualElement container, RadialProgressElement wheel) CreateVitalCircle(
+        string shortName,
+        Color accent,
+        float size,
+        float thickness,
+        int shortNameFont,
+        int valueFont)
+    {
+        var container = new VisualElement();
+        container.style.width = size;
+        container.style.height = size;
+        container.style.flexDirection = FlexDirection.Column;
+        container.style.alignItems = Align.Center;
+        container.style.justifyContent = Justify.FlexStart;
+
+        var circleWrap = new VisualElement();
+        circleWrap.style.width = size;
+        circleWrap.style.height = size;
+        circleWrap.style.position = Position.Relative;
+        circleWrap.style.backgroundColor = new StyleColor(new Color(0.05f, 0.08f, 0.12f, 0.42f));
+        float radius = size * 0.5f;
+        circleWrap.style.borderTopLeftRadius = radius;
+        circleWrap.style.borderTopRightRadius = radius;
+        circleWrap.style.borderBottomLeftRadius = radius;
+        circleWrap.style.borderBottomRightRadius = radius;
+        circleWrap.style.borderTopWidth = 1;
+        circleWrap.style.borderRightWidth = 1;
+        circleWrap.style.borderBottomWidth = 1;
+        circleWrap.style.borderLeftWidth = 1;
+        circleWrap.style.borderTopColor = new StyleColor(new Color(0.76f, 0.84f, 0.96f, 0.26f));
+        circleWrap.style.borderRightColor = new StyleColor(new Color(0.76f, 0.84f, 0.96f, 0.26f));
+        circleWrap.style.borderBottomColor = new StyleColor(new Color(0.76f, 0.84f, 0.96f, 0.14f));
+        circleWrap.style.borderLeftColor = new StyleColor(new Color(0.76f, 0.84f, 0.96f, 0.14f));
+
+        var glowRing = new VisualElement();
+        glowRing.style.position = Position.Absolute;
+        glowRing.style.left = -3;
+        glowRing.style.top = -3;
+        glowRing.style.width = size + 6;
+        glowRing.style.height = size + 6;
+        float glowRadius = (size + 6f) * 0.5f;
+        glowRing.style.borderTopLeftRadius = glowRadius;
+        glowRing.style.borderTopRightRadius = glowRadius;
+        glowRing.style.borderBottomLeftRadius = glowRadius;
+        glowRing.style.borderBottomRightRadius = glowRadius;
+        glowRing.style.borderTopWidth = 1;
+        glowRing.style.borderRightWidth = 1;
+        glowRing.style.borderBottomWidth = 1;
+        glowRing.style.borderLeftWidth = 1;
+        glowRing.style.borderTopColor = new StyleColor(new Color(accent.r, accent.g, accent.b, 0.34f));
+        glowRing.style.borderRightColor = new StyleColor(new Color(accent.r, accent.g, accent.b, 0.34f));
+        glowRing.style.borderBottomColor = new StyleColor(new Color(accent.r, accent.g, accent.b, 0.18f));
+        glowRing.style.borderLeftColor = new StyleColor(new Color(accent.r, accent.g, accent.b, 0.18f));
+
+        var wheel = new RadialProgressElement();
+        wheel.style.position = Position.Absolute;
+        float wheelInset = size * 0.13f;
+        float wheelSize = size - wheelInset * 2f;
+        wheel.style.left = wheelInset;
+        wheel.style.top = wheelInset;
+        wheel.style.width = wheelSize;
+        wheel.style.height = wheelSize;
+        wheel.SetThickness(thickness);
+        wheel.SetTrackColor(new Color(0.48f, 0.63f, 0.82f, 0.24f));
+        wheel.SetFillColor(accent);
+        wheel.SetProgress(1f);
+
+        var innerCore = new VisualElement();
+        innerCore.style.position = Position.Absolute;
+        float coreInset = size * 0.31f;
+        float coreSize = size - coreInset * 2f;
+        innerCore.style.left = coreInset;
+        innerCore.style.top = coreInset;
+        innerCore.style.width = coreSize;
+        innerCore.style.height = coreSize;
+        float coreRadius = coreSize * 0.5f;
+        innerCore.style.borderTopLeftRadius = coreRadius;
+        innerCore.style.borderTopRightRadius = coreRadius;
+        innerCore.style.borderBottomLeftRadius = coreRadius;
+        innerCore.style.borderBottomRightRadius = coreRadius;
+        innerCore.style.backgroundColor = new StyleColor(new Color(0.06f, 0.1f, 0.15f, 0.82f));
+        innerCore.style.borderTopWidth = 1;
+        innerCore.style.borderRightWidth = 1;
+        innerCore.style.borderBottomWidth = 1;
+        innerCore.style.borderLeftWidth = 1;
+        innerCore.style.borderTopColor = new StyleColor(new Color(0.74f, 0.84f, 0.98f, 0.22f));
+        innerCore.style.borderRightColor = new StyleColor(new Color(0.74f, 0.84f, 0.98f, 0.22f));
+        innerCore.style.borderBottomColor = new StyleColor(new Color(0.74f, 0.84f, 0.98f, 0.12f));
+        innerCore.style.borderLeftColor = new StyleColor(new Color(0.74f, 0.84f, 0.98f, 0.12f));
+
+        var marker = new VisualElement();
+        marker.style.position = Position.Absolute;
+        marker.style.left = size * 0.47f;
+        marker.style.top = size * 0.06f;
+        float markerSize = Mathf.Max(4f, size * 0.06f);
+        marker.style.width = markerSize;
+        marker.style.height = markerSize;
+        float markerRadius = markerSize * 0.5f;
+        marker.style.borderTopLeftRadius = markerRadius;
+        marker.style.borderTopRightRadius = markerRadius;
+        marker.style.borderBottomLeftRadius = markerRadius;
+        marker.style.borderBottomRightRadius = markerRadius;
+        marker.style.backgroundColor = new StyleColor(accent);
+
+        circleWrap.Add(glowRing);
+        circleWrap.Add(wheel);
+        circleWrap.Add(innerCore);
+        circleWrap.Add(marker);
+        container.Add(circleWrap);
+
+        return (container, wheel);
     }
 }

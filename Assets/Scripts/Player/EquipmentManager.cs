@@ -12,6 +12,7 @@ public class EquipmentManager : MonoBehaviour
     [SerializeField] private Transform pistolHandSlot;
     [SerializeField] private Transform primaryRestingSlot;
     [SerializeField] private Transform secondaryRestingSlot;
+    [SerializeField] private Transform meleeRestingSlot;
     [SerializeField] private InputActionReference switchWeaponAction;
     [Header("Weapon Hand Placement")]
     [Tooltip("Local rotation (in degrees) to apply to weapon when equipped in hand.")]
@@ -63,8 +64,10 @@ public class EquipmentManager : MonoBehaviour
 
         // Check for melee weapon in either hand slot
         MeleeWeapon meleeInHand = null;
+        if (meleeRestingSlot != null)
+            meleeInHand = meleeRestingSlot.GetComponentInChildren<MeleeWeapon>();
         if (pistolHandSlot != null)
-            meleeInHand = pistolHandSlot.GetComponentInChildren<MeleeWeapon>();
+            meleeInHand = meleeInHand ?? pistolHandSlot.GetComponentInChildren<MeleeWeapon>();
         if (meleeInHand == null && assaultHandSlot != null)
             meleeInHand = assaultHandSlot.GetComponentInChildren<MeleeWeapon>();
 
@@ -106,6 +109,10 @@ public class EquipmentManager : MonoBehaviour
             EquipSecondary();
         }
         else if (Keyboard.current.digit3Key.wasPressedThisFrame)
+        {
+            SelectMelee();
+        }
+        else if (Keyboard.current.digit4Key.wasPressedThisFrame)
         {
             HolsterAll();
         }
@@ -175,6 +182,10 @@ public class EquipmentManager : MonoBehaviour
                 if (weaponLayer >= 0) SetLayerRecursively(currentWeaponInHand.gameObject, 0);
             }
         }
+
+        // Holster melee if it is currently in hand
+        if (isMeleeEquipped)
+            HolsterMeleeToRestingSlot();
 
         // Instantiate new primary weapon in hand slot (not resting slot)
         GameObject weaponInstance = Instantiate(gunItem.GunPrefab, targetHandSlot);
@@ -273,6 +284,10 @@ public class EquipmentManager : MonoBehaviour
             }
         }
 
+        // Holster melee if it is currently in hand
+        if (isMeleeEquipped)
+            HolsterMeleeToRestingSlot();
+
         // Instantiate new secondary weapon in hand slot (not resting slot)
         GameObject weaponInstance = Instantiate(gunItem.GunPrefab, targetHandSlot);
         weaponInstance.name = gunItem.ItemName;
@@ -346,6 +361,9 @@ public class EquipmentManager : MonoBehaviour
         if (currentWeaponInHand == equippedPrimaryWeapon)
             return; // Already equipped
 
+        if (isMeleeEquipped)
+            HolsterMeleeToRestingSlot();
+
         // Holster current weapon
         if (currentWeaponInHand != null)
         {
@@ -376,6 +394,9 @@ public class EquipmentManager : MonoBehaviour
 
         if (currentWeaponInHand == equippedSecondaryWeapon)
             return; // Already equipped
+
+        if (isMeleeEquipped)
+            HolsterMeleeToRestingSlot();
 
         // Holster current weapon
         if (currentWeaponInHand != null)
@@ -415,6 +436,51 @@ public class EquipmentManager : MonoBehaviour
 
             onWeaponSwitched?.Invoke(null);
         }
+
+        if (isMeleeEquipped)
+        {
+            HolsterMeleeToRestingSlot();
+            onWeaponSwitched?.Invoke(null);
+        }
+    }
+
+    public void SelectMelee()
+    {
+        if (equippedMeleeWeapon == null)
+            return;
+
+        if (isMeleeEquipped)
+            return;
+
+        // Holster current gun if needed
+        if (currentWeaponInHand != null)
+        {
+            Transform restingSlot = currentWeaponInHand == equippedPrimaryWeapon ? primaryRestingSlot : secondaryRestingSlot;
+            currentWeaponInHand.transform.SetParent(restingSlot);
+            currentWeaponInHand.transform.localPosition = Vector3.zero;
+            currentWeaponInHand.transform.localRotation = Quaternion.identity;
+            currentWeaponInHand.gameObject.SetActive(true);
+            currentWeaponInHand.Unequip();
+            if (weaponLayer >= 0) SetLayerRecursively(currentWeaponInHand.gameObject, 0);
+            currentWeaponInHand = null;
+        }
+
+        Transform handSlot = GetDefaultHandSlot();
+        if (handSlot == null)
+        {
+            Debug.LogError("[EquipmentManager] Cannot select melee: no hand slot is assigned!");
+            return;
+        }
+
+        equippedMeleeWeapon.transform.SetParent(handSlot);
+        equippedMeleeWeapon.transform.localPosition = Vector3.zero;
+        equippedMeleeWeapon.transform.localRotation = Quaternion.Euler(weaponHandRotation);
+        equippedMeleeWeapon.gameObject.SetActive(true);
+        if (weaponLayer >= 0) SetLayerRecursively(equippedMeleeWeapon.gameObject, weaponLayer);
+        equippedMeleeWeapon.Equip();
+        isMeleeEquipped = true;
+
+        onWeaponSwitched?.Invoke(null);
     }
 
     // Recursively set layer for weapon and all children
@@ -464,6 +530,24 @@ public class EquipmentManager : MonoBehaviour
         return GetHandSlotForGunType(gunPrefabComponent.GetGunType());
     }
 
+    private void HolsterMeleeToRestingSlot()
+    {
+        if (equippedMeleeWeapon == null)
+            return;
+
+        Transform restingSlot = meleeRestingSlot != null ? meleeRestingSlot : GetDefaultHandSlot();
+        if (restingSlot == null)
+            return;
+
+        equippedMeleeWeapon.transform.SetParent(restingSlot);
+        equippedMeleeWeapon.transform.localPosition = Vector3.zero;
+        equippedMeleeWeapon.transform.localRotation = Quaternion.identity;
+        equippedMeleeWeapon.gameObject.SetActive(true);
+        equippedMeleeWeapon.Unequip();
+        if (weaponLayer >= 0) SetLayerRecursively(equippedMeleeWeapon.gameObject, 0);
+        isMeleeEquipped = false;
+    }
+
     public Gun GetCurrentWeapon() => currentWeaponInHand;
     public Gun GetPrimaryWeapon() => equippedPrimaryWeapon;
     public Gun GetSecondaryWeapon() => equippedSecondaryWeapon;
@@ -494,8 +578,10 @@ public class EquipmentManager : MonoBehaviour
         {
             if (equippedMeleeWeapon != null)
             {
-                equippedMeleeWeapon.Unequip();
-                equippedMeleeWeapon.gameObject.SetActive(false);
+                if (isMeleeEquipped)
+                    equippedMeleeWeapon.Unequip();
+
+                Destroy(equippedMeleeWeapon.gameObject);
                 equippedMeleeWeapon = null;
                 isMeleeEquipped = false;
                 onMeleeUnequipped?.Invoke();
@@ -510,8 +596,8 @@ public class EquipmentManager : MonoBehaviour
             return false;
         }
 
-        Transform meleeHandSlot = GetDefaultHandSlot();
-        if (meleeHandSlot == null)
+        Transform meleeSlot = meleeRestingSlot != null ? meleeRestingSlot : GetDefaultHandSlot();
+        if (meleeSlot == null)
         {
             Debug.LogError("[EquipmentManager] Cannot equip: no hand slot is assigned!");
             return false;
@@ -529,27 +615,26 @@ public class EquipmentManager : MonoBehaviour
             Destroy(equippedMeleeWeapon.gameObject);
 
         // Instantiate new melee weapon
-        GameObject weaponInstance = Instantiate(meleeItem.WeaponPrefab, meleeHandSlot);
+        GameObject weaponInstance = Instantiate(meleeItem.WeaponPrefab, meleeSlot);
         weaponInstance.name = meleeItem.ItemName;
         weaponInstance.SetActive(true);
         weaponInstance.transform.localPosition = Vector3.zero;
-        weaponInstance.transform.localRotation = Quaternion.Euler(weaponHandRotation);
-        if (weaponLayer >= 0) SetLayerRecursively(weaponInstance, weaponLayer);
+        weaponInstance.transform.localRotation = Quaternion.identity;
+        if (weaponLayer >= 0) SetLayerRecursively(weaponInstance, 0);
 
         MeleeWeapon newWeapon = weaponInstance.GetComponent<MeleeWeapon>();
         if (newWeapon != null)
         {
             newWeapon.SetWeaponItem(meleeItem);
             equippedMeleeWeapon = newWeapon;
-            currentWeaponInHand = null; // Clear gun reference
-            isMeleeEquipped = true;
-
-            // Equip the weapon
-            newWeapon.Equip();
+            isMeleeEquipped = false;
 
             Debug.Log($"[EquipmentManager] Melee weapon {meleeItem.ItemName} equipped and active!");
 
             onMeleeEquipped?.Invoke(equippedMeleeWeapon);
+
+            // Auto-select newly equipped melee so the player sees immediate feedback.
+            SelectMelee();
             return true;
         }
 
@@ -558,6 +643,8 @@ public class EquipmentManager : MonoBehaviour
 
     public bool IsMeleeEquipped() => isMeleeEquipped && equippedMeleeWeapon != null;
 
+    public bool HasMeleeWeapon() => equippedMeleeWeapon != null;
+
     public MeleeWeapon GetMeleeWeapon() => equippedMeleeWeapon;
 
     public object GetCurrentWeaponInHand()
@@ -565,5 +652,141 @@ public class EquipmentManager : MonoBehaviour
         if (isMeleeEquipped)
             return equippedMeleeWeapon;
         return currentWeaponInHand;
+    }
+
+    public void HandleDroppedInventoryItem(Item droppedItem, int quantity)
+    {
+        if (droppedItem == null || quantity <= 0)
+            return;
+
+        int remaining = quantity;
+
+        // Prioritize removing what is currently in hand to avoid visual duplication.
+        if (remaining > 0 && droppedItem is GunItem droppedGunItem)
+        {
+            if (currentWeaponInHand == equippedPrimaryWeapon && GunMatches(equippedPrimaryWeapon, droppedGunItem))
+            {
+                RemovePrimaryWeaponInstance();
+                remaining--;
+            }
+            else if (currentWeaponInHand == equippedSecondaryWeapon && GunMatches(equippedSecondaryWeapon, droppedGunItem))
+            {
+                RemoveSecondaryWeaponInstance();
+                remaining--;
+            }
+
+            if (remaining > 0 && GunMatches(equippedPrimaryWeapon, droppedGunItem))
+            {
+                RemovePrimaryWeaponInstance();
+                remaining--;
+            }
+
+            if (remaining > 0 && GunMatches(equippedSecondaryWeapon, droppedGunItem))
+            {
+                RemoveSecondaryWeaponInstance();
+                remaining--;
+            }
+        }
+
+        if (remaining > 0 && droppedItem is MeleeWeaponItem droppedMeleeItem)
+        {
+            if (MeleeMatches(equippedMeleeWeapon, droppedMeleeItem))
+            {
+                RemoveMeleeWeaponInstance();
+                remaining--;
+            }
+        }
+    }
+
+    private static bool GunMatches(Gun gun, GunItem item)
+    {
+        return gun != null && item != null && gun.GetGunItem() == item;
+    }
+
+    private static bool MeleeMatches(MeleeWeapon melee, MeleeWeaponItem item)
+    {
+        return melee != null && item != null && melee.GetWeaponItem() == item;
+    }
+
+    private void RemovePrimaryWeaponInstance()
+    {
+        if (equippedPrimaryWeapon == null)
+            return;
+
+        bool wasCurrent = currentWeaponInHand == equippedPrimaryWeapon;
+        Destroy(equippedPrimaryWeapon.gameObject);
+        equippedPrimaryWeapon = null;
+        onPrimaryEquipped?.Invoke(null);
+
+        if (wasCurrent)
+        {
+            if (equippedSecondaryWeapon != null)
+            {
+                Transform secondaryHandSlot = GetHandSlotForGun(equippedSecondaryWeapon);
+                equippedSecondaryWeapon.transform.SetParent(secondaryHandSlot);
+                equippedSecondaryWeapon.transform.localPosition = Vector3.zero;
+                equippedSecondaryWeapon.transform.localRotation = Quaternion.Euler(weaponHandRotation);
+                if (weaponLayer >= 0) SetLayerRecursively(equippedSecondaryWeapon.gameObject, weaponLayer);
+                equippedSecondaryWeapon.Equip();
+                currentWeaponInHand = equippedSecondaryWeapon;
+                onWeaponSwitched?.Invoke(currentWeaponInHand);
+            }
+            else
+            {
+                currentWeaponInHand = null;
+                onWeaponSwitched?.Invoke(null);
+            }
+        }
+    }
+
+    private void RemoveSecondaryWeaponInstance()
+    {
+        if (equippedSecondaryWeapon == null)
+            return;
+
+        bool wasCurrent = currentWeaponInHand == equippedSecondaryWeapon;
+        Destroy(equippedSecondaryWeapon.gameObject);
+        equippedSecondaryWeapon = null;
+        onSecondaryEquipped?.Invoke(null);
+
+        if (wasCurrent)
+        {
+            if (equippedPrimaryWeapon != null)
+            {
+                Transform primaryHandSlot = GetHandSlotForGun(equippedPrimaryWeapon);
+                equippedPrimaryWeapon.transform.SetParent(primaryHandSlot);
+                equippedPrimaryWeapon.transform.localPosition = Vector3.zero;
+                equippedPrimaryWeapon.transform.localRotation = Quaternion.Euler(weaponHandRotation);
+                if (weaponLayer >= 0) SetLayerRecursively(equippedPrimaryWeapon.gameObject, weaponLayer);
+                equippedPrimaryWeapon.Equip();
+                currentWeaponInHand = equippedPrimaryWeapon;
+                onWeaponSwitched?.Invoke(currentWeaponInHand);
+            }
+            else
+            {
+                currentWeaponInHand = null;
+                onWeaponSwitched?.Invoke(null);
+            }
+        }
+    }
+
+    private void RemoveMeleeWeaponInstance()
+    {
+        if (equippedMeleeWeapon == null)
+            return;
+
+        bool wasCurrentMelee = isMeleeEquipped;
+        Destroy(equippedMeleeWeapon.gameObject);
+        equippedMeleeWeapon = null;
+        isMeleeEquipped = false;
+        onMeleeUnequipped?.Invoke();
+
+        if (wasCurrentMelee)
+        {
+            if (currentWeaponInHand != null)
+                onWeaponSwitched?.Invoke(currentWeaponInHand);
+            else
+                onWeaponSwitched?.Invoke(null);
+        }
     }
 }

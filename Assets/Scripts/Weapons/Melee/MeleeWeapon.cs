@@ -5,10 +5,10 @@ using System.Collections.Generic;
 
 public class MeleeWeapon : MonoBehaviour
 {
-    public enum WeaponType { Sword, Axe, Hammer, Spear }
+    public enum WeaponType { Bat }
 
     [Header("Weapon Configuration")]
-    [SerializeField] private WeaponType weaponType = WeaponType.Sword;
+    [SerializeField] private WeaponType weaponType = WeaponType.Bat;
     [SerializeField] private Animator animator;
     [SerializeField] private int animatorLayerIndex = 1;
 
@@ -40,6 +40,7 @@ public class MeleeWeapon : MonoBehaviour
     private float lastComboTime = 0f;
     private int weaponLayer = -1;
     private MeleeWeaponItem weaponItem;
+    private const float STAMINA_COST_PER_ATTACK = 15f;
 
     // References
     private InputAction attackAction;
@@ -131,8 +132,7 @@ public class MeleeWeapon : MonoBehaviour
         // Check stamina if available
         if (player != null)
         {
-            float staminaCost = 15f; // Base stamina cost per attack
-            if (player.GetStamina() < staminaCost)
+            if (player.GetStamina() < STAMINA_COST_PER_ATTACK)
                 return false;
         }
 
@@ -147,10 +147,7 @@ public class MeleeWeapon : MonoBehaviour
         // Consume stamina
         if (player != null)
         {
-            float staminaCost = 15f;
-            player.Drink(-staminaCost); // Negative drink drains stamina (via health regen hijack)
-            // Actually, let's just drain it directly via reflection or create proper method
-            // For now, we'll track it in the playerSkills event
+            player.ConsumeStamina(STAMINA_COST_PER_ATTACK);
         }
 
         // Play attack animation with combo index
@@ -322,6 +319,7 @@ public class MeleeWeapon : MonoBehaviour
             attackSpeed = item.AttackSpeed;
             attackRange = item.AttackRange;
             knockbackForce = item.KnockbackForce;
+            weaponType = item.WeaponType;
         }
     }
 
