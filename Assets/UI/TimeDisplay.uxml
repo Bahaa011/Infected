@@ -5,8 +5,8 @@
     xmlns:uie="UnityEditor.UIElements"
     xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd"
 >
-    <ui:VisualElement class="time-panel" style="position: absolute; top: 20px; right: 24px; min-width: 112px; padding-top: 8px; padding-right: 10px; padding-bottom: 8px; padding-left: 10px; background-color: rgba(12, 16, 22, 0.9); border-radius: 8px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(190, 205, 230, 0.16); border-right-color: rgba(190, 205, 230, 0.16); border-bottom-color: rgba(120, 135, 165, 0.1); border-left-color: rgba(120, 135, 165, 0.1); flex-direction: column; align-items: flex-end; gap: 0px;">
-        <ui:Label class="time-display" text="12:00" style="font-size: 24px; color: rgb(233, 239, 248); -unity-font-style: bold;"/>
-        <ui:Label class="day-phase" text="DAY" style="font-size: 10px; color: rgb(195, 205, 223); -unity-font-style: bold; letter-spacing: 0.4px;"/>
+    <ui:VisualElement class="time-panel" style="position: absolute; top: 20px; right: 24px; min-width: 112px; padding-top: 8px; padding-right: 10px; padding-bottom: 8px; padding-left: 10px; background-color: rgba(6, 6, 6, 0.9); border-radius: 8px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(115, 115, 115, 0.16); border-right-color: rgba(115, 115, 115, 0.16); border-bottom-color: rgba(80, 80, 80, 0.1); border-left-color: rgba(80, 80, 80, 0.1); flex-direction: column; align-items: flex-end; gap: 0px;">
+        <ui:Label class="time-display" text="12:00" style="font-size: 24px; color: rgb(233, 233, 233); -unity-font-style: bold;"/>
+        <ui:Label class="day-phase" text="DAY" style="font-size: 10px; color: rgb(195, 195, 195); -unity-font-style: bold; letter-spacing: 0.4px;"/>
     </ui:VisualElement>
 </ui:UXML>

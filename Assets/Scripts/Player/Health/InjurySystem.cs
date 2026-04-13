@@ -30,6 +30,7 @@ public class InjurySystem : MonoBehaviour
     [Header("Bandage Healing")]
     [SerializeField] private float bandageHealDurationDaysMin = 1f;
     [SerializeField] private float bandageHealDurationDaysMax = 2f;
+    [SerializeField] private float allBandagedHealthRegenPerSecond = 1.2f;
 
     [Header("Max Injuries")]
     [SerializeField] private int maxInjuriesPerBodyPart = 3;
@@ -56,6 +57,68 @@ public class InjurySystem : MonoBehaviour
         ProcessBleeding();
         ProcessBiteFatality();
         ProcessBandagedHealing();
+        ProcessAllBandagedHealthRegen();
+    }
+
+    private void ProcessAllBandagedHealthRegen()
+    {
+        if (player == null)
+            return;
+
+        if (allBandagedHealthRegenPerSecond <= 0f)
+            return;
+
+        if (activeInjuries == null || activeInjuries.Count == 0)
+            return;
+
+        for (int i = 0; i < activeInjuries.Count; i++)
+        {
+            Injury injury = activeInjuries[i];
+            if (injury == null || !injury.isBandaged)
+                return;
+        }
+
+        float cappedMaxHealth = CalculateBandagedRegenCapHealth();
+        float currentHealth = player.GetHealth();
+
+        if (currentHealth >= cappedMaxHealth)
+            return;
+
+        float healAmount = Mathf.Min(allBandagedHealthRegenPerSecond * Time.deltaTime, cappedMaxHealth - currentHealth);
+        if (healAmount > 0f)
+            player.Heal(healAmount);
+    }
+
+    private float CalculateBandagedRegenCapHealth()
+    {
+        float maxHealth = Mathf.Max(1f, player.GetMaxHealth());
+
+        int injuryCount = activeInjuries != null ? activeInjuries.Count : 0;
+        if (injuryCount <= 0)
+            return maxHealth;
+
+        float severitySum = 0f;
+        for (int i = 0; i < activeInjuries.Count; i++)
+        {
+            Injury injury = activeInjuries[i];
+            if (injury == null)
+                continue;
+
+            // Uses existing injury multipliers to estimate severity pressure.
+            severitySum += injury.GetDamageMultiplier() * injury.GetBodyPartMultiplier();
+        }
+
+        float avgSeverity = severitySum / Mathf.Max(1, injuryCount);
+
+        // Count pressure reaches max around 6 active injuries.
+        float countPressure = Mathf.Clamp01((injuryCount - 1f) / 5f);
+        // Severity pressure maps roughly 0.5..3.0 to 0..1.
+        float severityPressure = Mathf.Clamp01((avgSeverity - 0.5f) / 2.5f);
+        float pressure = Mathf.Clamp01((countPressure * 0.55f) + (severityPressure * 0.45f));
+
+        // Regen cap between 90% (light/few injuries) and 60% (severe/many injuries).
+        float capPercent = Mathf.Lerp(0.9f, 0.6f, pressure);
+        return maxHealth * capPercent;
     }
 
     public Injury ApplyRandomInjury()
@@ -68,6 +131,9 @@ public class InjurySystem : MonoBehaviour
 
     public Injury ApplyInjury(BodyPart bodyPart, InjuryType injuryType)
     {
+        // New hit on this body part re-opens previously bandaged/healing wounds there.
+        BreakBandagesOnBodyPart(bodyPart);
+
         // Check if body part already has max injuries
         int injuriesOnPart = GetInjuryCountOnBodyPart(bodyPart);
         if (injuriesOnPart >= maxInjuriesPerBodyPart)
@@ -149,6 +215,10 @@ public class InjurySystem : MonoBehaviour
         {
             if (injury.isInfected)
             {
+                // Bandaging suppresses infection damage/progression until reopened.
+                if (injury.isBandaged)
+                    continue;
+
                 // Progress infection
                 injury.infectionProgress += infectionProgressRate * Time.deltaTime;
                 injury.infectionProgress = Mathf.Clamp01(injury.infectionProgress);
@@ -193,8 +263,11 @@ public class InjurySystem : MonoBehaviour
             if (injury.biteFatalDuration <= 0f)
                 continue;
 
-            // Calculate progression rate (bandages slow it down)
-            float progressionRate = injury.isBandaged ? bandageSlowdownMultiplier : 1f;
+            // Bandaging suppresses bite fatal damage/progression until reopened.
+            if (injury.isBandaged)
+                continue;
+
+            float progressionRate = 1f;
             injury.biteFatalElapsed += Time.deltaTime * progressionRate;
 
             // Calculate damage per second for this specific bite
@@ -208,6 +281,32 @@ public class InjurySystem : MonoBehaviour
                 player.TakeDamage(player.GetMaxHealth());
             }
         }
+    }
+
+    private void BreakBandagesOnBodyPart(BodyPart bodyPart)
+    {
+        if (activeInjuries == null || activeInjuries.Count == 0)
+            return;
+
+        int reopened = 0;
+        for (int i = 0; i < activeInjuries.Count; i++)
+        {
+            Injury injury = activeInjuries[i];
+            if (injury == null)
+                continue;
+
+            if (injury.bodyPart != bodyPart)
+                continue;
+
+            if (!injury.isBandaged)
+                continue;
+
+            injury.RemoveBandage();
+            reopened++;
+        }
+
+        if (reopened > 0)
+            Debug.Log($"Bandage broken on {reopened} injury/injuries at {bodyPart} due to a new hit.");
     }
 
     public void BandageInjury(Injury injury)

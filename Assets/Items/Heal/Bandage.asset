@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd83a412a2ff2504082371e58c9b3a5a, type: 3}
+  m_Name: Bandage
+  m_EditorClassIdentifier: Assembly-CSharp::BandageItem
+  itemName: Bandage
+  description: 
+  weight: 0
+  maxStackSize: 1
+  icon: {fileID: 0}
+  prefab: {fileID: 233166476930137601, guid: 374994d1f67610931b87fadd63ef4509, type: 3}
+  id: 0
+  healModifier: 1

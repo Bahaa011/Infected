@@ -3,7 +3,6 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "New Melee Weapon", menuName = "Inventory/Melee Weapon Item")]
 public class MeleeWeaponItem : Item
 {
-    [SerializeField] private GameObject weaponPrefab;
     [SerializeField] private float baseDamage = 25f;
     [SerializeField] private float attackSpeed = 1f; // Attacks per second
     [SerializeField] private float attackRange = 2f;
@@ -12,7 +11,6 @@ public class MeleeWeaponItem : Item
 
     public override int MaxStackSize => 1;
 
-    public GameObject WeaponPrefab => weaponPrefab;
     public float BaseDamage => baseDamage;
     public float AttackSpeed => attackSpeed;
     public float AttackRange => attackRange;

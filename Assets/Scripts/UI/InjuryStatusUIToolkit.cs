@@ -141,7 +141,7 @@ public class InjuryStatusUIToolkit : MonoBehaviour
         var divider = new VisualElement();
         divider.style.width = Length.Percent(100);
         divider.style.height = 1f;
-        divider.style.backgroundColor = new Color(1f, 1f, 1f, 0.15f);
+        divider.style.backgroundColor = new Color(0.62f, 0.62f, 0.62f, 0.15f);
         divider.style.marginTop = 8f;
         divider.style.marginBottom = 6f;
         injuryPanel.Add(divider);
@@ -176,10 +176,10 @@ public class InjuryStatusUIToolkit : MonoBehaviour
         contextMenu.style.borderRightWidth = 1f;
         contextMenu.style.borderBottomWidth = 1f;
         contextMenu.style.borderLeftWidth = 1f;
-        contextMenu.style.borderTopColor = new Color(0.6f, 0.2f, 0.2f, 0.9f);
-        contextMenu.style.borderRightColor = new Color(0.6f, 0.2f, 0.2f, 0.9f);
-        contextMenu.style.borderBottomColor = new Color(0.6f, 0.2f, 0.2f, 0.9f);
-        contextMenu.style.borderLeftColor = new Color(0.6f, 0.2f, 0.2f, 0.9f);
+        contextMenu.style.borderTopColor = new Color(0.46f, 0.46f, 0.46f, 0.9f);
+        contextMenu.style.borderRightColor = new Color(0.46f, 0.46f, 0.46f, 0.9f);
+        contextMenu.style.borderBottomColor = new Color(0.46f, 0.46f, 0.46f, 0.9f);
+        contextMenu.style.borderLeftColor = new Color(0.46f, 0.46f, 0.46f, 0.9f);
         contextMenu.style.paddingTop = 4f;
         contextMenu.style.paddingBottom = 4f;
         contextMenu.style.paddingLeft = 4f;
@@ -565,6 +565,13 @@ public class InjuryStatusUIToolkit : MonoBehaviour
         {
             if (slot == null || slot.item == null || slot.quantity <= 0)
                 continue;
+
+            // Preferred: explicit type detection.
+            if (slot.item is BandageItem)
+            {
+                bandageItem = slot.item;
+                return true;
+            }
 
             string itemName = slot.item.ItemName;
             if (string.IsNullOrWhiteSpace(itemName))

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 [CreateAssetMenu(fileName = "New Item", menuName = "Inventory/Item")]
 public class Item : ScriptableObject
@@ -8,6 +9,9 @@ public class Item : ScriptableObject
     [SerializeField] private float weight; // Weight per unit
     [SerializeField] protected int maxStackSize = 1;
     [SerializeField] private Sprite icon;
+    [FormerlySerializedAs("gunPrefab")]
+    [FormerlySerializedAs("weaponPrefab")]
+    [SerializeField] private GameObject prefab;
     [SerializeField] private int id; // Unique ID for this item
 
     public string ItemName => itemName;
@@ -15,6 +19,7 @@ public class Item : ScriptableObject
     public float Weight => weight;
     public virtual int MaxStackSize => maxStackSize;
     public Sprite Icon => icon;
+    public GameObject Prefab => prefab;
     public int ID => id;
 
     private void OnValidate()

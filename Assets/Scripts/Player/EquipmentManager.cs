@@ -149,9 +149,9 @@ public class EquipmentManager : MonoBehaviour
             return false;
         }
 
-        if (gunItem.GunPrefab == null)
+        if (gunItem.Prefab == null)
         {
-            Debug.LogError($"[EquipmentManager] Cannot equip {gunItem.ItemName}: GunPrefab is null! Make sure the GunItem asset has a prefab assigned.");
+            Debug.LogError($"[EquipmentManager] Cannot equip {gunItem.ItemName}: Prefab is null! Make sure the GunItem asset has a prefab assigned.");
             return false;
         }
 
@@ -188,7 +188,7 @@ public class EquipmentManager : MonoBehaviour
             HolsterMeleeToRestingSlot();
 
         // Instantiate new primary weapon in hand slot (not resting slot)
-        GameObject weaponInstance = Instantiate(gunItem.GunPrefab, targetHandSlot);
+        GameObject weaponInstance = Instantiate(gunItem.Prefab, targetHandSlot);
         weaponInstance.name = gunItem.ItemName;
         weaponInstance.SetActive(true);
         weaponInstance.transform.localPosition = Vector3.zero;
@@ -250,9 +250,9 @@ public class EquipmentManager : MonoBehaviour
             return false;
         }
 
-        if (gunItem.GunPrefab == null)
+        if (gunItem.Prefab == null)
         {
-            Debug.LogError($"[EquipmentManager] Cannot equip {gunItem.ItemName}: GunPrefab is null! Make sure the GunItem asset has a prefab assigned.");
+            Debug.LogError($"[EquipmentManager] Cannot equip {gunItem.ItemName}: Prefab is null! Make sure the GunItem asset has a prefab assigned.");
             return false;
         }
 
@@ -289,7 +289,7 @@ public class EquipmentManager : MonoBehaviour
             HolsterMeleeToRestingSlot();
 
         // Instantiate new secondary weapon in hand slot (not resting slot)
-        GameObject weaponInstance = Instantiate(gunItem.GunPrefab, targetHandSlot);
+        GameObject weaponInstance = Instantiate(gunItem.Prefab, targetHandSlot);
         weaponInstance.name = gunItem.ItemName;
         weaponInstance.SetActive(true);
         weaponInstance.transform.localPosition = Vector3.zero;
@@ -520,10 +520,10 @@ public class EquipmentManager : MonoBehaviour
 
     private Transform GetHandSlotForGunItem(GunItem gunItem)
     {
-        if (gunItem == null || gunItem.GunPrefab == null)
+        if (gunItem == null || gunItem.Prefab == null)
             return GetDefaultHandSlot();
 
-        Gun gunPrefabComponent = gunItem.GunPrefab.GetComponent<Gun>();
+        Gun gunPrefabComponent = gunItem.Prefab.GetComponent<Gun>();
         if (gunPrefabComponent == null)
             return GetDefaultHandSlot();
 
@@ -590,9 +590,9 @@ public class EquipmentManager : MonoBehaviour
             return false;
         }
 
-        if (meleeItem.WeaponPrefab == null)
+        if (meleeItem.Prefab == null)
         {
-            Debug.LogError($"[EquipmentManager] Cannot equip {meleeItem.ItemName}: WeaponPrefab is null!");
+            Debug.LogError($"[EquipmentManager] Cannot equip {meleeItem.ItemName}: Prefab is null!");
             return false;
         }
 
@@ -615,7 +615,7 @@ public class EquipmentManager : MonoBehaviour
             Destroy(equippedMeleeWeapon.gameObject);
 
         // Instantiate new melee weapon
-        GameObject weaponInstance = Instantiate(meleeItem.WeaponPrefab, meleeSlot);
+        GameObject weaponInstance = Instantiate(meleeItem.Prefab, meleeSlot);
         weaponInstance.name = meleeItem.ItemName;
         weaponInstance.SetActive(true);
         weaponInstance.transform.localPosition = Vector3.zero;

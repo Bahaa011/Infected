@@ -1,4 +1,3 @@
 ﻿<Solution>
-  <Project Path="RoadArchitect.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
 </Solution>

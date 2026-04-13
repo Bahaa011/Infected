@@ -3,14 +3,12 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "New Gun Item", menuName = "Inventory/Gun Item")]
 public class GunItem : Item
 {
-    [SerializeField] private GameObject gunPrefab;
     [SerializeField] private int ammoCapacity = 30;
     [SerializeField] private int currentAmmo = 30;
     [SerializeField] private Gun.GunType gunType = Gun.GunType.Pistol;
 
     public override int MaxStackSize => 1;
 
-    public GameObject GunPrefab => gunPrefab;
     public int AmmoCapacity => ammoCapacity;
     public int CurrentAmmo => currentAmmo;
     public Gun.GunType GunType => gunType;

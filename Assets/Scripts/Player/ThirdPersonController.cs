@@ -14,9 +14,6 @@ public class ThirdPersonController : MonoBehaviour
     [SerializeField] private float runShakeAmplitude = 0.06f;
     [SerializeField] private float runShakeFrequency = 10f;
     [SerializeField] private float runShakeSmooth = 10f;
-    [Header("Crouch Camera")]
-    [SerializeField] private float crouchCameraDrop = 0.45f;
-    [SerializeField] private float crouchCameraSmooth = 8f;
 
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 3f;
@@ -75,7 +72,6 @@ public class ThirdPersonController : MonoBehaviour
     private float runShakeTimer;
     private float currentShakeAmplitude;
     private float currentShakeOffsetY;
-    private float currentCrouchCameraOffsetY;
 
     private void Awake()
     {
@@ -202,7 +198,7 @@ public class ThirdPersonController : MonoBehaviour
         Vector3 targetPos = cameraTarget.position;
         targetPos.x = transform.position.x;
         targetPos.z = transform.position.z;
-        targetPos.y = transform.position.y + baseCameraHeight + currentCrouchCameraOffsetY + currentShakeOffsetY;
+        targetPos.y = transform.position.y + baseCameraHeight + currentShakeOffsetY;
         cameraTarget.position = targetPos;
         
         // Only rotate camera target on both axes (independent of player rotation)
@@ -325,9 +321,6 @@ public class ThirdPersonController : MonoBehaviour
     {
         float targetHeight = player.IsCrouching() ? crouchHeight : normalHeight;
         controller.height = Mathf.Lerp(controller.height, targetHeight, Time.deltaTime * 5f);
-
-        float targetCameraOffset = player.IsCrouching() ? -Mathf.Abs(crouchCameraDrop) : 0f;
-        currentCrouchCameraOffsetY = Mathf.Lerp(currentCrouchCameraOffsetY, targetCameraOffset, Time.deltaTime * crouchCameraSmooth);
 
         float heightDifference = normalHeight - targetHeight;
         float targetCenterY = normalHeight / 2f - heightDifference / 2f;

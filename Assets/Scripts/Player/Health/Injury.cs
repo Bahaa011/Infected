@@ -116,6 +116,13 @@ public class Injury
         healingDurationDays = Mathf.Max(0.0001f, durationDays);
     }
 
+    public void RemoveBandage()
+    {
+        isBandaged = false;
+        isHealing = false;
+        healingElapsedDays = 0f;
+    }
+
     public void ProgressHealing(float deltaDays)
     {
         if (!isHealing)

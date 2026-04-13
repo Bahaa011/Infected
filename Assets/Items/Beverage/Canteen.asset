@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c70e16095e5e85f49837e4041c84a515, type: 3}
+  m_Name: Canteen
+  m_EditorClassIdentifier: Assembly-CSharp::FoodItem
+  itemName: Canteen
+  description: 
+  weight: 0
+  maxStackSize: 1
+  icon: {fileID: 0}
+  prefab: {fileID: 1565698249407801112, guid: 2e650c6101e78f75595b54620b449cb3, type: 3}
+  id: 0
+  hungerRestore: 0
+  thirstRestore: 50

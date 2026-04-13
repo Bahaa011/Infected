@@ -241,6 +241,34 @@ public class Inventory : MonoBehaviour
         return true;
     }
 
+    public bool AddItemAtSlot(Item item, int quantity, int slotIndex)
+    {
+        if (item == null || quantity <= 0)
+            return false;
+
+        EnsureSlotCapacity();
+
+        if (slotIndex < 0 || slotIndex >= slots.Count)
+            return false;
+
+        bool usesLargeFootprint = UsesLargeFootprint(item);
+        int width = usesLargeFootprint ? 2 : 1;
+        int height = usesLargeFootprint ? 2 : 1;
+
+        if (!CanPlaceAt(slotIndex, width, height))
+            return false;
+
+        PlaceItemWithFootprint(slotIndex, item, quantity, width, height);
+        OnInventoryChanged?.Invoke();
+        return true;
+    }
+
+    public int ResolveAnchorSlotIndex(int slotIndex)
+    {
+        EnsureSlotCapacity();
+        return ResolveAnchorIndex(slotIndex);
+    }
+
     public int GetItemQuantity(Item item)
     {
         EnsureSlotCapacity();
@@ -607,13 +635,7 @@ public class Inventory : MonoBehaviour
         if (item == null)
             return null;
 
-        if (item is GunItem gunItem && gunItem.GunPrefab != null)
-            return gunItem.GunPrefab;
-
-        if (item is MeleeWeaponItem meleeItem && meleeItem.WeaponPrefab != null)
-            return meleeItem.WeaponPrefab;
-
-        return null;
+        return item.Prefab;
     }
 
     private static void DisableInteractiveComponents(GameObject root)

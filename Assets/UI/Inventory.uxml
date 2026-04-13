@@ -5,27 +5,27 @@
     xmlns:uie="UnityEditor.UIElements"
     xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd"
 >
-    <ui:VisualElement class="inventory-panel" style="width: 760px; height: 500px; background-color: rgba(12, 16, 22, 0.96); border-radius: 8px; padding-top: 12px; padding-right: 12px; padding-bottom: 12px; padding-left: 12px; flex-direction: column; align-items: stretch; justify-content: flex-start; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(190, 205, 230, 0.22); border-right-color: rgba(190, 205, 230, 0.22); border-bottom-color: rgba(120, 135, 165, 0.16); border-left-color: rgba(120, 135, 165, 0.16); position: absolute; left: 50%; top: 50%; margin-left: -380px; margin-top: -250px;">
+    <ui:VisualElement class="inventory-panel" style="width: 760px; height: 500px; background-color: rgba(6, 6, 6, 0.96); border-radius: 8px; padding-top: 12px; padding-right: 12px; padding-bottom: 12px; padding-left: 12px; flex-direction: column; align-items: stretch; justify-content: flex-start; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(115, 115, 115, 0.22); border-right-color: rgba(115, 115, 115, 0.22); border-bottom-color: rgba(80, 80, 80, 0.16); border-left-color: rgba(80, 80, 80, 0.16); position: absolute; left: 50%; top: 50%; margin-left: -380px; margin-top: -250px;">
         <ui:VisualElement name="inventory-drag-handle" style="height: 24px; flex-direction: row; align-items: center; justify-content: flex-start; margin-bottom: 8px;">
             <ui:Label text="Inventory" class="inventory-title" style="font-size: 14px; color: rgb(224, 230, 239); -unity-font-style: bold; margin-bottom: 0px;"/>
         </ui:VisualElement>
 
         <ui:VisualElement style="flex-direction: row; gap: 6px; margin-bottom: 8px;">
-            <ui:Button name="tab-inventory" text="Inventory" style="height: 30px; flex-grow: 1; background-color: rgba(38, 50, 67, 0.95); color: rgb(231, 236, 246); border-radius: 6px; -unity-font-style: bold; font-size: 11px;" />
-            <ui:Button name="tab-skills" text="Skills" style="height: 30px; flex-grow: 1; background-color: rgba(24, 31, 42, 0.95); color: rgba(194, 206, 228, 0.95); border-radius: 6px; -unity-font-style: bold; font-size: 11px;" />
-            <ui:Button name="tab-injury" text="Injury" style="height: 30px; flex-grow: 1; background-color: rgba(24, 31, 42, 0.95); color: rgba(194, 206, 228, 0.95); border-radius: 6px; -unity-font-style: bold; font-size: 11px;" />
+            <ui:Button name="tab-inventory" text="Inventory" style="height: 30px; flex-grow: 1; background-color: rgba(28, 28, 28, 0.95); color: rgb(236, 236, 236); border-radius: 6px; -unity-font-style: bold; font-size: 11px;" />
+            <ui:Button name="tab-skills" text="Skills" style="height: 30px; flex-grow: 1; background-color: rgba(18, 18, 18, 0.95); color: rgba(194, 194, 194, 0.95); border-radius: 6px; -unity-font-style: bold; font-size: 11px;" />
+            <ui:Button name="tab-injury" text="Injury" style="height: 30px; flex-grow: 1; background-color: rgba(18, 18, 18, 0.95); color: rgba(194, 194, 194, 0.95); border-radius: 6px; -unity-font-style: bold; font-size: 11px;" />
         </ui:VisualElement>
 
         <ui:VisualElement name="tab-content-inventory" style="flex-grow: 1; display: flex;">
-            <ui:ScrollView horizontal-scrolling="false" vertical-scrolling="true" class="items-list" style="flex-grow: 1; background-color: rgba(18, 23, 31, 0.96); border-radius: 6px; margin-bottom: 2px; padding: 8px; min-height: 320px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(193, 207, 232, 0.12); border-right-color: rgba(193, 207, 232, 0.12); border-bottom-color: rgba(193, 207, 232, 0.08); border-left-color: rgba(193, 207, 232, 0.08);"/>
+            <ui:ScrollView horizontal-scrolling="false" vertical-scrolling="true" class="items-list" style="flex-grow: 1; background-color: rgba(8, 8, 8, 0.96); border-radius: 6px; margin-bottom: 2px; padding: 8px; min-height: 320px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(120, 120, 120, 0.12); border-right-color: rgba(120, 120, 120, 0.12); border-bottom-color: rgba(120, 120, 120, 0.08); border-left-color: rgba(120, 120, 120, 0.08);"/>
         </ui:VisualElement>
 
         <ui:VisualElement name="tab-content-skills" style="flex-grow: 1; display: none;">
-            <ui:ScrollView name="skills-list" horizontal-scrolling="false" vertical-scrolling="true" style="flex-grow: 1; background-color: rgba(18, 23, 31, 0.96); border-radius: 6px; margin-bottom: 2px; padding: 8px; min-height: 320px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(193, 207, 232, 0.12); border-right-color: rgba(193, 207, 232, 0.12); border-bottom-color: rgba(193, 207, 232, 0.08); border-left-color: rgba(193, 207, 232, 0.08);"/>
+            <ui:ScrollView name="skills-list" horizontal-scrolling="false" vertical-scrolling="true" style="flex-grow: 1; background-color: rgba(8, 8, 8, 0.96); border-radius: 6px; margin-bottom: 2px; padding: 8px; min-height: 320px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(120, 120, 120, 0.12); border-right-color: rgba(120, 120, 120, 0.12); border-bottom-color: rgba(120, 120, 120, 0.08); border-left-color: rgba(120, 120, 120, 0.08);"/>
         </ui:VisualElement>
 
         <ui:VisualElement name="tab-content-injury" style="flex-grow: 1; display: none;">
-            <ui:ScrollView name="injury-list" horizontal-scrolling="false" vertical-scrolling="true" style="flex-grow: 1; background-color: rgba(18, 23, 31, 0.96); border-radius: 6px; margin-bottom: 2px; padding: 8px; min-height: 320px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(193, 207, 232, 0.12); border-right-color: rgba(193, 207, 232, 0.12); border-bottom-color: rgba(193, 207, 232, 0.08); border-left-color: rgba(193, 207, 232, 0.08);"/>
+            <ui:ScrollView name="injury-list" horizontal-scrolling="false" vertical-scrolling="true" style="flex-grow: 1; background-color: rgba(8, 8, 8, 0.96); border-radius: 6px; margin-bottom: 2px; padding: 8px; min-height: 320px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(120, 120, 120, 0.12); border-right-color: rgba(120, 120, 120, 0.12); border-bottom-color: rgba(120, 120, 120, 0.08); border-left-color: rgba(120, 120, 120, 0.08);"/>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

@@ -15,6 +15,11 @@ public class ItemPickup : MonoBehaviour
     private bool isPickedUp = false;
     private bool playerInRange = false;
 
+    private bool IsAttachedToPlayer()
+    {
+        return GetComponentInParent<Player>() != null;
+    }
+
     public void Initialize(Item item, int stackQuantity, float radius = 2f)
     {
         itemToPickup = item;
@@ -25,6 +30,13 @@ public class ItemPickup : MonoBehaviour
     private void Start()
     {
         Debug.Log($"[{itemToPickup?.ItemName ?? "Unknown"}] Start called");
+
+        // Never allow equipped/in-hand items (children of Player) to be picked up.
+        if (IsAttachedToPlayer())
+        {
+            enabled = false;
+            return;
+        }
         
         if (itemToPickup == null)
         {
@@ -68,6 +80,9 @@ public class ItemPickup : MonoBehaviour
     private void Update()
     {
         if (isPickedUp || !playerInRange) return;
+
+        if (IsAttachedToPlayer())
+            return;
         
         // Check for E key press
         if (Keyboard.current.eKey.wasPressedThisFrame)
@@ -148,8 +163,15 @@ public class ItemPickup : MonoBehaviour
         }
         
         Debug.Log($"[INPUT] Raycast hit: {hit.collider.gameObject.name}");
+
+        // Ignore player/weapon-in-hand colliders in front of the camera.
+        if (player != null && hit.collider.transform.IsChildOf(player.transform))
+        {
+            Debug.Log("[INPUT] Hit player's own hierarchy, ignoring pickup.");
+            return;
+        }
         
-        if (hit.collider != pickupCollider)
+        if (hit.collider != pickupCollider && !hit.collider.transform.IsChildOf(transform))
         {
             Debug.Log($"[INPUT] Hit wrong object: {hit.collider.gameObject.name} (expected {gameObject.name})");
             return;

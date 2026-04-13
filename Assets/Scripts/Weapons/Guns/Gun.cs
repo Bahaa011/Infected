@@ -100,6 +100,9 @@ public class Gun : MonoBehaviour
 
     void Update()
     {
+        if (InventoryUIToolkit.IsInventoryOpen)
+            return;
+
         if (!isEquipped || !gameObject.activeInHierarchy || fireAction == null)
             return;
 

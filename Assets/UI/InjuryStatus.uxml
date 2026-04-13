@@ -6,15 +6,15 @@
     xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd"
 >
     <!-- Injury Body Overlay -->
-    <ui:VisualElement class="injury-panel" style="width: 390px; height: 620px; background-color: rgba(14, 18, 24, 0.96); padding-top: 12px; padding-right: 12px; padding-bottom: 12px; padding-left: 12px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(190, 205, 230, 0.24); border-right-color: rgba(190, 205, 230, 0.24); border-bottom-color: rgba(120, 135, 165, 0.14); border-left-color: rgba(120, 135, 165, 0.14); border-radius: 12px; flex-direction: column; align-items: stretch; justify-content: flex-start; position: absolute; left: 24px; bottom: 220px; display: none;">
+    <ui:VisualElement class="injury-panel" style="width: 390px; height: 620px; background-color: rgba(6, 6, 6, 0.96); padding-top: 12px; padding-right: 12px; padding-bottom: 12px; padding-left: 12px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(115, 115, 115, 0.24); border-right-color: rgba(115, 115, 115, 0.24); border-bottom-color: rgba(80, 80, 80, 0.14); border-left-color: rgba(80, 80, 80, 0.14); border-radius: 12px; flex-direction: column; align-items: stretch; justify-content: flex-start; position: absolute; left: 24px; bottom: 220px; display: none;">
 
         <ui:VisualElement style="flex-direction: row; justify-content: flex-start; align-items: center; margin-bottom: 10px;">
-            <ui:Label text="Body Condition" style="font-size: 14px; color: rgb(241, 245, 255); -unity-font-style: bold;" />
+            <ui:Label text="Body Condition" style="font-size: 14px; color: rgb(241, 241, 241); -unity-font-style: bold;" />
         </ui:VisualElement>
 
-        <ui:Label text="Left click/hover: inspect   •   Right click: treatment" style="font-size: 10px; color: rgba(210, 220, 236, 0.85); margin-bottom: 10px;" />
+        <ui:Label text="Left click/hover: inspect   •   Right click: treatment" style="font-size: 10px; color: rgba(210, 210, 210, 0.85); margin-bottom: 10px;" />
 
-        <ui:VisualElement style="width: 100%; height: 430px; position: relative; background-color: rgba(20, 25, 33, 0.95); border-radius: 8px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(193, 207, 232, 0.16); border-right-color: rgba(193, 207, 232, 0.16); border-bottom-color: rgba(193, 207, 232, 0.1); border-left-color: rgba(193, 207, 232, 0.1); margin-bottom: 8px;">
+        <ui:VisualElement style="width: 100%; height: 430px; position: relative; background-color: rgba(10, 10, 10, 0.95); border-radius: 8px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(120, 120, 120, 0.16); border-right-color: rgba(120, 120, 120, 0.16); border-bottom-color: rgba(120, 120, 120, 0.1); border-left-color: rgba(120, 120, 120, 0.1); margin-bottom: 8px;">
 
             <!-- Head -->
             <ui:Button name="body-head" class="body-part" style="position: absolute; left: 171px; top: 16px; width: 52px; height: 62px; background-color: rgba(102, 200, 128, 0.9); border-radius: 26px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(225, 240, 255, 0.55); border-right-color: rgba(225, 240, 255, 0.55); border-bottom-color: rgba(225, 240, 255, 0.45); border-left-color: rgba(225, 240, 255, 0.45);" />

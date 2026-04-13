@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ui="UnityEngine.UIElements"
+    xmlns:uie="UnityEditor.UIElements"
+    xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd"
+>
+    <ui:VisualElement class="crosshair-root" style="position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; translate: -50% -50%; display: none; pointer-events: none;">
+        <ui:VisualElement name="crosshair-line-top" style="position: absolute; left: 50%; top: 2px; width: 2px; height: 10px; translate: -50% 0; background-color: rgba(245, 245, 245, 0.95);" />
+        <ui:VisualElement name="crosshair-line-bottom" style="position: absolute; left: 50%; bottom: 2px; width: 2px; height: 10px; translate: -50% 0; background-color: rgba(245, 245, 245, 0.95);" />
+        <ui:VisualElement name="crosshair-line-left" style="position: absolute; left: 2px; top: 50%; width: 10px; height: 2px; translate: 0 -50%; background-color: rgba(245, 245, 245, 0.95);" />
+        <ui:VisualElement name="crosshair-line-right" style="position: absolute; right: 2px; top: 50%; width: 10px; height: 2px; translate: 0 -50%; background-color: rgba(245, 245, 245, 0.95);" />
+        <ui:VisualElement name="crosshair-dot" style="position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; translate: -50% -50%; border-top-left-radius: 2px; border-top-right-radius: 2px; border-bottom-left-radius: 2px; border-bottom-right-radius: 2px; background-color: rgba(245, 245, 245, 0.95);" />
+    </ui:VisualElement>
+</ui:UXML>
