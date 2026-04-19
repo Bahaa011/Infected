@@ -73,7 +73,7 @@ public class Player : MonoBehaviour
         equipmentManager = GetComponent<EquipmentManager>();
         injurySystem = GetComponent<InjurySystem>();
         playerSkills = GetComponent<PlayerSkills>();
-        dayNightManager = FindFirstObjectByType<DayNightManager>();
+        dayNightManager = FindAnyObjectByType<DayNightManager>();
 
         var playerInput = GetComponent<PlayerInput>();
         if (playerInput != null)
@@ -218,7 +218,7 @@ public class Player : MonoBehaviour
         Vector3 center = origin + transform.forward * punchRange;
         Collider[] hitColliders = Physics.OverlapSphere(center, punchHitRadius, punchHitLayers, QueryTriggerInteraction.Ignore);
 
-        HashSet<int> hitTargets = new HashSet<int>();
+        HashSet<GameObject> hitTargets = new HashSet<GameObject>();
         foreach (Collider col in hitColliders)
         {
             if (col == null)
@@ -227,10 +227,9 @@ public class Player : MonoBehaviour
                 continue;
 
             GameObject target = col.attachedRigidbody != null ? col.attachedRigidbody.gameObject : col.gameObject;
-            int id = target.GetInstanceID();
-            if (hitTargets.Contains(id))
+            if (hitTargets.Contains(target))
                 continue;
-            hitTargets.Add(id);
+            hitTargets.Add(target);
 
             Zombie zombie = target.GetComponent<Zombie>();
             if (zombie != null)

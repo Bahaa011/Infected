@@ -7,7 +7,16 @@ using System;
 
 public class InventoryUIToolkit : MonoBehaviour
 {
-    public enum InventoryTab { Inventory, Skills, Injury }
+    public enum InventoryTab { Inventory, Skills, Injury, Crafting }
+
+    private enum CraftingCategoryTab
+    {
+        Ammunition,
+        Weapons,
+        HealingItems,
+        Food,
+        Water
+    }
 
     public static bool IsInventoryOpen { get; private set; }
     public static InventoryTab ActiveTab { get; private set; } = InventoryTab.Inventory;
@@ -20,19 +29,25 @@ public class InventoryUIToolkit : MonoBehaviour
     [SerializeField] private PlayerSkills playerSkills;
     [SerializeField] private Player player;
     [SerializeField] private InputActionReference toggleInventoryAction;
+    [Header("Crafting")]
+    [SerializeField] private CraftingSystem craftingSystem;
 
     private VisualElement rootVisual;
     private VisualElement inventoryPanel;
     private VisualElement tabContentInventory;
     private VisualElement tabContentSkills;
     private VisualElement tabContentInjury;
+    private VisualElement tabContentCrafting;
     private VisualElement inventoryDragHandle;
     private ScrollView itemsScrollView;
     private ScrollView skillsScrollView;
     private ScrollView injuryScrollView;
+    private ScrollView craftingScrollView;
     private Button inventoryTabButton;
     private Button skillsTabButton;
     private Button injuryTabButton;
+    private Button craftingTabButton;
+    private CraftingCategoryTab activeCraftingCategory = CraftingCategoryTab.Ammunition;
 
     private readonly Dictionary<int, VisualElement> inventoryCellsByIndex = new();
 
@@ -63,6 +78,7 @@ public class InventoryUIToolkit : MonoBehaviour
         ApplyInventoryScrollStyle(itemsScrollView);
         ApplyInventoryScrollStyle(skillsScrollView);
         ApplyInventoryScrollStyle(injuryScrollView);
+        ApplyInventoryScrollStyle(craftingScrollView);
         SetActiveTabInternal(InventoryTab.Inventory, false);
         SetInventoryPanelVisible(false);
 
@@ -104,8 +120,14 @@ public class InventoryUIToolkit : MonoBehaviour
     private void Update()
     {
         ResolveReferences();
-        if (IsInventoryOpen)
-            RefreshCurrentTab();
+
+        if (!IsInventoryOpen)
+            return;
+
+        // Avoid rebuilding tab UI every frame; this can interrupt click events.
+        // Only keep crafting tab live-updated while an active craft is running.
+        if (ActiveTab == InventoryTab.Crafting && craftingSystem != null && craftingSystem.IsCraftingInProgress)
+            UpdateCraftingTab();
     }
 
     private void BindToggleInput()
@@ -179,6 +201,14 @@ public class InventoryUIToolkit : MonoBehaviour
 
         if (equipmentManager == null) equipmentManager = FindAnyObjectByType<EquipmentManager>();
         if (playerSkills == null) playerSkills = FindAnyObjectByType<PlayerSkills>();
+        if ((craftingSystem == null || !craftingSystem.gameObject.activeInHierarchy) && player != null)
+            craftingSystem = player.GetComponent<CraftingSystem>();
+        if (craftingSystem == null && inventory != null)
+            craftingSystem = inventory.GetComponent<CraftingSystem>();
+        if (craftingSystem == null)
+            craftingSystem = FindAnyObjectByType<CraftingSystem>();
+        if (craftingSystem != null && inventory != null)
+            craftingSystem.SetRuntimeInventory(inventory);
         if (uiDocument == null) uiDocument = GetComponent<UIDocument>() ?? FindAnyObjectByType<UIDocument>();
     }
 
@@ -220,6 +250,8 @@ public class InventoryUIToolkit : MonoBehaviour
         if (tabContentInventory != null) tabContentInventory.style.display = tab == InventoryTab.Inventory ? DisplayStyle.Flex : DisplayStyle.None;
         if (tabContentSkills != null) tabContentSkills.style.display = tab == InventoryTab.Skills ? DisplayStyle.Flex : DisplayStyle.None;
         if (tabContentInjury != null) tabContentInjury.style.display = tab == InventoryTab.Injury ? DisplayStyle.Flex : DisplayStyle.None;
+        if (tabContentCrafting != null) tabContentCrafting.style.display = tab == InventoryTab.Crafting ? DisplayStyle.Flex : DisplayStyle.None;
+        UpdateTopTabVisualState();
 
         if (refresh && IsInventoryOpen) RefreshCurrentTab();
     }
@@ -231,13 +263,16 @@ public class InventoryUIToolkit : MonoBehaviour
         tabContentInventory = rootVisual.Q<VisualElement>("tab-content-inventory");
         tabContentSkills = rootVisual.Q<VisualElement>("tab-content-skills");
         tabContentInjury = rootVisual.Q<VisualElement>("tab-content-injury");
+        tabContentCrafting = rootVisual.Q<VisualElement>("tab-content-crafting");
         inventoryDragHandle = rootVisual.Q<VisualElement>("inventory-drag-handle");
         itemsScrollView = rootVisual.Q<ScrollView>(className: "items-list");
         skillsScrollView = rootVisual.Q<ScrollView>("skills-list");
         injuryScrollView = rootVisual.Q<ScrollView>("injury-list");
+        craftingScrollView = rootVisual.Q<ScrollView>("crafting-list");
         inventoryTabButton = rootVisual.Q<Button>("tab-inventory");
         skillsTabButton = rootVisual.Q<Button>("tab-skills");
         injuryTabButton = rootVisual.Q<Button>("tab-injury");
+        craftingTabButton = rootVisual.Q<Button>("tab-crafting");
     }
 
     private void HookTabButtons()
@@ -249,9 +284,58 @@ public class InventoryUIToolkit : MonoBehaviour
             inventoryDragHandle.RegisterCallback<PointerUpEvent>(OnInventoryDragPointerUp);
         }
 
-        if (inventoryTabButton != null) inventoryTabButton.clicked += () => SetActiveTab(InventoryTab.Inventory);
-        if (skillsTabButton != null) skillsTabButton.clicked += () => SetActiveTab(InventoryTab.Skills);
-        if (injuryTabButton != null) injuryTabButton.clicked += () => SetActiveTab(InventoryTab.Injury);
+        if (inventoryTabButton != null)
+        {
+            inventoryTabButton.clicked += () => SetActiveTab(InventoryTab.Inventory);
+            inventoryTabButton.RegisterCallback<ClickEvent>(_ => SetActiveTab(InventoryTab.Inventory));
+        }
+
+        if (skillsTabButton != null)
+        {
+            skillsTabButton.clicked += () => SetActiveTab(InventoryTab.Skills);
+            skillsTabButton.RegisterCallback<ClickEvent>(_ => SetActiveTab(InventoryTab.Skills));
+        }
+
+        if (injuryTabButton != null)
+        {
+            injuryTabButton.clicked += () => SetActiveTab(InventoryTab.Injury);
+            injuryTabButton.RegisterCallback<ClickEvent>(_ => SetActiveTab(InventoryTab.Injury));
+        }
+
+        if (craftingTabButton != null)
+        {
+            craftingTabButton.clicked += () => SetActiveTab(InventoryTab.Crafting);
+            craftingTabButton.RegisterCallback<ClickEvent>(_ => SetActiveTab(InventoryTab.Crafting));
+        }
+
+        UpdateTopTabVisualState();
+    }
+
+    private void UpdateTopTabVisualState()
+    {
+        StyleTopTabButton(inventoryTabButton, ActiveTab == InventoryTab.Inventory);
+        StyleTopTabButton(skillsTabButton, ActiveTab == InventoryTab.Skills);
+        StyleTopTabButton(injuryTabButton, ActiveTab == InventoryTab.Injury);
+        StyleTopTabButton(craftingTabButton, ActiveTab == InventoryTab.Crafting);
+    }
+
+    private static void StyleTopTabButton(Button button, bool isActive)
+    {
+        if (button == null)
+            return;
+
+        button.style.backgroundColor = new StyleColor(isActive
+            ? new Color(0.2f, 0.2f, 0.2f, 0.98f)
+            : new Color(0.12f, 0.12f, 0.12f, 0.95f));
+
+        button.style.color = new StyleColor(isActive
+            ? new Color(0.96f, 0.96f, 0.96f, 1f)
+            : new Color(0.75f, 0.75f, 0.75f, 0.96f));
+
+        button.style.borderBottomWidth = isActive ? 2 : 1;
+        button.style.borderBottomColor = new StyleColor(isActive
+            ? new Color(0.68f, 0.68f, 0.68f, 0.9f)
+            : new Color(0.22f, 0.22f, 0.22f, 0.9f));
     }
 
     private void OnInventoryDragPointerDown(PointerDownEvent evt)
@@ -315,7 +399,332 @@ public class InventoryUIToolkit : MonoBehaviour
     {
         if (ActiveTab == InventoryTab.Inventory) RefreshInventoryTab();
         else if (ActiveTab == InventoryTab.Skills) UpdateSkillsTab();
-        else UpdateInjuryTab();
+        else if (ActiveTab == InventoryTab.Injury) UpdateInjuryTab();
+        else UpdateCraftingTab();
+    }
+
+    private void UpdateCraftingTab()
+    {
+        ApplyInventoryScrollStyle(craftingScrollView);
+
+        if (craftingScrollView == null)
+            return;
+
+        craftingScrollView.Clear();
+
+        if (inventory == null)
+        {
+            craftingScrollView.Add(CreateInfoLabel("Inventory not found."));
+            return;
+        }
+
+        if (craftingSystem == null)
+        {
+            craftingScrollView.Add(CreateInfoLabel("Crafting system component not found."));
+            return;
+        }
+
+        var recipes = craftingSystem.CraftingRecipes;
+        if (recipes == null || recipes.Count == 0)
+        {
+            craftingScrollView.Add(CreateInfoLabel("No crafting recipes assigned yet."));
+            return;
+        }
+
+        craftingScrollView.Add(CreateCraftingHeader());
+        craftingScrollView.Add(CreateCraftingCategoryTabs());
+
+        List<CraftingRecipe> filteredRecipes = recipes
+            .Where(r => r != null && IsRecipeVisibleInActiveCategory(r))
+            .ToList();
+
+        if (filteredRecipes.Count == 0)
+        {
+            craftingScrollView.Add(CreateInfoLabel("No recipes in this category yet."));
+            return;
+        }
+
+        for (int i = 0; i < filteredRecipes.Count; i++)
+        {
+            var recipe = filteredRecipes[i];
+
+            craftingScrollView.Add(CreateCraftingRecipeCard(recipe));
+        }
+    }
+
+    private VisualElement CreateCraftingCategoryTabs()
+    {
+        var row = new VisualElement();
+        row.style.flexDirection = FlexDirection.Row;
+        row.style.flexWrap = Wrap.Wrap;
+        row.style.marginBottom = 8;
+
+        row.Add(CreateCraftingCategoryButton("Ammunition", CraftingCategoryTab.Ammunition));
+        row.Add(CreateCraftingCategoryButton("Weapons", CraftingCategoryTab.Weapons));
+        row.Add(CreateCraftingCategoryButton("Healing", CraftingCategoryTab.HealingItems));
+        row.Add(CreateCraftingCategoryButton("Food", CraftingCategoryTab.Food));
+        row.Add(CreateCraftingCategoryButton("Water", CraftingCategoryTab.Water));
+
+        return row;
+    }
+
+    private Button CreateCraftingCategoryButton(string label, CraftingCategoryTab tab)
+    {
+        bool isActive = activeCraftingCategory == tab;
+        var button = new Button(() =>
+        {
+            activeCraftingCategory = tab;
+            if (IsInventoryOpen && ActiveTab == InventoryTab.Crafting)
+                UpdateCraftingTab();
+        })
+        {
+            text = label
+        };
+
+        button.style.height = 26;
+        button.style.paddingLeft = 8;
+        button.style.paddingRight = 8;
+        button.style.marginRight = 6;
+        button.style.marginBottom = 6;
+        button.style.unityFontStyleAndWeight = FontStyle.Bold;
+        button.style.fontSize = 10;
+        button.style.borderTopLeftRadius = 6;
+        button.style.borderTopRightRadius = 6;
+        button.style.borderBottomLeftRadius = 6;
+        button.style.borderBottomRightRadius = 6;
+        button.style.backgroundColor = new StyleColor(isActive
+            ? new Color(0.2f, 0.2f, 0.2f, 0.98f)
+            : new Color(0.11f, 0.11f, 0.11f, 0.96f));
+        button.style.color = new StyleColor(isActive
+            ? new Color(0.95f, 0.95f, 0.95f, 1f)
+            : new Color(0.73f, 0.73f, 0.73f, 0.96f));
+        button.style.borderTopWidth = 1;
+        button.style.borderRightWidth = 1;
+        button.style.borderBottomWidth = 1;
+        button.style.borderLeftWidth = 1;
+        button.style.borderTopColor = new StyleColor(new Color(0.28f, 0.28f, 0.28f, 0.95f));
+        button.style.borderRightColor = new StyleColor(new Color(0.28f, 0.28f, 0.28f, 0.95f));
+        button.style.borderBottomColor = new StyleColor(new Color(0.2f, 0.2f, 0.2f, 0.95f));
+        button.style.borderLeftColor = new StyleColor(new Color(0.2f, 0.2f, 0.2f, 0.95f));
+
+        return button;
+    }
+
+    private bool IsRecipeVisibleInActiveCategory(CraftingRecipe recipe)
+    {
+        if (recipe == null)
+            return false;
+
+        return activeCraftingCategory switch
+        {
+            CraftingCategoryTab.Ammunition => recipe.Category == CraftingRecipe.CraftingCategory.Ammunition,
+            CraftingCategoryTab.Weapons => recipe.Category == CraftingRecipe.CraftingCategory.Weapons,
+            CraftingCategoryTab.HealingItems => recipe.Category == CraftingRecipe.CraftingCategory.HealingItems,
+            CraftingCategoryTab.Food => recipe.Category == CraftingRecipe.CraftingCategory.Food,
+            CraftingCategoryTab.Water => recipe.Category == CraftingRecipe.CraftingCategory.Water,
+            _ => true
+        };
+    }
+
+    private VisualElement CreateCraftingRecipeCard(CraftingRecipe recipe)
+    {
+        var card = new VisualElement();
+        card.style.flexDirection = FlexDirection.Column;
+        card.style.marginBottom = 8;
+        card.style.paddingTop = 10;
+        card.style.paddingRight = 12;
+        card.style.paddingBottom = 10;
+        card.style.paddingLeft = 12;
+        card.style.backgroundColor = new StyleColor(new Color(0.1f, 0.1f, 0.1f, 0.96f));
+        card.style.borderTopLeftRadius = 8;
+        card.style.borderTopRightRadius = 8;
+        card.style.borderBottomLeftRadius = 8;
+        card.style.borderBottomRightRadius = 8;
+        card.style.borderTopWidth = 1;
+        card.style.borderRightWidth = 1;
+        card.style.borderBottomWidth = 1;
+        card.style.borderLeftWidth = 1;
+        card.style.borderTopColor = new StyleColor(new Color(0.28f, 0.28f, 0.28f, 0.4f));
+        card.style.borderRightColor = new StyleColor(new Color(0.28f, 0.28f, 0.28f, 0.4f));
+        card.style.borderBottomColor = new StyleColor(new Color(0.22f, 0.22f, 0.22f, 0.3f));
+        card.style.borderLeftColor = new StyleColor(new Color(0.22f, 0.22f, 0.22f, 0.3f));
+
+        var topRow = new VisualElement();
+        topRow.style.flexDirection = FlexDirection.Row;
+        topRow.style.alignItems = Align.Center;
+        topRow.style.justifyContent = Justify.SpaceBetween;
+
+        var durationBadge = new Label($"{recipe.CraftDurationSeconds:0.0}s");
+        durationBadge.style.fontSize = 10;
+        durationBadge.style.paddingLeft = 6;
+        durationBadge.style.paddingRight = 6;
+        durationBadge.style.paddingTop = 2;
+        durationBadge.style.paddingBottom = 2;
+        durationBadge.style.backgroundColor = new StyleColor(new Color(0.16f, 0.16f, 0.16f, 0.98f));
+        durationBadge.style.color = new StyleColor(new Color(0.87f, 0.87f, 0.87f, 1f));
+        durationBadge.style.borderTopLeftRadius = 4;
+        durationBadge.style.borderTopRightRadius = 4;
+        durationBadge.style.borderBottomLeftRadius = 4;
+        durationBadge.style.borderBottomRightRadius = 4;
+        durationBadge.style.unityFontStyleAndWeight = FontStyle.Bold;
+
+        string recipeName = !string.IsNullOrWhiteSpace(recipe.RecipeName)
+            ? recipe.RecipeName
+            : (recipe.OutputItem != null ? recipe.OutputItem.ItemName : "Recipe");
+
+        var title = new Label($"{recipeName}  →  {GetOutputText(recipe)}");
+        title.style.fontSize = 13;
+        title.style.unityFontStyleAndWeight = FontStyle.Bold;
+        title.style.color = new StyleColor(new Color(0.94f, 0.94f, 0.94f, 1f));
+        topRow.Add(title);
+        topRow.Add(durationBadge);
+        card.Add(topRow);
+
+        if (!string.IsNullOrWhiteSpace(recipe.Description))
+        {
+            var description = new Label(recipe.Description);
+            description.style.fontSize = 11;
+            description.style.marginTop = 2;
+            description.style.marginBottom = 6;
+            description.style.color = new StyleColor(new Color(0.74f, 0.74f, 0.74f, 0.95f));
+            description.style.whiteSpace = WhiteSpace.Normal;
+            card.Add(description);
+        }
+
+        var requirementsTitle = new Label("Requirements:");
+        requirementsTitle.style.fontSize = 11;
+        requirementsTitle.style.marginTop = 4;
+        requirementsTitle.style.marginBottom = 2;
+        requirementsTitle.style.color = new StyleColor(new Color(0.82f, 0.82f, 0.82f, 0.95f));
+        card.Add(requirementsTitle);
+
+        bool hasRequirements = false;
+        if (recipe.Requirements != null)
+        {
+            foreach (var req in recipe.Requirements)
+            {
+                if (req == null || req.Item == null || req.Quantity <= 0)
+                    continue;
+
+                hasRequirements = true;
+                int owned = inventory != null ? inventory.GetItemQuantity(req.Item) : 0;
+                bool ok = owned >= req.Quantity;
+                var reqLabel = new Label($"• {req.Item.ItemName}   {owned}/{req.Quantity}");
+                reqLabel.style.fontSize = 11;
+                reqLabel.style.color = new StyleColor(ok
+                    ? new Color(0.76f, 0.9f, 0.76f, 0.95f)
+                    : new Color(1f, 0.52f, 0.52f, 0.95f));
+                card.Add(reqLabel);
+            }
+        }
+
+        if (!hasRequirements)
+        {
+            var none = new Label("• No requirements");
+            none.style.fontSize = 11;
+            none.style.color = new StyleColor(new Color(0.72f, 0.72f, 0.72f, 0.96f));
+            card.Add(none);
+        }
+
+        bool isCraftingBusy = craftingSystem != null && craftingSystem.IsCraftingInProgress;
+        bool canCraft = craftingSystem != null && craftingSystem.CanCraftRecipe(recipe) && !isCraftingBusy;
+        string buttonText = isCraftingBusy
+            ? "Crafting in progress..."
+            : (canCraft ? $"Craft ({recipe.CraftDurationSeconds:0.0}s)" : "Missing resources");
+
+        var craftButton = new Button(() => TryCraftRecipe(recipe)) { text = buttonText };
+        craftButton.SetEnabled(canCraft);
+        craftButton.style.marginTop = 8;
+        craftButton.style.height = 30;
+        craftButton.style.unityFontStyleAndWeight = FontStyle.Bold;
+        craftButton.style.backgroundColor = new StyleColor(canCraft
+            ? new Color(0.24f, 0.24f, 0.24f, 0.98f)
+            : new Color(0.16f, 0.16f, 0.16f, 0.95f));
+        craftButton.style.color = new StyleColor(canCraft
+            ? new Color(0.95f, 0.95f, 0.95f, 1f)
+            : new Color(0.62f, 0.62f, 0.62f, 1f));
+        card.Add(craftButton);
+
+        return card;
+    }
+
+    private void TryCraftRecipe(CraftingRecipe recipe)
+    {
+        if (craftingSystem == null)
+            return;
+
+        craftingSystem.TryStartCraft(recipe);
+        RefreshCurrentTab();
+    }
+
+    private VisualElement CreateCraftingHeader()
+    {
+        var container = new VisualElement();
+        container.style.flexDirection = FlexDirection.Column;
+        container.style.marginBottom = 10;
+        container.style.paddingTop = 8;
+        container.style.paddingRight = 10;
+        container.style.paddingBottom = 8;
+        container.style.paddingLeft = 10;
+        container.style.backgroundColor = new StyleColor(new Color(0.09f, 0.09f, 0.09f, 0.97f));
+        container.style.borderTopLeftRadius = 8;
+        container.style.borderTopRightRadius = 8;
+        container.style.borderBottomLeftRadius = 8;
+        container.style.borderBottomRightRadius = 8;
+        container.style.borderTopWidth = 1;
+        container.style.borderRightWidth = 1;
+        container.style.borderBottomWidth = 1;
+        container.style.borderLeftWidth = 1;
+        container.style.borderTopColor = new StyleColor(new Color(0.28f, 0.28f, 0.28f, 0.45f));
+        container.style.borderRightColor = new StyleColor(new Color(0.28f, 0.28f, 0.28f, 0.45f));
+        container.style.borderBottomColor = new StyleColor(new Color(0.22f, 0.22f, 0.22f, 0.3f));
+        container.style.borderLeftColor = new StyleColor(new Color(0.22f, 0.22f, 0.22f, 0.3f));
+
+        var title = new Label("Crafting Bench");
+        title.style.fontSize = 14;
+        title.style.unityFontStyleAndWeight = FontStyle.Bold;
+        title.style.color = new StyleColor(new Color(0.95f, 0.95f, 0.95f, 1f));
+        container.Add(title);
+
+        string statusText = craftingSystem != null ? craftingSystem.StatusMessage : "Crafting unavailable.";
+        Color statusColor = craftingSystem != null ? craftingSystem.StatusColor : new Color(1f, 0.55f, 0.55f, 0.95f);
+
+        var status = new Label(statusText);
+        status.style.fontSize = 11;
+        status.style.marginTop = 2;
+        status.style.color = new StyleColor(statusColor);
+        container.Add(status);
+
+        var progressTrack = new VisualElement();
+        progressTrack.style.height = 14;
+        progressTrack.style.marginTop = 7;
+        progressTrack.style.backgroundColor = new StyleColor(new Color(0.06f, 0.08f, 0.06f, 1f));
+        progressTrack.style.borderTopLeftRadius = 3;
+        progressTrack.style.borderTopRightRadius = 3;
+        progressTrack.style.borderBottomLeftRadius = 3;
+        progressTrack.style.borderBottomRightRadius = 3;
+
+        var progressFill = new VisualElement();
+        progressFill.style.height = Length.Percent(100);
+        float progress = craftingSystem != null ? craftingSystem.CraftingProgress01 : 0f;
+        progressFill.style.width = Length.Percent(progress * 100f);
+        progressFill.style.backgroundColor = new StyleColor(new Color(0.45f, 0.84f, 0.45f, 1f));
+        progressFill.style.borderTopLeftRadius = 3;
+        progressFill.style.borderTopRightRadius = 3;
+        progressFill.style.borderBottomLeftRadius = 3;
+        progressFill.style.borderBottomRightRadius = 3;
+        progressTrack.Add(progressFill);
+
+        container.Add(progressTrack);
+        return container;
+    }
+
+    private static string GetOutputText(CraftingRecipe recipe)
+    {
+        if (recipe == null || recipe.OutputItem == null || recipe.OutputAmount <= 0)
+            return "Invalid output";
+
+        return $"{recipe.OutputItem.ItemName} x{recipe.OutputAmount}";
     }
 
     private void RefreshInventoryTab()

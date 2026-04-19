@@ -14,6 +14,7 @@
             <ui:Button name="tab-inventory" text="Inventory" style="height: 30px; flex-grow: 1; background-color: rgba(28, 28, 28, 0.95); color: rgb(236, 236, 236); border-radius: 6px; -unity-font-style: bold; font-size: 11px;" />
             <ui:Button name="tab-skills" text="Skills" style="height: 30px; flex-grow: 1; background-color: rgba(18, 18, 18, 0.95); color: rgba(194, 194, 194, 0.95); border-radius: 6px; -unity-font-style: bold; font-size: 11px;" />
             <ui:Button name="tab-injury" text="Injury" style="height: 30px; flex-grow: 1; background-color: rgba(18, 18, 18, 0.95); color: rgba(194, 194, 194, 0.95); border-radius: 6px; -unity-font-style: bold; font-size: 11px;" />
+            <ui:Button name="tab-crafting" text="Crafting" style="height: 30px; flex-grow: 1; background-color: rgba(18, 18, 18, 0.95); color: rgba(194, 194, 194, 0.95); border-radius: 6px; -unity-font-style: bold; font-size: 11px;" />
         </ui:VisualElement>
 
         <ui:VisualElement name="tab-content-inventory" style="flex-grow: 1; display: flex;">
@@ -26,6 +27,10 @@
 
         <ui:VisualElement name="tab-content-injury" style="flex-grow: 1; display: none;">
             <ui:ScrollView name="injury-list" horizontal-scrolling="false" vertical-scrolling="true" style="flex-grow: 1; background-color: rgba(8, 8, 8, 0.96); border-radius: 6px; margin-bottom: 2px; padding: 8px; min-height: 320px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(120, 120, 120, 0.12); border-right-color: rgba(120, 120, 120, 0.12); border-bottom-color: rgba(120, 120, 120, 0.08); border-left-color: rgba(120, 120, 120, 0.08);"/>
+        </ui:VisualElement>
+
+        <ui:VisualElement name="tab-content-crafting" style="flex-grow: 1; display: none;">
+            <ui:ScrollView name="crafting-list" horizontal-scrolling="false" vertical-scrolling="true" style="flex-grow: 1; background-color: rgba(8, 8, 8, 0.96); border-radius: 6px; margin-bottom: 2px; padding: 8px; min-height: 320px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(120, 120, 120, 0.12); border-right-color: rgba(120, 120, 120, 0.12); border-bottom-color: rgba(120, 120, 120, 0.08); border-left-color: rgba(120, 120, 120, 0.08);"/>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>
