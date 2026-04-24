@@ -82,6 +82,9 @@ public class InventoryUIToolkit : MonoBehaviour
         SetActiveTabInternal(InventoryTab.Inventory, false);
         SetInventoryPanelVisible(false);
 
+        if (rootVisual != null)
+            ItemTooltipUtility.EnsureTooltipPanel(rootVisual);
+
         rootVisual.RegisterCallback<PointerMoveEvent>(OnRootPointerMoveItemDrag);
         rootVisual.RegisterCallback<PointerUpEvent>(OnRootPointerUpItemDrag);
     }
@@ -946,18 +949,35 @@ public class InventoryUIToolkit : MonoBehaviour
             qty.style.bottom = 3;
             qty.style.fontSize = 10;
             qty.style.unityFontStyleAndWeight = FontStyle.Bold;
+            qty.pickingMode = PickingMode.Ignore;
             tile.Add(qty);
         }
 
-        tile.tooltip = $"{slot.item.ItemName} x{slot.quantity}";
-        tile.RegisterCallback<MouseUpEvent>(evt => { if (evt.button == 1) ShowInventoryContextMenu(slot, root, evt); });
+        tile.RegisterCallback<MouseEnterEvent>(evt =>
+        {
+            ItemTooltipUtility.ShowTooltip(root, slot.item, slot.quantity, GetTooltipAnchorPoint(tile, evt.mousePosition));
+        });
+
+        tile.RegisterCallback<MouseMoveEvent>(evt =>
+        {
+            ItemTooltipUtility.ShowTooltip(root, slot.item, slot.quantity, GetTooltipAnchorPoint(tile, evt.mousePosition));
+        });
+
+        tile.RegisterCallback<MouseLeaveEvent>(_ => ItemTooltipUtility.HideTooltip(root));
+        tile.RegisterCallback<MouseUpEvent>(evt => { if (evt.button == 1) ShowInventoryContextMenu(slot, anchorIndex, root, evt); });
         tile.RegisterCallback<PointerDownEvent>(evt =>
         {
             if (evt.button != 0) return;
+            ItemTooltipUtility.HideTooltip(rootVisual);
             BeginItemDragCandidate(slot.item, slot.quantity, anchorIndex, evt.pointerId, evt.position);
             evt.StopPropagation();
         });
         return tile;
+    }
+
+    private static Vector2 GetTooltipAnchorPoint(VisualElement element, Vector2 localPointerPosition)
+    {
+        return localPointerPosition;
     }
 
     private void BeginItemDragCandidate(Item item, int quantity, int sourceSlotIndex, int pointerId, Vector2 pointerPos)
@@ -981,6 +1001,7 @@ public class InventoryUIToolkit : MonoBehaviour
         {
             Vector2 delta = pointerPos - itemDragStartMouse;
             if (delta.sqrMagnitude < ItemDragStartThreshold * ItemDragStartThreshold) return;
+            ItemTooltipUtility.HideTooltip(rootVisual);
             StartItemDragGhost();
             isItemDragging = true;
         }
@@ -1041,63 +1062,223 @@ public class InventoryUIToolkit : MonoBehaviour
         itemDragQuantity = 0;
         itemDragGhost?.RemoveFromHierarchy();
         itemDragGhost = null;
+        ItemTooltipUtility.HideTooltip(rootVisual);
     }
 
-    private void ShowInventoryContextMenu(InventorySlot slot, VisualElement root, MouseUpEvent evt)
+    private void ShowInventoryContextMenu(InventorySlot slot, int slotIndex, VisualElement root, MouseUpEvent evt)
     {
         if (slot == null || slot.item == null) return;
         var existing = root.Q("inventory-context-menu");
         existing?.RemoveFromHierarchy();
+
         var menu = new VisualElement { name = "inventory-context-menu" };
         menu.style.position = Position.Absolute;
         Vector2 p = root.WorldToLocal(evt.mousePosition);
         menu.style.left = p.x;
         menu.style.top = p.y;
-        menu.style.backgroundColor = new StyleColor(new Color(0.1f, 0.14f, 0.19f, 0.98f));
+        menu.style.minWidth = 220;
+        menu.style.maxWidth = 260;
+        menu.style.backgroundColor = new StyleColor(new Color(0.08f, 0.08f, 0.09f, 0.98f));
+        menu.style.borderTopWidth = 1;
+        menu.style.borderRightWidth = 1;
+        menu.style.borderBottomWidth = 1;
+        menu.style.borderLeftWidth = 1;
+        menu.style.borderTopColor = new StyleColor(new Color(0.62f, 0.62f, 0.62f, 0.24f));
+        menu.style.borderRightColor = new StyleColor(new Color(0.62f, 0.62f, 0.62f, 0.24f));
+        menu.style.borderBottomColor = new StyleColor(new Color(0.62f, 0.62f, 0.62f, 0.15f));
+        menu.style.borderLeftColor = new StyleColor(new Color(0.62f, 0.62f, 0.62f, 0.15f));
+        menu.style.borderTopLeftRadius = 8;
+        menu.style.borderTopRightRadius = 8;
+        menu.style.borderBottomLeftRadius = 8;
+        menu.style.borderBottomRightRadius = 8;
         menu.style.paddingLeft = 8;
         menu.style.paddingRight = 8;
-        menu.style.paddingTop = 6;
-        menu.style.paddingBottom = 6;
-        AddContextActions(slot, menu);
+        menu.style.paddingTop = 8;
+        menu.style.paddingBottom = 8;
+
+        string itemName = string.IsNullOrWhiteSpace(slot.item.ItemName) ? "Item" : slot.item.ItemName;
+        var header = new Label(itemName);
+        header.style.fontSize = 12;
+        header.style.unityFontStyleAndWeight = FontStyle.Bold;
+        header.style.color = new StyleColor(new Color(0.95f, 0.95f, 0.95f, 1f));
+        header.style.marginBottom = 2;
+        menu.Add(header);
+
+        var subtitle = new Label("Actions");
+        subtitle.style.fontSize = 10;
+        subtitle.style.color = new StyleColor(new Color(0.76f, 0.76f, 0.78f, 0.95f));
+        subtitle.style.marginBottom = 6;
+        menu.Add(subtitle);
+
+        var divider = new VisualElement();
+        divider.style.height = 1;
+        divider.style.backgroundColor = new StyleColor(new Color(0.62f, 0.62f, 0.62f, 0.18f));
+        divider.style.marginBottom = 6;
+        menu.Add(divider);
+
+        AddContextActions(slot, slotIndex, menu);
         root.Add(menu);
+
+        menu.BringToFront();
+
+        float rootWidth = root.resolvedStyle.width;
+        float rootHeight = root.resolvedStyle.height;
+        float menuWidth = Mathf.Max(220f, menu.resolvedStyle.width > 0f ? menu.resolvedStyle.width : 220f);
+        float menuHeight = Mathf.Max(120f, menu.resolvedStyle.height > 0f ? menu.resolvedStyle.height : 120f);
+        if (rootWidth > 0f && p.x + menuWidth > rootWidth - 8f)
+            menu.style.left = Mathf.Max(8f, rootWidth - menuWidth - 8f);
+        if (rootHeight > 0f && p.y + menuHeight > rootHeight - 8f)
+            menu.style.top = Mathf.Max(8f, rootHeight - menuHeight - 8f);
     }
 
-    private void AddContextActions(InventorySlot slot, VisualElement menu)
+    private void AddContextActions(InventorySlot slot, int slotIndex, VisualElement menu)
     {
-        if (equipmentManager == null) equipmentManager = FindAnyObjectByType<EquipmentManager>();
-        if (equipmentManager == null) return;
+        if (slot == null || slot.item == null)
+            return;
+
+        bool hasAnyAction = false;
+
+        if (equipmentManager == null)
+            equipmentManager = FindAnyObjectByType<EquipmentManager>();
+
         if (slot.item is GunItem gun)
         {
-            if (gun.GunType == Gun.GunType.Pistol)
+            if (equipmentManager != null && gun.GunType == Gun.GunType.Pistol)
             {
                 AddContextActionLabel(menu, "Equip as Secondary", () => equipmentManager.EquipAsSecondary(gun));
                 AddContextActionLabel(menu, "Dequip Secondary", () => equipmentManager.EquipAsSecondary(null));
+                hasAnyAction = true;
             }
-            else
+            else if (equipmentManager != null)
             {
                 AddContextActionLabel(menu, "Equip as Primary", () => equipmentManager.EquipAsPrimary(gun));
                 AddContextActionLabel(menu, "Dequip Primary", () => equipmentManager.EquipAsPrimary(null));
+                hasAnyAction = true;
             }
-            return;
         }
+
         if (slot.item is MeleeWeaponItem melee)
         {
-            AddContextActionLabel(menu, "Equip as Melee Slot", () => equipmentManager.EquipMeleeWeapon(melee));
-            AddContextActionLabel(menu, "Select Melee (3)", equipmentManager.SelectMelee);
-            AddContextActionLabel(menu, "Unequip Melee Slot", () => equipmentManager.EquipMeleeWeapon(null));
+            if (equipmentManager != null)
+            {
+                AddContextActionLabel(menu, "Equip as Melee Slot", () => equipmentManager.EquipMeleeWeapon(melee));
+                AddContextActionLabel(menu, "Select Melee (3)", equipmentManager.SelectMelee);
+                AddContextActionLabel(menu, "Unequip Melee Slot", () => equipmentManager.EquipMeleeWeapon(null));
+                hasAnyAction = true;
+            }
         }
+
+        if (slot.item is FoodItem food)
+        {
+            AddContextActionLabel(menu, "Eat", () => ConsumeFoodItem(food, slotIndex));
+            hasAnyAction = true;
+        }
+
+        if (slot.item is WaterItem water)
+        {
+            AddContextActionLabel(menu, "Drink", () => ConsumeWaterItem(water, slotIndex));
+            hasAnyAction = true;
+        }
+
+        if (!hasAnyAction)
+        {
+            var emptyLabel = new Label("No actions available");
+            emptyLabel.style.fontSize = 10;
+            emptyLabel.style.color = new StyleColor(new Color(0.72f, 0.72f, 0.75f, 0.9f));
+            emptyLabel.style.marginLeft = 4;
+            emptyLabel.style.marginBottom = 2;
+            menu.Add(emptyLabel);
+        }
+    }
+
+    private void ConsumeFoodItem(FoodItem foodItem, int slotIndex)
+    {
+        if (foodItem == null)
+            return;
+
+        ResolveReferences();
+        if (inventory == null || player == null)
+            return;
+
+        int anchorIndex = inventory.ResolveAnchorSlotIndex(slotIndex);
+        if (anchorIndex < 0)
+            return;
+
+        if (!inventory.RemoveItemAtSlot(anchorIndex, 1))
+            return;
+
+        if (!Mathf.Approximately(foodItem.HungerRestore, 0f))
+            player.Eat(foodItem.HungerRestore);
+        if (!Mathf.Approximately(foodItem.ThirstRestore, 0f))
+            player.Drink(foodItem.ThirstRestore);
+    }
+
+    private void ConsumeWaterItem(WaterItem waterItem, int slotIndex)
+    {
+        if (waterItem == null)
+            return;
+
+        ResolveReferences();
+        if (inventory == null || player == null)
+            return;
+
+        int anchorIndex = inventory.ResolveAnchorSlotIndex(slotIndex);
+        if (anchorIndex < 0)
+            return;
+
+        if (!inventory.RemoveItemAtSlot(anchorIndex, 1))
+            return;
+
+        if (!Mathf.Approximately(waterItem.ThirstRestore, 0f))
+            player.Drink(waterItem.ThirstRestore);
+        if (!Mathf.Approximately(waterItem.HungerRestore, 0f))
+            player.Eat(waterItem.HungerRestore);
     }
 
     private void AddContextActionLabel(VisualElement menu, string text, Action callback)
     {
-        var label = new Label(text);
-        label.RegisterCallback<MouseUpEvent>(_ =>
+        var button = new Button(() =>
         {
             callback?.Invoke();
             var m = rootVisual?.Q("inventory-context-menu");
             m?.RemoveFromHierarchy();
         });
-        menu.Add(label);
+        button.text = text;
+        button.style.height = 28;
+        button.style.marginBottom = 4;
+        button.style.paddingLeft = 8;
+        button.style.paddingRight = 8;
+        button.style.borderTopLeftRadius = 6;
+        button.style.borderTopRightRadius = 6;
+        button.style.borderBottomLeftRadius = 6;
+        button.style.borderBottomRightRadius = 6;
+        button.style.borderTopWidth = 1;
+        button.style.borderRightWidth = 1;
+        button.style.borderBottomWidth = 1;
+        button.style.borderLeftWidth = 1;
+        button.style.borderTopColor = new StyleColor(new Color(0.62f, 0.62f, 0.62f, 0.2f));
+        button.style.borderRightColor = new StyleColor(new Color(0.62f, 0.62f, 0.62f, 0.2f));
+        button.style.borderBottomColor = new StyleColor(new Color(0.62f, 0.62f, 0.62f, 0.14f));
+        button.style.borderLeftColor = new StyleColor(new Color(0.62f, 0.62f, 0.62f, 0.14f));
+        button.style.backgroundColor = new StyleColor(new Color(0.13f, 0.13f, 0.14f, 0.98f));
+        button.style.color = new StyleColor(new Color(0.92f, 0.92f, 0.94f, 1f));
+        button.style.unityTextAlign = TextAnchor.MiddleLeft;
+        button.style.unityFontStyleAndWeight = FontStyle.Normal;
+        button.style.fontSize = 11;
+
+        button.RegisterCallback<MouseEnterEvent>(_ =>
+        {
+            button.style.backgroundColor = new StyleColor(new Color(0.2f, 0.2f, 0.22f, 0.98f));
+            button.style.color = new StyleColor(new Color(1f, 1f, 1f, 1f));
+        });
+
+        button.RegisterCallback<MouseLeaveEvent>(_ =>
+        {
+            button.style.backgroundColor = new StyleColor(new Color(0.13f, 0.13f, 0.14f, 0.98f));
+            button.style.color = new StyleColor(new Color(0.92f, 0.92f, 0.94f, 1f));
+        });
+
+        menu.Add(button);
     }
 
     private void UpdateSkillsTab()

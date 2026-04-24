@@ -55,6 +55,9 @@ public class StorageWindowUIToolkit : MonoBehaviour
         root = uiDocument.rootVisualElement;
         BuildStorageWindow();
 
+        if (root != null)
+            ItemTooltipUtility.EnsureTooltipPanel(root);
+
         root.RegisterCallback<PointerMoveEvent>(OnRootPointerMoveItemDrag);
         root.RegisterCallback<PointerUpEvent>(OnRootPointerUpItemDrag);
     }
@@ -541,18 +544,34 @@ public class StorageWindowUIToolkit : MonoBehaviour
             tile.Add(qtyLabel);
         }
 
-        tile.tooltip = $"{slot.item.ItemName} x{slot.quantity}";
+        tile.RegisterCallback<MouseEnterEvent>(evt =>
+        {
+            ItemTooltipUtility.ShowTooltip(root, slot.item, slot.quantity, GetTooltipAnchorPoint(tile, evt.mousePosition));
+        });
+
+        tile.RegisterCallback<MouseMoveEvent>(evt =>
+        {
+            ItemTooltipUtility.ShowTooltip(root, slot.item, slot.quantity, GetTooltipAnchorPoint(tile, evt.mousePosition));
+        });
+
+        tile.RegisterCallback<MouseLeaveEvent>(_ => ItemTooltipUtility.HideTooltip(root));
 
         tile.RegisterCallback<PointerDownEvent>(evt =>
         {
             if (evt.button != 0)
                 return;
 
+            ItemTooltipUtility.HideTooltip(root);
             BeginItemDragCandidate(slot.item, slot.quantity, anchorIndex, sourceInventory, evt.pointerId, evt.position);
             evt.StopPropagation();
         });
 
         return tile;
+    }
+
+    private static Vector2 GetTooltipAnchorPoint(VisualElement element, Vector2 localPointerPosition)
+    {
+        return localPointerPosition;
     }
 
     private void BeginItemDragCandidate(Item item, int quantity, int sourceSlotIndex, Inventory sourceInventory, int pointerId, Vector2 pointerPos)
@@ -585,6 +604,7 @@ public class StorageWindowUIToolkit : MonoBehaviour
             if (delta.sqrMagnitude < ItemDragStartThreshold * ItemDragStartThreshold)
                 return;
 
+            ItemTooltipUtility.HideTooltip(root);
             StartItemDragGhost();
             isItemDragging = true;
         }
@@ -747,5 +767,7 @@ public class StorageWindowUIToolkit : MonoBehaviour
             itemDragGhost.RemoveFromHierarchy();
             itemDragGhost = null;
         }
+
+        ItemTooltipUtility.HideTooltip(root);
     }
 }
