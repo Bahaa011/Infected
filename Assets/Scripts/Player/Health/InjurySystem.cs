@@ -4,6 +4,22 @@ using UnityEngine.Events;
 
 public class InjurySystem : MonoBehaviour
 {
+    [System.Serializable]
+    public struct InjurySaveData
+    {
+        public BodyPart bodyPart;
+        public InjuryType injuryType;
+        public float timestamp;
+        public bool isInfected;
+        public float infectionProgress;
+        public bool isBandaged;
+        public float biteFatalElapsed;
+        public float biteFatalDuration;
+        public bool isHealing;
+        public float healingElapsedDays;
+        public float healingDurationDays;
+    }
+
     [Header("Injury Probabilities")]
     [SerializeField] [Range(0f, 1f)] private float scratchChance = 0.5f;      // 50% chance
     [SerializeField] [Range(0f, 1f)] private float lacerationChance = 0.35f;  // 35% chance
@@ -542,5 +558,62 @@ public class InjurySystem : MonoBehaviour
                 injuries.Add(injury);
         }
         return injuries;
+    }
+
+    public List<InjurySaveData> CaptureSaveData()
+    {
+        List<InjurySaveData> data = new List<InjurySaveData>();
+        if (activeInjuries == null)
+            return data;
+
+        for (int i = 0; i < activeInjuries.Count; i++)
+        {
+            Injury injury = activeInjuries[i];
+            if (injury == null)
+                continue;
+
+            data.Add(new InjurySaveData
+            {
+                bodyPart = injury.bodyPart,
+                injuryType = injury.injuryType,
+                timestamp = injury.timestamp,
+                isInfected = injury.isInfected,
+                infectionProgress = injury.infectionProgress,
+                isBandaged = injury.isBandaged,
+                biteFatalElapsed = injury.biteFatalElapsed,
+                biteFatalDuration = injury.biteFatalDuration,
+                isHealing = injury.isHealing,
+                healingElapsedDays = injury.healingElapsedDays,
+                healingDurationDays = injury.healingDurationDays
+            });
+        }
+
+        return data;
+    }
+
+    public void ApplySaveData(List<InjurySaveData> data)
+    {
+        activeInjuries.Clear();
+        if (data == null)
+            return;
+
+        for (int i = 0; i < data.Count; i++)
+        {
+            InjurySaveData save = data[i];
+            Injury injury = new Injury(save.bodyPart, save.injuryType)
+            {
+                timestamp = save.timestamp,
+                isInfected = save.isInfected,
+                infectionProgress = Mathf.Clamp01(save.infectionProgress),
+                isBandaged = save.isBandaged,
+                biteFatalElapsed = Mathf.Max(0f, save.biteFatalElapsed),
+                biteFatalDuration = Mathf.Max(0f, save.biteFatalDuration),
+                isHealing = save.isHealing,
+                healingElapsedDays = Mathf.Max(0f, save.healingElapsedDays),
+                healingDurationDays = Mathf.Max(0f, save.healingDurationDays)
+            };
+
+            activeInjuries.Add(injury);
+        }
     }
 }

@@ -352,6 +352,20 @@ public class Player : MonoBehaviour
         onThirstChanged?.Invoke(currentThirst, maxThirst);
     }
 
+    public void ApplySavedVitals(float health, float hunger, float thirst, float stamina, bool alive)
+    {
+        currentHealth = Mathf.Clamp(health, 0f, maxHealth);
+        currentHunger = Mathf.Clamp(hunger, 0f, maxHunger);
+        currentThirst = Mathf.Clamp(thirst, 0f, maxThirst);
+        currentStamina = Mathf.Clamp(stamina, 0f, maxStamina);
+        isAlive = alive;
+
+        onHealthChanged?.Invoke(currentHealth, maxHealth);
+        onHungerChanged?.Invoke(currentHunger, maxHunger);
+        onThirstChanged?.Invoke(currentThirst, maxThirst);
+        onStaminaChanged?.Invoke(currentStamina, maxStamina);
+    }
+
     public void SetIsCurrentlySprinting(bool isSprinting)
     {
         isCurrentlySprinting = isSprinting;

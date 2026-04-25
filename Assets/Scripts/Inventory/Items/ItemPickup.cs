@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Linq;
 
-public class ItemPickup : MonoBehaviour
+public class ItemPickup : MonoBehaviour, IInteractionPromptSource
 {
     [Header("Item Settings")]
     [SerializeField] private Item itemToPickup;
@@ -220,5 +220,20 @@ public class ItemPickup : MonoBehaviour
     public bool IsPickedUp()
     {
         return isPickedUp;
+    }
+
+    public bool TryGetInteractionPrompt(Transform viewer, out string prompt)
+    {
+        prompt = string.Empty;
+
+        if (isPickedUp || itemToPickup == null || viewer == null)
+            return false;
+
+        if (!playerInRange)
+            return false;
+
+        string itemName = string.IsNullOrWhiteSpace(itemToPickup.ItemName) ? "item" : itemToPickup.ItemName;
+        prompt = $"Press E to pick up {itemName}";
+        return true;
     }
 }

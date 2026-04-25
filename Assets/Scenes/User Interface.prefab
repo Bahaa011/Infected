@@ -360,7 +360,7 @@ MonoBehaviour:
   playerSkills: {fileID: 0}
   player: {fileID: 0}
   toggleInventoryAction: {fileID: 0}
-  craftingRecipes: []
+  craftingSystem: {fileID: 0}
 --- !u!114 &8052267367803385364
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -446,6 +446,95 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TimeDisplayUIToolkit
   uiDocument: {fileID: 1954536424232804932}
   dayNightManager: {fileID: 0}
+--- !u!1 &5534902232663340760
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 410317602780508585}
+  - component: {fileID: 4452980130798961729}
+  - component: {fileID: 31978398535645873}
+  m_Layer: 0
+  m_Name: Map
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &410317602780508585
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5534902232663340760}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4259486151678239736}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4452980130798961729
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5534902232663340760}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
+  m_PanelSettings: {fileID: 11400000, guid: a4f67f1d2bbfd2de5b554be6e15f1947, type: 2}
+  m_ParentUI: {fileID: 0}
+  sourceAsset: {fileID: 9197481963319205126, guid: 135f91292c1149d68a5e017c2246dd63, type: 3}
+  m_SortingOrder: 0
+  m_Position: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+  m_PivotReferenceSize: 0
+  m_Pivot: 0
+  m_WorldSpaceCollider: {fileID: 0}
+--- !u!114 &31978398535645873
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5534902232663340760}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 103f1e04ab2d273328b15920b5892b43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WorldMapUIToolkit
+  uiDocument: {fileID: 4452980130798961729}
+  player: {fileID: 0}
+  playerTag: Player
+  scenePrefix: Tile
+  worldOrigin: {x: 0, y: 0}
+  worldSize: {x: 1000, y: 1000}
+  gridSize: {x: 8, y: 8}
+  minimapCellSize: 18
+  minimapPadding: 8
+  minimapPanelSize: 220
+  bigMapCellSize: 64
+  bigMapPadding: 14
+  bigMapPanelSize: 740
+  mapBackground: {r: 0.06, g: 0.06, b: 0.06, a: 0.92}
+  frameBackground: {r: 0.1, g: 0.1, b: 0.1, a: 0.95}
+  tileColor: {r: 0.18, g: 0.18, b: 0.18, a: 0.94}
+  loadedTileColor: {r: 0.28, g: 0.28, b: 0.28, a: 0.96}
+  activeTileColor: {r: 0.34, g: 0.49, b: 0.28, a: 1}
+  borderColor: {r: 0.55, g: 0.55, b: 0.55, a: 0.22}
+  markerColor: {r: 0.95, g: 0.92, b: 0.18, a: 1}
+  overlayColor: {r: 0, g: 0, b: 0, a: 0.35}
 --- !u!1 &6325341378023893324
 GameObject:
   m_ObjectHideFlags: 0
@@ -483,6 +572,8 @@ Transform:
   - {fileID: 6174625574788124860}
   - {fileID: 4682126604736193362}
   - {fileID: 99810129306683618}
+  - {fileID: 410317602780508585}
+  - {fileID: 8636466927844016471}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6647691627800723774
@@ -565,6 +656,82 @@ MonoBehaviour:
   centerOnScreen: 1
   enforceCleanVisualPreset: 1
   usePollingFallback: 1
+--- !u!1 &8129490984058875824
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8636466927844016471}
+  - component: {fileID: 5378864950823558055}
+  - component: {fileID: 35570259300134999}
+  m_Layer: 0
+  m_Name: Toast Message
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8636466927844016471
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8129490984058875824}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4259486151678239736}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5378864950823558055
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8129490984058875824}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
+  m_PanelSettings: {fileID: 11400000, guid: a4f67f1d2bbfd2de5b554be6e15f1947, type: 2}
+  m_ParentUI: {fileID: 0}
+  sourceAsset: {fileID: 9197481963319205126, guid: 5d6e16bda9672ef5997d02ded3556f0d, type: 3}
+  m_SortingOrder: 0
+  m_Position: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+  m_PivotReferenceSize: 0
+  m_Pivot: 0
+  m_WorldSpaceCollider: {fileID: 0}
+--- !u!114 &35570259300134999
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8129490984058875824}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d43d8296e099062caa814cf5dc5098ee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::InteractionPromptUIToolkit
+  uiDocument: {fileID: 5378864950823558055}
+  player: {fileID: 0}
+  playerTag: Player
+  maxRayDistance: 4.5
+  interactionLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  screenOffset: {x: 0, y: -26}
 --- !u!1 &8548628231228193629
 GameObject:
   m_ObjectHideFlags: 0

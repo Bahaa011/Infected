@@ -6,8 +6,200 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/Mechanics'.unity
-    guid: 99c9720ab356a0642a771bea13969a05
+    path: Assets/Scenes/Main.unity
+    guid: f63698d6a9043889183a4e1092589927
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_0_0.unity
+    guid: ae63c61fd10a09abfac46fb9ea3145c6
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_0_1.unity
+    guid: 5a91b15515359288786e523d9683e443
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_0_2.unity
+    guid: 7ef08102acb8f578db6d8c00f92a8346
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_0_3.unity
+    guid: 6199bb9aadf2e51dcbc320a15cce459e
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_0_4.unity
+    guid: 7f15e1d82b4592083a0f51417a8ded03
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_0_5.unity
+    guid: 028861fa459d219eb835a8f6de343190
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_0_6.unity
+    guid: 1e3ba31addf05003a94429ea8eed65f6
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_0_7.unity
+    guid: 8f84e17de156a0d8c8a6f9272d6ac2f0
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_1_0.unity
+    guid: 63854d4bf0980c24d888971ff140842f
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_1_1.unity
+    guid: 411c6303dc312c37abe9df5bcc8ad07a
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_1_2.unity
+    guid: 1f32f11c5c528bf0ab9e0163c41cff35
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_1_3.unity
+    guid: 539f815865af212d9ba9b7c2a050abb3
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_1_4.unity
+    guid: 5f49dec6d6a3c50d989b58caffaf50cb
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_1_5.unity
+    guid: 438b0f93a9eb07e95a31bd86c78dee65
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_1_6.unity
+    guid: 2f426e5ec1aeb8439b61dbb8a6f462af
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_1_7.unity
+    guid: 1046bbd1aa8d781df885242ba4d90064
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_2_0.unity
+    guid: 84263b1dcfbb333029ecbcf2877900d0
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_2_1.unity
+    guid: 625fe18ac5a117863b90c92f51fc8f17
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_2_2.unity
+    guid: 1e6e83c2cc3a7c0fdad128070fc9c836
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_2_3.unity
+    guid: e58540c8f7c07a03aa19fb5f4d3998e9
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_2_4.unity
+    guid: 362e5456574cdf1c48942bd28035ade2
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_2_5.unity
+    guid: 94c0ba139a0057b5694a22b1df8b4c37
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_2_6.unity
+    guid: 4fe8ee1d8f79f36d9bebf03d2cee9efd
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_2_7.unity
+    guid: e52712b33a555b47ab49e9d11b2ea509
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_3_0.unity
+    guid: 1e51517b469b064cf9fd4d81e90bf819
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_3_1.unity
+    guid: 3b95845e32fe6d8cea6e0e62765cbec1
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_3_2.unity
+    guid: 3d4c766e1e6e14effaea94c94e768f44
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_3_3.unity
+    guid: 408e8ab4865ae0815b0dacb6f9e425a5
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_3_4.unity
+    guid: 00ecb74057d7038c1aba514f44b4427e
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_3_5.unity
+    guid: 08dc011316529dae699f5f523ac29347
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_3_6.unity
+    guid: 1a43bda000a089428bfe61f2d8a2b498
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_3_7.unity
+    guid: f6939d486adc8113390d011620a0dd1a
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_4_0.unity
+    guid: 2b613f51e5f244a4e89d347ba4a529bb
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_4_1.unity
+    guid: 736a3f23fea72cdbbbfda79f84982ead
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_4_2.unity
+    guid: febd6bbce80870c06a5951b4bdf9497d
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_4_3.unity
+    guid: a93c8dcdc14b4023899f88678ee19881
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_4_4.unity
+    guid: 5a43ddf399f2214ddb0fba0a379bc599
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_4_5.unity
+    guid: a323711c8efbf315794192a921c3de31
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_4_6.unity
+    guid: 42db557bfead28bb694f1e217c93653d
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_4_7.unity
+    guid: 7a310c3d6c2dbfdef83e15f76a1a7374
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_5_0.unity
+    guid: 367768e8d0d717ce4bf1f4922d821f1e
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_5_1.unity
+    guid: a6e7e72be55bc65eeaeba22de8533652
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_5_2.unity
+    guid: ef2947e205735898db28ca0ada69f0bc
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_5_3.unity
+    guid: a01fa087d5436ce17a65231b1f4601fd
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_5_4.unity
+    guid: 7b17edd82bd8b3fc0853475c0b5ea02d
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_5_5.unity
+    guid: e7245631384e909749cf8535de3f96ab
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_5_6.unity
+    guid: 015cb6c657490779ba756a7fe2b10c21
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_5_7.unity
+    guid: 8834659a436a2f07eb862e85c63a15ab
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_6_0.unity
+    guid: 79b8712056a2f112caaaa2bdc67e75ca
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_6_1.unity
+    guid: 2fa1439ff0ddc1f5d94087cddb00986d
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_6_2.unity
+    guid: 565ffee3fa5867f9884faa7cfaf6ae31
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_6_3.unity
+    guid: b5897f04ce46777b882d448177214f78
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_6_4.unity
+    guid: 62979ef38ddd6eb74b2c2228ff9e13c2
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_6_5.unity
+    guid: e9be502f96935255b9323591c5560b9b
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_6_6.unity
+    guid: af5a16ba4f567bfbbaf21f60a4095104
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_6_7.unity
+    guid: 5358ea3e516d0d709a436632fc84f509
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_7_0.unity
+    guid: beb94ab8e208e4dff87f15d9456002ca
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_7_1.unity
+    guid: 60da0e94b5e779213a6ccda862cbd815
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_7_2.unity
+    guid: cd6c5a4805ac6cdfcbf95a68fff422a1
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_7_3.unity
+    guid: 7289a25774b2383128e98ee4478acd2f
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_7_4.unity
+    guid: 9097af96594dd743f8cc7dc166d661fe
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_7_5.unity
+    guid: f261773acf3114c95bcb96ce283dbf00
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_7_6.unity
+    guid: 3298be886470413dfa9c1c26200347a2
+  - enabled: 1
+    path: Assets/Scenes/TerrainTiles/Tile_7_7.unity
+    guid: 11e31d138717c23f8bece592e9871ed6
   m_configObjects:
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

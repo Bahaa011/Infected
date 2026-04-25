@@ -4,6 +4,31 @@ using System.Collections.Generic;
 
 public class PlayerSkills : MonoBehaviour
 {
+    [System.Serializable]
+    public struct GunSkillSaveData
+    {
+        public Gun.GunType gunType;
+        public int level;
+        public float currentXP;
+        public float totalShots;
+    }
+
+    [System.Serializable]
+    public struct GeneralSkillSaveData
+    {
+        public SkillType skillType;
+        public int level;
+        public float currentXP;
+        public float totalXP;
+    }
+
+    [System.Serializable]
+    public class SkillsSaveData
+    {
+        public List<GunSkillSaveData> gunSkills = new List<GunSkillSaveData>();
+        public List<GeneralSkillSaveData> generalSkills = new List<GeneralSkillSaveData>();
+    }
+
     public enum SkillType
     {
         // Gun skills
@@ -425,5 +450,70 @@ public class PlayerSkills : MonoBehaviour
             data[kvp.Key] = (kvp.Value.level, kvp.Value.currentXP, kvp.Value.totalShots);
         }
         return data;
+    }
+
+    public SkillsSaveData CaptureSaveData()
+    {
+        SkillsSaveData data = new SkillsSaveData();
+
+        foreach (var kvp in gunSkills)
+        {
+            data.gunSkills.Add(new GunSkillSaveData
+            {
+                gunType = kvp.Key,
+                level = Mathf.Max(1, kvp.Value.level),
+                currentXP = Mathf.Max(0f, kvp.Value.currentXP),
+                totalShots = Mathf.Max(0f, kvp.Value.totalShots)
+            });
+        }
+
+        foreach (var kvp in generalSkills)
+        {
+            data.generalSkills.Add(new GeneralSkillSaveData
+            {
+                skillType = kvp.Key,
+                level = Mathf.Max(1, kvp.Value.level),
+                currentXP = Mathf.Max(0f, kvp.Value.currentXP),
+                totalXP = Mathf.Max(0f, kvp.Value.totalXP)
+            });
+        }
+
+        return data;
+    }
+
+    public void ApplySaveData(SkillsSaveData data)
+    {
+        if (data == null)
+            return;
+
+        ResetAllSkills();
+
+        if (data.gunSkills != null)
+        {
+            for (int i = 0; i < data.gunSkills.Count; i++)
+            {
+                GunSkillSaveData save = data.gunSkills[i];
+                if (!gunSkills.TryGetValue(save.gunType, out GunSkill skill) || skill == null)
+                    continue;
+
+                skill.level = Mathf.Max(1, save.level);
+                skill.currentXP = Mathf.Max(0f, save.currentXP);
+                skill.totalShots = Mathf.Max(0f, save.totalShots);
+            }
+        }
+
+        if (data.generalSkills != null)
+        {
+            for (int i = 0; i < data.generalSkills.Count; i++)
+            {
+                GeneralSkillSaveData save = data.generalSkills[i];
+                if (!generalSkills.TryGetValue(save.skillType, out GeneralSkill skill) || skill == null)
+                    continue;
+
+                skill.level = Mathf.Max(1, save.level);
+                skill.currentXP = Mathf.Max(0f, save.currentXP);
+                skill.totalXP = Mathf.Max(0f, save.totalXP);
+            }
+        }
     }
 }

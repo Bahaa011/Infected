@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class DoorController : MonoBehaviour
+public class DoorController : MonoBehaviour, IInteractionPromptSource
 {
     [Header("Door Settings")]
     [SerializeField] private float openAngle = 90f;
@@ -154,6 +154,21 @@ public class DoorController : MonoBehaviour
     public bool IsOpen => isOpen;
 
     public bool IsPlayerNearby => isPlayerNearby;
+
+    public bool TryGetInteractionPrompt(Transform viewer, out string prompt)
+    {
+        prompt = string.Empty;
+
+        if (viewer == null)
+            return false;
+
+        float distance = Vector3.Distance(transform.position, viewer.position);
+        if (distance > interactionRange)
+            return false;
+
+        prompt = isOpen ? "Press E to close door" : "Press E to open door";
+        return true;
+    }
 
     private void PlaySound(AudioClip clip)
     {

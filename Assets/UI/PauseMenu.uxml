@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ui="UnityEngine.UIElements"
+    xmlns:uie="UnityEditor.UIElements"
+    xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd"
+>
+    <ui:VisualElement name="pause-overlay" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: none; justify-content: center; align-items: center; background-color: rgba(0, 0, 0, 0.55); pointer-events: auto;">
+        <ui:VisualElement name="pause-main-panel" style="width: 420px; background-color: rgba(12, 12, 12, 0.95); border-top-left-radius: 10px; border-top-right-radius: 10px; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(120, 120, 120, 0.2); border-right-color: rgba(120, 120, 120, 0.2); border-bottom-color: rgba(120, 120, 120, 0.12); border-left-color: rgba(120, 120, 120, 0.12); padding-top: 16px; padding-right: 16px; padding-bottom: 16px; padding-left: 16px; gap: 10px;">
+            <ui:Label text="Paused" style="font-size: 22px; -unity-font-style: bold; color: rgb(242, 242, 242); margin-bottom: 6px;" />
+            <ui:Button name="pause-resume-btn" text="Resume" style="height: 38px; font-size: 13px;" />
+            <ui:Button name="pause-save-btn" text="Save" style="height: 38px; font-size: 13px;" />
+            <ui:Button name="pause-save-slots-btn" text="Save Slots" style="height: 38px; font-size: 13px;" />
+            <ui:Button name="pause-options-btn" text="Options" style="height: 38px; font-size: 13px;" />
+            <ui:Button name="pause-quit-btn" text="Quit" style="height: 38px; font-size: 13px;" />
+        </ui:VisualElement>
+
+        <ui:VisualElement name="pause-save-slots-panel" style="width: 560px; display: none; background-color: rgba(12, 12, 12, 0.95); border-top-left-radius: 10px; border-top-right-radius: 10px; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(120, 120, 120, 0.2); border-right-color: rgba(120, 120, 120, 0.2); border-bottom-color: rgba(120, 120, 120, 0.12); border-left-color: rgba(120, 120, 120, 0.12); padding-top: 16px; padding-right: 16px; padding-bottom: 16px; padding-left: 16px; gap: 12px;">
+            <ui:Label text="Save Slots" style="font-size: 20px; -unity-font-style: bold; color: rgb(242, 242, 242); margin-bottom: 4px;" />
+            <ui:ScrollView name="pause-save-slots-list" horizontal-scrolling="false" vertical-scrolling="true" style="max-height: 320px; flex-grow: 1; background-color: rgba(7, 7, 7, 0.75); border-top-left-radius: 6px; border-top-right-radius: 6px; border-bottom-left-radius: 6px; border-bottom-right-radius: 6px; padding-top: 8px; padding-right: 8px; padding-bottom: 8px; padding-left: 8px;" />
+            <ui:Button name="pause-save-slots-back-btn" text="Back" style="height: 36px;" />
+        </ui:VisualElement>
+
+        <ui:VisualElement name="pause-options-panel" style="width: 520px; display: none; background-color: rgba(12, 12, 12, 0.95); border-top-left-radius: 10px; border-top-right-radius: 10px; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(120, 120, 120, 0.2); border-right-color: rgba(120, 120, 120, 0.2); border-bottom-color: rgba(120, 120, 120, 0.12); border-left-color: rgba(120, 120, 120, 0.12); padding-top: 16px; padding-right: 16px; padding-bottom: 16px; padding-left: 16px; gap: 12px;">
+            <ui:Label text="Options" style="font-size: 20px; -unity-font-style: bold; color: rgb(242, 242, 242); margin-bottom: 4px;" />
+
+            <ui:VisualElement style="gap: 6px;">
+                <ui:Label text="Master Volume" style="font-size: 12px; color: rgb(220, 220, 220);" />
+                <ui:Slider name="pause-master-volume-slider" low-value="0" high-value="1" value="1" style="height: 22px;" />
+            </ui:VisualElement>
+
+            <ui:VisualElement style="gap: 6px;">
+                <ui:Label text="Mouse Sensitivity" style="font-size: 12px; color: rgb(220, 220, 220);" />
+                <ui:Slider name="pause-mouse-sensitivity-slider" low-value="0.1" high-value="10" value="2" style="height: 22px;" />
+            </ui:VisualElement>
+
+            <ui:VisualElement style="gap: 6px;">
+                <ui:Label text="Graphics Quality" style="font-size: 12px; color: rgb(220, 220, 220);" />
+                <ui:DropdownField name="pause-quality-dropdown" style="height: 28px;" />
+            </ui:VisualElement>
+
+            <ui:Toggle name="pause-fullscreen-toggle" text="Fullscreen" value="true" style="font-size: 12px; color: rgb(220, 220, 220);" />
+
+            <ui:Button name="pause-options-back-btn" text="Back" style="height: 36px; margin-top: 6px;" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

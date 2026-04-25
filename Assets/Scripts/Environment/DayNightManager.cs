@@ -21,10 +21,12 @@ public class DayNightManager : MonoBehaviour
 
     private float currentTimeInHours; // 0-24 format
     private float timeScale = 1f; // Multiplier for time progression
+    private int elapsedDayCount;
 
     private void Awake()
     {
         currentTimeInHours = startTimeInHours;
+        elapsedDayCount = 0;
 
         if (sunLight == null)
         {
@@ -48,8 +50,11 @@ public class DayNightManager : MonoBehaviour
         currentTimeInHours += hoursPerSecond * Time.deltaTime * timeScale;
 
         // Wrap around after 24 hours
-        if (currentTimeInHours >= 24f)
+        while (currentTimeInHours >= 24f)
+        {
             currentTimeInHours -= 24f;
+            elapsedDayCount++;
+        }
 
         CheckTimeEvents();
     }
@@ -98,6 +103,8 @@ public class DayNightManager : MonoBehaviour
 
     // Getters
     public float GetCurrentTime() => currentTimeInHours;
+    public int GetElapsedDayCount() => Mathf.Max(0, elapsedDayCount);
+    public float GetTotalGameDays() => GetElapsedDayCount() + (currentTimeInHours / 24f);
 
     public string GetTimeFormatted()
     {
@@ -124,6 +131,16 @@ public class DayNightManager : MonoBehaviour
         currentTimeInHours = Mathf.Clamp(hourOfDay, 0f, 24f);
     }
 
+    public void SetTotalGameDays(float totalDays)
+    {
+        float safeDays = Mathf.Max(0f, totalDays);
+        int wholeDays = Mathf.FloorToInt(safeDays);
+        float fractional = safeDays - wholeDays;
+
+        elapsedDayCount = wholeDays;
+        currentTimeInHours = Mathf.Clamp(fractional * 24f, 0f, 23.999f);
+    }
+
     public void SetTimeScale(float scale)
     {
         timeScale = Mathf.Max(0f, scale);
@@ -132,8 +149,17 @@ public class DayNightManager : MonoBehaviour
     public void AddHours(float hours)
     {
         currentTimeInHours += hours;
-        if (currentTimeInHours >= 24f)
+        while (currentTimeInHours >= 24f)
+        {
             currentTimeInHours -= 24f;
+            elapsedDayCount++;
+        }
+
+        while (currentTimeInHours < 0f)
+        {
+            currentTimeInHours += 24f;
+            elapsedDayCount = Mathf.Max(0, elapsedDayCount - 1);
+        }
     }
 
     public void PauseTime()

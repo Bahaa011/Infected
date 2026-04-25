@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(AdvancedCarController))]
-public class CarEnterExitController : MonoBehaviour
+public class CarEnterExitController : MonoBehaviour, IInteractionPromptSource
 {
     [Header("Driver Points")]
     [SerializeField] private Transform driverSeat;
@@ -305,5 +305,32 @@ public class CarEnterExitController : MonoBehaviour
             input = player.GetComponentInParent<PlayerInput>();
 
         return input;
+    }
+
+    public bool TryGetInteractionPrompt(Transform viewer, out string prompt)
+    {
+        prompt = string.Empty;
+
+        Player player = GetPlayer();
+        if (player == null || viewer == null)
+            return false;
+
+        float distance = GetDistanceToCar(viewer.position);
+        if (currentDriver == null)
+        {
+            if (!isPlayerInRange && distance > enterDistance)
+                return false;
+
+            prompt = "Press E to enter vehicle";
+            return true;
+        }
+
+        if (currentDriver == player)
+        {
+            prompt = "Press E to exit vehicle";
+            return true;
+        }
+
+        return false;
     }
 }
