@@ -100,8 +100,14 @@ public class WorldMapUIToolkit : MonoBehaviour
 
     private void ApplyBaseStyles()
     {
+        float scale = ResponsiveUiUtility.GetScaleFactor();
+        minimapSize = minimapSize * scale;
+        bigMapSize = bigMapSize * scale;
+
         if (minimapPanel != null)
         {
+            minimapPanel.style.width = minimapSize.x;
+            minimapPanel.style.height = minimapSize.y;
             minimapPanel.style.backgroundColor = mapBackground;
             minimapPanel.style.borderTopColor = borderColor;
             minimapPanel.style.borderRightColor = borderColor;
@@ -110,13 +116,19 @@ public class WorldMapUIToolkit : MonoBehaviour
         }
 
         if (minimapFrame != null)
+        {
+            minimapFrame.style.width = minimapSize.x;
+            minimapFrame.style.height = minimapSize.y;
             minimapFrame.style.backgroundColor = frameBackground;
+        }
 
         if (bigMapOverlay != null)
             bigMapOverlay.style.backgroundColor = overlayColor;
 
         if (bigMapPanel != null)
         {
+            bigMapPanel.style.width = bigMapSize.x;
+            bigMapPanel.style.height = bigMapSize.y;
             bigMapPanel.style.backgroundColor = mapBackground;
             bigMapPanel.style.borderTopColor = borderColor;
             bigMapPanel.style.borderRightColor = borderColor;
@@ -125,10 +137,14 @@ public class WorldMapUIToolkit : MonoBehaviour
         }
 
         if (bigMapFrame != null)
+        {
+            bigMapFrame.style.width = bigMapSize.x;
+            bigMapFrame.style.height = bigMapSize.y;
             bigMapFrame.style.backgroundColor = frameBackground;
+        }
 
-        SetMarkerStyle(minimapMarker, 12f);
-        SetMarkerStyle(bigMapMarker, 18f);
+        SetMarkerStyle(minimapMarker, ResponsiveUiUtility.Scale(12f));
+        SetMarkerStyle(bigMapMarker, ResponsiveUiUtility.Scale(18f));
     }
 
     private void ApplyMapTexture()

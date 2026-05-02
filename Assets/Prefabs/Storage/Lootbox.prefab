@@ -29,13 +29,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2102971186118455891}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071068}
+  m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 1.6049858, y: 6.55, z: 7.18}
-  m_LocalScale: {x: 10, y: 10, z: 10}
+  m_LocalScale: {x: 4, y: 4, z: 4}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: -90, y: 0, z: 0}
 --- !u!33 &8415221066552332377
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -112,8 +112,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 0.5719528, y: 0.843353, z: 0.5124129}
+  m_Center: {x: 0.018100739, y: 0.0033835173, z: 0.099907726}
 --- !u!114 &1004128954647358196
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -144,5 +144,24 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StorageContainer
   storageDisplayName: Loot Box
+  containerIdOverride: 
+  autoGenerateLoot: 1
+  lootDropSettings:
+    autoDiscoverLoadedItemAssets: 1
+    lootItemPool: []
+    minLootEntries: 2
+    maxLootEntries: 6
+    maxRollAttempts: 40
+    commonWeight: 60
+    uncommonWeight: 25
+    rareWeight: 12
+    epicWeight: 3
+    commonQuantityRange: {x: 1, y: 3}
+    uncommonQuantityRange: {x: 1, y: 2}
+    rareQuantityRange: {x: 1, y: 1}
+    epicQuantityRange: {x: 1, y: 1}
+    rarityOverrides: []
+  respawnIntervalInGameDays: 1
+  fallbackDayLengthInSeconds: 1200
   fillStartingItemsOnStart: 0
   startingItems: []

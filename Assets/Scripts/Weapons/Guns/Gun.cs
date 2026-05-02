@@ -33,6 +33,10 @@ public class Gun : MonoBehaviour
     [SerializeField] private float aimRotationSpeed = 20f;
     [SerializeField] private float maxAimDistance = 250f;
     [SerializeField] private LayerMask aimLayers = ~0;
+
+    [Header("Stealth Noise")]
+    [SerializeField] private float gunshotNoiseRadius = 45f;
+    [SerializeField] private float gunshotNoiseStrength = 1f;
     
     private InputAction fireAction;
     private InputAction reloadAction;
@@ -190,6 +194,10 @@ public class Gun : MonoBehaviour
                 FireShotgun();
                 break;
         }
+
+            Vector3 noisePosition = firePoint != null ? firePoint.position : transform.position;
+            ZombieNoiseSystem.EmitNoise(noisePosition, gunshotNoiseRadius, gunshotNoiseStrength, ZombieNoiseSystem.NoiseType.Gunshot);
+
         lastFireTime = Time.time;
     }
 

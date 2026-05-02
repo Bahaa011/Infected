@@ -39,6 +39,8 @@ public class SkillsUIToolkit : MonoBehaviour
     private Gun.GunType currentDisplayedGunType = Gun.GunType.Pistol;
     private bool isOpen = false;
     private InputAction runtimeToggleAction;
+    private int lastScreenWidth;
+    private int lastScreenHeight;
 
     private void Awake()
     {
@@ -78,6 +80,7 @@ public class SkillsUIToolkit : MonoBehaviour
         
         // Start hidden
         SetUIOpen(false);
+        RefreshResponsiveScale(true);
     }
 
     private void OnEnable()
@@ -169,6 +172,8 @@ public class SkillsUIToolkit : MonoBehaviour
 
     private void Update()
     {
+        RefreshResponsiveScale();
+
         // Re-fetch references if lost
         if (playerSkills == null)
             playerSkills = FindFirstObjectByType<PlayerSkills>();
@@ -285,5 +290,20 @@ public class SkillsUIToolkit : MonoBehaviour
     private void OnGeneralSkillProgressChanged(PlayerSkills.SkillType skillType, float currentXP, float neededXP)
     {
         // Will be updated in Update()
+    }
+
+    private void RefreshResponsiveScale(bool force = false)
+    {
+        if (!force && Screen.width == lastScreenWidth && Screen.height == lastScreenHeight)
+            return;
+
+        lastScreenWidth = Screen.width;
+        lastScreenHeight = Screen.height;
+
+        if (skillsPanel == null)
+            return;
+
+        // Keep panel placement stable; avoid transform scaling that shifts anchored UI.
+        skillsPanel.style.scale = new Scale(Vector3.one);
     }
 }

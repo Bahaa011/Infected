@@ -16,7 +16,7 @@ MonoBehaviour:
   description: 
   weight: 0
   maxStackSize: 1
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: bb31e4e2cbf7962cf85bd8237a80380e, type: 3}
   prefab: {fileID: 233166476930137601, guid: 374994d1f67610931b87fadd63ef4509, type: 3}
   id: 0
   healModifier: 1

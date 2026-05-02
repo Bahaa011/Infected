@@ -12,6 +12,10 @@ public class DoorController : MonoBehaviour, IInteractionPromptSource
     [Header("Interaction")]
     [SerializeField] private float interactionRange = 3f;
 
+    [Header("Collision")]
+    [SerializeField] private bool disableMeshCollidersWhenOpen = true;
+    [SerializeField] private bool includeChildMeshColliders = true;
+
     [Header("Audio")]
     [SerializeField] private AudioClip openSound;
     [SerializeField] private AudioClip closeSound;
@@ -24,6 +28,7 @@ public class DoorController : MonoBehaviour, IInteractionPromptSource
     private bool isPlayerNearby = false;
     private Transform player;
     private InputAction interactAction;
+    private MeshCollider[] doorMeshColliders;
 
     private void Start()
     {
@@ -47,6 +52,10 @@ public class DoorController : MonoBehaviour, IInteractionPromptSource
             collider.isTrigger = false;
         }
 
+        doorMeshColliders = includeChildMeshColliders
+            ? GetComponentsInChildren<MeshCollider>(true)
+            : GetComponents<MeshCollider>();
+
         // Setup Rigidbody for door physics
         Rigidbody rb = GetComponent<Rigidbody>();
         if (rb == null)
@@ -57,6 +66,8 @@ public class DoorController : MonoBehaviour, IInteractionPromptSource
         // Configure rigidbody to be kinematic (won't fall)
         rb.isKinematic = true;
         rb.constraints = RigidbodyConstraints.FreezeAll;
+
+        UpdateDoorCollisionState();
 
         // Get input action from player
         if (player != null)
@@ -124,6 +135,7 @@ public class DoorController : MonoBehaviour, IInteractionPromptSource
         isOpen = true;
         isAnimating = true;
         targetRotation = closedRotation * Quaternion.Euler(0, 0, openAngle);
+        UpdateDoorCollisionState();
 
         PlaySound(openSound);
     }
@@ -135,6 +147,7 @@ public class DoorController : MonoBehaviour, IInteractionPromptSource
         isOpen = false;
         isAnimating = true;
         targetRotation = closedRotation;
+        UpdateDoorCollisionState();
 
         PlaySound(closeSound);
     }
@@ -175,6 +188,22 @@ public class DoorController : MonoBehaviour, IInteractionPromptSource
         if (clip != null && audioSource != null)
         {
             audioSource.PlayOneShot(clip, audioVolume);
+        }
+    }
+
+    private void UpdateDoorCollisionState()
+    {
+        if (!disableMeshCollidersWhenOpen || doorMeshColliders == null)
+            return;
+
+        bool meshEnabled = !isOpen;
+        for (int i = 0; i < doorMeshColliders.Length; i++)
+        {
+            MeshCollider mesh = doorMeshColliders[i];
+            if (mesh == null)
+                continue;
+
+            mesh.enabled = meshEnabled;
         }
     }
 }

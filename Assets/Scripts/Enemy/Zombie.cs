@@ -9,8 +9,25 @@ public class Zombie : MonoBehaviour, IDamageable
     private float currentHealth;
 
     [Header("Detection")]
-    [SerializeField] private float sightRange = 20f;
+    [SerializeField] private float sightRange = 50f;
+    [SerializeField] private float fieldOfViewAngle = 110f;
+    [SerializeField] private LayerMask visionObstructionLayers = ~0;
     [SerializeField] private float attackRange = 2f;
+
+    [Header("Stealth Perception")]
+    [SerializeField] private float visionBuildPerSecond = 60f;
+    [SerializeField] private float visionDecayPerSecond = 12f;
+    [SerializeField] private float hearingDecayPerSecond = 14f;
+    [SerializeField] private float crouchVisibilityMultiplier = 0.55f;
+    [SerializeField] private float sprintVisibilityMultiplier = 1.25f;
+    [SerializeField] private float hearingGainScale = 55f;
+    [SerializeField] private float investigateThreshold = 15f;
+    [SerializeField] private float chaseThreshold = 60f;
+    [SerializeField] private float rememberTargetDuration = 5f;
+
+    [Header("Awareness Meters (Runtime)")]
+    [SerializeField, Range(0f, 100f)] private float visionMeter = 0f;
+    [SerializeField, Range(0f, 100f)] private float hearingMeter = 0f;
 
     [Header("Movement")]
     [SerializeField] private float walkSpeed = 3.5f;
@@ -37,6 +54,9 @@ public class Zombie : MonoBehaviour, IDamageable
     private bool isAttacking = false;
     private bool isDead = false;
     private float stunnedUntilTime = 0f;
+    private Vector3 lastKnownTargetPosition;
+    private float lastKnownTargetTime = -999f;
+    private Player player;
 
     private void Awake()
     {
@@ -48,6 +68,7 @@ public class Zombie : MonoBehaviour, IDamageable
         if (playerObject != null)
         {
             playerTransform = playerObject.transform;
+            player = playerObject.GetComponent<Player>();
         }
         else
         {
@@ -76,7 +97,6 @@ public class Zombie : MonoBehaviour, IDamageable
             }
 
             animator.SetFloat("velocity", velocity);
-            animator.SetFloat("speed", velocity);
         }
 
         if (isDead || playerTransform == null) return;
@@ -96,16 +116,25 @@ public class Zombie : MonoBehaviour, IDamageable
             return;
         }
 
-        float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
+        bool canSeePlayer = CanSeePlayer(out float visionGainFactor);
+        UpdateAwarenessMeters(canSeePlayer, visionGainFactor);
 
-        // Check if player is in sight range
-        if (distanceToPlayer <= sightRange)
+        float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
+        bool isAlerted = IsAlerted();
+
+        if (canSeePlayer)
+        {
+            lastKnownTargetPosition = playerTransform.position;
+            lastKnownTargetTime = Time.time;
+        }
+
+        if (isAlerted)
         {
             isChasing = true;
             float attackTriggerRange = GetAttackTriggerRange();
 
-            // Try to attack if in range
-            if (distanceToPlayer <= attackTriggerRange)
+            // Attack only when target is visible and in range
+            if (canSeePlayer && distanceToPlayer <= attackTriggerRange)
             {
                 StopMovingForAttack();
                 AttackPlayer();
@@ -113,7 +142,14 @@ public class Zombie : MonoBehaviour, IDamageable
             else
             {
                 ResumeMovement();
-                ChasePlayer();
+
+                bool hasRecentKnownPosition = Time.time - lastKnownTargetTime <= rememberTargetDuration;
+                if (canSeePlayer)
+                    ChasePlayer();
+                else if (hasRecentKnownPosition)
+                    InvestigateLastKnownPosition();
+                else
+                    Wander();
             }
         }
         else
@@ -128,6 +164,84 @@ public class Zombie : MonoBehaviour, IDamageable
         {
             animator.SetBool("isChasing", isChasing);
             animator.SetBool("attack", isAttacking);
+        }
+    }
+
+    private void UpdateAwarenessMeters(bool canSeePlayer, float visionGainFactor)
+    {
+        float dt = Time.deltaTime;
+
+        if (canSeePlayer)
+        {
+            float gain = visionBuildPerSecond * Mathf.Clamp01(visionGainFactor) * dt;
+            visionMeter += gain;
+        }
+        else
+        {
+            visionMeter -= visionDecayPerSecond * dt;
+        }
+
+        hearingMeter -= hearingDecayPerSecond * dt;
+
+        visionMeter = Mathf.Clamp(visionMeter, 0f, 100f);
+        hearingMeter = Mathf.Clamp(hearingMeter, 0f, 100f);
+    }
+
+    private bool CanSeePlayer(out float visionGainFactor)
+    {
+        visionGainFactor = 0f;
+
+        if (playerTransform == null)
+            return false;
+
+        Vector3 eyePosition = transform.position + Vector3.up * 1.55f;
+        Vector3 targetPosition = playerTransform.position + Vector3.up * 1.2f;
+        Vector3 toTarget = targetPosition - eyePosition;
+
+        float distance = toTarget.magnitude;
+        if (distance <= 0.001f || distance > sightRange)
+            return false;
+
+        Vector3 direction = toTarget / distance;
+        float angleToTarget = Vector3.Angle(transform.forward, direction);
+        if (angleToTarget > fieldOfViewAngle * 0.5f)
+            return false;
+
+        if (Physics.Raycast(eyePosition, direction, out RaycastHit hit, distance, visionObstructionLayers, QueryTriggerInteraction.Ignore))
+        {
+            Transform hitTransform = hit.transform;
+            if (hitTransform != playerTransform && !hitTransform.IsChildOf(playerTransform))
+                return false;
+        }
+
+        float distanceFactor = 1f - Mathf.Clamp01(distance / sightRange);
+        float movementVisibility = 1f;
+
+        if (player != null)
+        {
+            if (player.IsCrouching())
+                movementVisibility *= crouchVisibilityMultiplier;
+            if (player.IsCurrentlySprinting())
+                movementVisibility *= sprintVisibilityMultiplier;
+        }
+
+        // Better vision gain: even at max range, there's a decent base gain (0.3 instead of 0.15)
+        // This makes detection faster and more consistent at distance
+        visionGainFactor = Mathf.Clamp01(distanceFactor * movementVisibility * 0.8f + 0.35f);
+        return true;
+    }
+
+    private bool IsAlerted()
+    {
+        return visionMeter >= investigateThreshold || hearingMeter >= investigateThreshold;
+    }
+
+    private void InvestigateLastKnownPosition()
+    {
+        if (navMeshAgent != null && navMeshAgent.isOnNavMesh)
+        {
+            navMeshAgent.speed = walkSpeed;
+            navMeshAgent.SetDestination(lastKnownTargetPosition);
         }
     }
 
@@ -286,6 +400,13 @@ public class Zombie : MonoBehaviour, IDamageable
 
         currentHealth -= damage;
         ApplyHitStun(rangedHitStunDuration);
+        visionMeter = Mathf.Max(visionMeter, chaseThreshold);
+        hearingMeter = Mathf.Max(hearingMeter, chaseThreshold);
+        if (playerTransform != null)
+        {
+            lastKnownTargetPosition = playerTransform.position;
+            lastKnownTargetTime = Time.time;
+        }
         
         // Play hit animation
         if (animator != null)
@@ -347,6 +468,42 @@ public class Zombie : MonoBehaviour, IDamageable
         TakeDamageWithStun(meleeDamage, meleeHitStunDuration);
     }
 
+    public void RegisterNoise(Vector3 noisePosition, float radius, float strength, ZombieNoiseSystem.NoiseType noiseType)
+    {
+        if (isDead)
+            return;
+
+        float distance = Vector3.Distance(transform.position, noisePosition);
+        if (distance > radius)
+            return;
+
+        float distanceFalloff = 1f - Mathf.Clamp01(distance / Mathf.Max(0.01f, radius));
+
+        float occlusionFactor = 1f;
+        Vector3 earPosition = transform.position + Vector3.up * 1.5f;
+        Vector3 toNoise = noisePosition - earPosition;
+        float noiseDistance = toNoise.magnitude;
+        if (noiseDistance > 0.01f)
+        {
+            Vector3 noiseDirection = toNoise / noiseDistance;
+            if (Physics.Raycast(earPosition, noiseDirection, out RaycastHit hit, noiseDistance, visionObstructionLayers, QueryTriggerInteraction.Ignore))
+            {
+                if (hit.transform != null && hit.transform != playerTransform && !hit.transform.IsChildOf(playerTransform))
+                    occlusionFactor = 0.55f;
+            }
+        }
+
+        float typeMultiplier = noiseType == ZombieNoiseSystem.NoiseType.Gunshot ? 1.25f : 1f;
+        float awarenessGain = hearingGainScale * strength * distanceFalloff * occlusionFactor * typeMultiplier;
+        hearingMeter = Mathf.Clamp(hearingMeter + awarenessGain, 0f, 100f);
+
+        if (hearingMeter >= investigateThreshold)
+        {
+            lastKnownTargetPosition = noisePosition;
+            lastKnownTargetTime = Time.time;
+        }
+    }
+
     private bool IsStunned()
     {
         return Time.time < stunnedUntilTime;
@@ -373,6 +530,13 @@ public class Zombie : MonoBehaviour, IDamageable
 
         currentHealth -= damage;
         ApplyHitStun(stunDuration);
+        visionMeter = Mathf.Max(visionMeter, chaseThreshold);
+        hearingMeter = Mathf.Max(hearingMeter, chaseThreshold);
+        if (playerTransform != null)
+        {
+            lastKnownTargetPosition = playerTransform.position;
+            lastKnownTargetTime = Time.time;
+        }
 
         if (animator != null)
             animator.SetTrigger("hit");

@@ -16,9 +16,9 @@ MonoBehaviour:
   description: 
   weight: 2.5
   maxStackSize: 1
-  icon: {fileID: 21300000, guid: 2b027a72bd49274a8a4a5e83399c5ba3, type: 3}
+  icon: {fileID: 21300000, guid: 7cc0e0eb5201317358afd686f1103509, type: 3}
+  prefab: {fileID: 9812083240837565, guid: e234e479a018ca76984e0494ba65f3f5, type: 3}
   id: 10
-  weaponPrefab: {fileID: 9812083240837565, guid: e234e479a018ca76984e0494ba65f3f5, type: 3}
   baseDamage: 25
   attackSpeed: 1
   attackRange: 2

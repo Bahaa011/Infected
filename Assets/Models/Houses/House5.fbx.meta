@@ -3,7 +3,62 @@ guid: 6a715c0ea5c7766da878e39ec9b4fb92
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: tl2lagdl_2K_Roughness
+    second: {fileID: 2800000, guid: 3acdb5408c79169dbb2ab6ccb8297787, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: tl2lagdl_2K_Specular
+    second: {fileID: 2800000, guid: 2e7e312afbbf9177d93f4f6e246c3d22, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: udeledcv_2K_Albedo
+    second: {fileID: 2800000, guid: d0912cf194ddeb7a8b8b596ee3398ca5, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: udeledcv_2K_Normal
+    second: {fileID: 2800000, guid: b13edc55e7828c407a605df404d3a915, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: udeledcv_2K_Roughness
+    second: {fileID: 2800000, guid: 359d57b6b978bbe259e5eb9cfda0e494, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: udrmdjmdy_2K_Albedo
+    second: {fileID: 2800000, guid: 4edf43c86a4314e7d8780354685611c7, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: udrmdjmdy_2K_Roughness
+    second: {fileID: 2800000, guid: d3c61e7536682702f856bb1eb6111761, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: udrmdjmdy_2K_Specular
+    second: {fileID: 2800000, guid: c171daa44b1c85efda455f4c15ff19a5, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: ujpkbfyn_2K_Albedo
+    second: {fileID: 2800000, guid: 8e616a8792d2bc041ab47fe2912594bf, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: ujpkbfyn_2K_Roughness
+    second: {fileID: 2800000, guid: eca0013b0ebdbaaa795279e36416fff8, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: ujpkbfyn_2K_Specular
+    second: {fileID: 2800000, guid: d0c4a8cb7a4fa084cafd23fcdd263bbb, type: 3}
   materials:
     materialImportMode: 2
     materialName: 0

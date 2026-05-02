@@ -72,6 +72,13 @@ MonoBehaviour:
   player: {fileID: 0}
   equipmentManager: {fileID: 0}
   crosshairColor: {r: 0.96, g: 0.96, b: 0.96, a: 0.95}
+  hitMarkerColor: {r: 1, g: 1, b: 1, a: 0.95}
+  hitMarkerDuration: 0.12
+  hitMarkerStartScale: 1.2
+  hitMarkerEndScale: 1
+  zombieHitClips: []
+  zombieHitVolume: 0.75
+  minHitSoundInterval: 0.03
 --- !u!1 &1212435301065939047
 GameObject:
   m_ObjectHideFlags: 0
@@ -215,76 +222,6 @@ MonoBehaviour:
   uiDocument: {fileID: 1578398535889082972}
   playerSkills: {fileID: 0}
   toggleSkillsAction: {fileID: 0}
---- !u!1 &3593858272446483563
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 5970200081956664910}
-  - component: {fileID: 2089996380336409021}
-  - component: {fileID: 8528839965913822401}
-  m_Layer: 0
-  m_Name: Hotbar
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &5970200081956664910
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3593858272446483563}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4259486151678239736}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2089996380336409021
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3593858272446483563}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
-  m_PanelSettings: {fileID: 11400000, guid: a4f67f1d2bbfd2de5b554be6e15f1947, type: 2}
-  m_ParentUI: {fileID: 0}
-  sourceAsset: {fileID: 9197481963319205126, guid: 8eb9f855669a1970f9c9a91b6b1507e1, type: 3}
-  m_SortingOrder: 0
-  m_Position: 0
-  m_WorldSpaceSizeMode: 1
-  m_WorldSpaceWidth: 1920
-  m_WorldSpaceHeight: 1080
-  m_PivotReferenceSize: 0
-  m_Pivot: 0
-  m_WorldSpaceCollider: {fileID: 0}
---- !u!114 &8528839965913822401
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3593858272446483563}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 14fa69d4704a832a5b320ef4821bf504, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::HotbarUIToolkit
-  uiDocument: {fileID: 2089996380336409021}
-  equipmentManager: {fileID: 0}
 --- !u!1 &4766781956915570734
 GameObject:
   m_ObjectHideFlags: 0
@@ -517,21 +454,13 @@ MonoBehaviour:
   uiDocument: {fileID: 4452980130798961729}
   player: {fileID: 0}
   playerTag: Player
-  scenePrefix: Tile
+  mapTexture: {fileID: 0}
   worldOrigin: {x: 0, y: 0}
   worldSize: {x: 1000, y: 1000}
-  gridSize: {x: 8, y: 8}
-  minimapCellSize: 18
-  minimapPadding: 8
-  minimapPanelSize: 220
-  bigMapCellSize: 64
-  bigMapPadding: 14
-  bigMapPanelSize: 740
+  minimapSize: {x: 220, y: 220}
+  bigMapSize: {x: 780, y: 820}
   mapBackground: {r: 0.06, g: 0.06, b: 0.06, a: 0.92}
   frameBackground: {r: 0.1, g: 0.1, b: 0.1, a: 0.95}
-  tileColor: {r: 0.18, g: 0.18, b: 0.18, a: 0.94}
-  loadedTileColor: {r: 0.28, g: 0.28, b: 0.28, a: 0.96}
-  activeTileColor: {r: 0.34, g: 0.49, b: 0.28, a: 1}
   borderColor: {r: 0.55, g: 0.55, b: 0.55, a: 0.22}
   markerColor: {r: 0.95, g: 0.92, b: 0.18, a: 1}
   overlayColor: {r: 0, g: 0, b: 0, a: 0.35}
@@ -565,7 +494,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8147959242758018555}
-  - {fileID: 5970200081956664910}
   - {fileID: 9062239632328031531}
   - {fileID: 457968568192150272}
   - {fileID: 1930146191172147508}
@@ -574,6 +502,7 @@ Transform:
   - {fileID: 99810129306683618}
   - {fileID: 410317602780508585}
   - {fileID: 8636466927844016471}
+  - {fileID: 7132227777777777772}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6647691627800723774
@@ -656,6 +585,81 @@ MonoBehaviour:
   centerOnScreen: 1
   enforceCleanVisualPreset: 1
   usePollingFallback: 1
+--- !u!1 &7132227777777777771
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7132227777777777772}
+  - component: {fileID: 7132227777777777773}
+  - component: {fileID: 7132227777777777774}
+  m_Layer: 0
+  m_Name: WeaponHUD
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7132227777777777772
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7132227777777777771}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4259486151678239736}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7132227777777777773
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7132227777777777771}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
+  m_PanelSettings: {fileID: 11400000, guid: a4f67f1d2bbfd2de5b554be6e15f1947, type: 2}
+  m_ParentUI: {fileID: 0}
+  sourceAsset: {fileID: 9197481963319205126, guid: 7f3e8b2d4c1a4f9b9d2c7e6a1f5b0c33, type: 3}
+  m_SortingOrder: 0
+  m_Position: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+  m_PivotReferenceSize: 0
+  m_Pivot: 0
+  m_WorldSpaceCollider: {fileID: 0}
+--- !u!114 &7132227777777777774
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7132227777777777771}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4b1e7f9c3a14e2b8d7f2a5b1c6e9d10, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponVehicleHUDUIToolkit
+  uiDocument: {fileID: 7132227777777777773}
+  player: {fileID: 0}
+  equipmentManager: {fileID: 0}
+  carController: {fileID: 0}
+  accentColor: {r: 0.92, g: 0.62, b: 0.28, a: 1}
+  panelBackground: {r: 0.05, g: 0.06, b: 0.07, a: 0.94}
+  panelBorder: {r: 0.78, g: 0.53, b: 0.28, a: 0.3}
 --- !u!1 &8129490984058875824
 GameObject:
   m_ObjectHideFlags: 0
@@ -731,7 +735,8 @@ MonoBehaviour:
   interactionLayers:
     serializedVersion: 2
     m_Bits: 4294967295
-  screenOffset: {x: 0, y: -26}
+  normalizedAnchor: {x: 0.5, y: 0.58}
+  anchorOffset: {x: 0, y: 0}
 --- !u!1 &8548628231228193629
 GameObject:
   m_ObjectHideFlags: 0

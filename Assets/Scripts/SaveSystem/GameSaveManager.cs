@@ -7,6 +7,8 @@ using UnityEngine.InputSystem;
 [DisallowMultipleComponent]
 public class GameSaveManager : MonoBehaviour
 {
+    private const string PrefSelectedSlotIndex = "save.selectedSlotIndex";
+
     [Serializable]
     public class SaveSlotInfo
     {
@@ -46,13 +48,21 @@ public class GameSaveManager : MonoBehaviour
     private void Awake()
     {
         ResolveReferences();
+        if (PlayerPrefs.HasKey(PrefSelectedSlotIndex))
+            activeSlotIndex = PlayerPrefs.GetInt(PrefSelectedSlotIndex, activeSlotIndex);
+
         activeSlotIndex = ClampSlotIndex(activeSlotIndex);
+        PlayerPrefs.SetInt(PrefSelectedSlotIndex, activeSlotIndex);
+        PlayerPrefs.Save();
     }
 
     private void Start()
     {
-        if (autoLoadOnStart && loadActiveSlotOnStart)
-            LoadGame();
+        if (loadActiveSlotOnStart && (autoLoadOnStart || PlayerPrefs.HasKey(PrefSelectedSlotIndex)))
+        {
+            if (File.Exists(GetSaveFilePath(activeSlotIndex)))
+                LoadGame();
+        }
     }
 
     private void Update()
@@ -84,6 +94,8 @@ public class GameSaveManager : MonoBehaviour
         ResolveReferences();
         slotIndex = ClampSlotIndex(slotIndex);
         activeSlotIndex = slotIndex;
+        PlayerPrefs.SetInt(PrefSelectedSlotIndex, activeSlotIndex);
+        PlayerPrefs.Save();
 
         GameSaveData data = BuildSaveData(slotIndex);
         if (data == null)
@@ -112,6 +124,8 @@ public class GameSaveManager : MonoBehaviour
         ResolveReferences();
         slotIndex = ClampSlotIndex(slotIndex);
         activeSlotIndex = slotIndex;
+        PlayerPrefs.SetInt(PrefSelectedSlotIndex, activeSlotIndex);
+        PlayerPrefs.Save();
 
         string path = GetSaveFilePath(slotIndex);
         if (!File.Exists(path))
@@ -161,6 +175,8 @@ public class GameSaveManager : MonoBehaviour
     public void SetActiveSlot(int slotIndex)
     {
         activeSlotIndex = ClampSlotIndex(slotIndex);
+        PlayerPrefs.SetInt(PrefSelectedSlotIndex, activeSlotIndex);
+        PlayerPrefs.Save();
     }
 
     public GameSaveManager.SaveSlotInfo[] GetSaveSlotInfos()

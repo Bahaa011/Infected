@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ui="UnityEngine.UIElements"
+    xmlns:uie="UnityEditor.UIElements"
+    xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd"
+>
+    <ui:VisualElement name="mainmenu-root" style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; width: 100%; height: 100%; justify-content: center; align-items: center; background-color: rgb(4, 6, 10);">
+        <ui:VisualElement name="mainmenu-background-image" style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-color: rgb(10, 13, 18); -unity-background-scale-mode: scale-and-crop;" />
+        <ui:VisualElement style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-color: rgba(5, 8, 12, 0.42);" />
+        <ui:VisualElement style="position: absolute; left: 0; top: 0; right: 0; height: 200px; background-color: rgba(0, 0, 0, 0.24);" />
+        <ui:VisualElement style="position: absolute; left: 0; bottom: 0; right: 0; height: 180px; background-color: rgba(0, 0, 0, 0.32);" />
+
+        <ui:VisualElement name="mainmenu-main-panel" style="width: 420px; align-items: center; background-color: rgba(0, 0, 0, 0); padding-top: 10px; padding-right: 16px; padding-bottom: 14px; padding-left: 16px;">
+            <ui:Label text="INFECTED" style="font-size: 58px; -unity-font-style: bold; letter-spacing: 5px; color: rgba(246, 242, 232, 0.97); -unity-text-align: middle-center;" />
+            <ui:Label text="SURVIVAL HORROR" style="font-size: 11px; letter-spacing: 2px; color: rgba(246, 242, 232, 0.84); margin-top: -4px; margin-bottom: 26px; -unity-text-align: middle-center;" />
+
+            <ui:Button name="mainmenu-play-btn" text="PLAY GAME" style="width: 250px; height: 42px; font-size: 12px; letter-spacing: 2px; color: rgba(250, 250, 250, 0.95); background-color: rgba(0, 0, 0, 0.2); border-top-width: 1px; border-right-width: 0; border-bottom-width: 1px; border-left-width: 0; border-top-color: rgba(230, 230, 230, 0.55); border-bottom-color: rgba(230, 230, 230, 0.55); border-top-left-radius: 0; border-top-right-radius: 0; border-bottom-left-radius: 0; border-bottom-right-radius: 0;" />
+            <ui:Button name="mainmenu-options-btn" text="OPTIONS" style="width: 250px; height: 42px; font-size: 12px; letter-spacing: 2px; color: rgba(250, 250, 250, 0.95); background-color: rgba(0, 0, 0, 0.2); border-top-width: 1px; border-right-width: 0; border-bottom-width: 1px; border-left-width: 0; border-top-color: rgba(230, 230, 230, 0.55); border-bottom-color: rgba(230, 230, 230, 0.55); border-top-left-radius: 0; border-top-right-radius: 0; border-bottom-left-radius: 0; border-bottom-right-radius: 0; margin-top: 7px;" />
+            <ui:Button name="mainmenu-quit-btn" text="QUIT" style="width: 250px; height: 42px; font-size: 12px; letter-spacing: 2px; color: rgba(250, 250, 250, 0.95); background-color: rgba(0, 0, 0, 0.2); border-top-width: 1px; border-right-width: 0; border-bottom-width: 1px; border-left-width: 0; border-top-color: rgba(230, 230, 230, 0.55); border-bottom-color: rgba(230, 230, 230, 0.55); border-top-left-radius: 0; border-top-right-radius: 0; border-bottom-left-radius: 0; border-bottom-right-radius: 0; margin-top: 7px;" />
+
+            <ui:Label text="Press Play to continue" style="font-size: 10px; letter-spacing: 1px; color: rgba(244, 244, 244, 0.65); margin-top: 20px; -unity-text-align: middle-center;" />
+        </ui:VisualElement>
+
+        <ui:VisualElement name="mainmenu-options-panel" style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; display: none; justify-content: center; align-items: center; background-color: rgba(5, 7, 10, 0.82);">
+            <ui:VisualElement style="width: 700px; min-height: 460px; background-color: rgba(15, 15, 15, 0.98); border-top-left-radius: 6px; border-top-right-radius: 6px; border-bottom-left-radius: 6px; border-bottom-right-radius: 6px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(191, 102, 38, 0.7); border-right-color: rgba(191, 102, 38, 0.3); border-bottom-color: rgba(115, 115, 115, 0.18); border-left-color: rgba(115, 115, 115, 0.18); padding-top: 18px; padding-right: 18px; padding-bottom: 18px; padding-left: 18px;">
+                <ui:Label text="SETTINGS" style="font-size: 10px; letter-spacing: 1px; color: rgba(245, 170, 84, 0.88); margin-bottom: 8px; -unity-text-align: middle-center;" />
+                <ui:Label text="OPTIONS" style="font-size: 24px; -unity-font-style: bold; letter-spacing: 1.5px; color: rgb(236, 222, 200);" />
+                <ui:Label text="Tune your setup before entering the world." style="font-size: 12px; color: rgba(205, 205, 205, 0.82); margin-top: 2px; margin-bottom: 12px;" />
+
+                <ui:VisualElement style="background-color: rgba(23, 20, 17, 0.86); border-top-left-radius: 4px; border-top-right-radius: 4px; border-bottom-left-radius: 4px; border-bottom-right-radius: 4px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(186, 117, 61, 0.26); border-right-color: rgba(186, 117, 61, 0.26); border-bottom-color: rgba(120, 120, 120, 0.16); border-left-color: rgba(120, 120, 120, 0.16); padding-top: 10px; padding-right: 10px; padding-bottom: 10px; padding-left: 10px; margin-bottom: 10px;">
+                    <ui:Label text="Master Volume" style="font-size: 12px; color: rgb(220, 220, 220); margin-bottom: 6px;" />
+                    <ui:Slider name="mainmenu-master-volume-slider" low-value="0" high-value="1" value="1" style="height: 22px;" />
+                </ui:VisualElement>
+
+                <ui:VisualElement style="background-color: rgba(23, 20, 17, 0.86); border-top-left-radius: 4px; border-top-right-radius: 4px; border-bottom-left-radius: 4px; border-bottom-right-radius: 4px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(186, 117, 61, 0.26); border-right-color: rgba(186, 117, 61, 0.26); border-bottom-color: rgba(120, 120, 120, 0.16); border-left-color: rgba(120, 120, 120, 0.16); padding-top: 10px; padding-right: 10px; padding-bottom: 10px; padding-left: 10px; margin-bottom: 10px;">
+                    <ui:Label text="Graphics Quality" style="font-size: 12px; color: rgb(220, 220, 220); margin-bottom: 6px;" />
+                    <ui:DropdownField name="mainmenu-quality-dropdown" style="height: 30px;" />
+                </ui:VisualElement>
+
+                <ui:VisualElement style="background-color: rgba(23, 20, 17, 0.86); border-top-left-radius: 4px; border-top-right-radius: 4px; border-bottom-left-radius: 4px; border-bottom-right-radius: 4px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(186, 117, 61, 0.26); border-right-color: rgba(186, 117, 61, 0.26); border-bottom-color: rgba(120, 120, 120, 0.16); border-left-color: rgba(120, 120, 120, 0.16); padding-top: 10px; padding-right: 10px; padding-bottom: 10px; padding-left: 10px; margin-bottom: 12px;">
+                    <ui:Toggle name="mainmenu-fullscreen-toggle" text="Fullscreen" value="true" style="font-size: 12px; color: rgb(220, 220, 220);" />
+                </ui:VisualElement>
+
+                <ui:Button name="mainmenu-options-back-btn" text="Back" style="height: 40px; color: rgb(234, 227, 215); background-color: rgba(45, 45, 45, 0.94); border-top-left-radius: 4px; border-top-right-radius: 4px; border-bottom-left-radius: 4px; border-bottom-right-radius: 4px;" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement name="mainmenu-save-slots-panel" style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; display: none; justify-content: center; align-items: center; background-color: rgba(5, 7, 10, 0.82);">
+            <ui:VisualElement style="width: 780px; min-height: 560px; background-color: rgba(15, 15, 15, 0.98); border-top-left-radius: 6px; border-top-right-radius: 6px; border-bottom-left-radius: 6px; border-bottom-right-radius: 6px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(191, 102, 38, 0.7); border-right-color: rgba(191, 102, 38, 0.3); border-bottom-color: rgba(115, 115, 115, 0.18); border-left-color: rgba(115, 115, 115, 0.18); padding-top: 18px; padding-right: 18px; padding-bottom: 18px; padding-left: 18px;">
+                <ui:Label text="SELECT SAVE SLOT" style="font-size: 10px; letter-spacing: 1px; color: rgba(245, 170, 84, 0.88); margin-bottom: 8px; -unity-text-align: middle-center;" />
+                <ui:Label text="CHOOSE YOUR START" style="font-size: 24px; -unity-font-style: bold; letter-spacing: 1.5px; color: rgb(236, 222, 200);" />
+                <ui:Label text="Click an existing slot to continue, or an empty one to begin a new game." style="font-size: 12px; color: rgba(205, 205, 205, 0.82); margin-top: 2px; margin-bottom: 12px;" />
+
+                <ui:ScrollView name="mainmenu-save-slots-list" horizontal-scrolling="false" vertical-scrolling="true" style="flex-grow: 1; max-height: 410px; background-color: rgba(10, 10, 10, 0.88); border-top-left-radius: 5px; border-top-right-radius: 5px; border-bottom-left-radius: 5px; border-bottom-right-radius: 5px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(200, 124, 67, 0.25); border-right-color: rgba(200, 124, 67, 0.25); border-bottom-color: rgba(160, 160, 160, 0.12); border-left-color: rgba(160, 160, 160, 0.12); padding-top: 10px; padding-right: 10px; padding-bottom: 10px; padding-left: 10px;" />
+
+                <ui:Button name="mainmenu-save-slots-back-btn" text="Back" style="height: 40px; margin-top: 14px; color: rgb(234, 227, 215); background-color: rgba(45, 45, 45, 0.94); border-top-left-radius: 4px; border-top-right-radius: 4px; border-bottom-left-radius: 4px; border-bottom-right-radius: 4px;" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement name="mainmenu-loading-panel" style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; display: none; justify-content: center; align-items: center; background-color: rgba(2, 4, 6, 0.92);">
+            <ui:VisualElement style="width: 560px; background-color: rgba(15, 15, 15, 0.98); border-top-left-radius: 6px; border-top-right-radius: 6px; border-bottom-left-radius: 6px; border-bottom-right-radius: 6px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(191, 102, 38, 0.7); border-right-color: rgba(191, 102, 38, 0.3); border-bottom-color: rgba(115, 115, 115, 0.18); border-left-color: rgba(115, 115, 115, 0.18); padding-top: 22px; padding-right: 22px; padding-bottom: 22px; padding-left: 22px;">
+                <ui:Label name="mainmenu-loading-title" text="LOADING" style="font-size: 14px; letter-spacing: 2px; color: rgba(245, 170, 84, 0.92); -unity-text-align: middle-center;" />
+                <ui:Label name="mainmenu-loading-status" text="Preparing world..." style="font-size: 12px; color: rgba(220, 220, 220, 0.8); margin-top: 6px; margin-bottom: 16px; -unity-text-align: middle-center;" />
+                <ui:ProgressBar name="mainmenu-loading-progress" value="0" low-value="0" high-value="100" style="height: 18px;" />
+                <ui:Label text="Please wait" style="font-size: 10px; letter-spacing: 1px; color: rgba(220, 220, 220, 0.58); margin-top: 10px; -unity-text-align: middle-center;" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

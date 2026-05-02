@@ -1,3 +1,5 @@
+#if false
+#if false
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -33,6 +35,7 @@ public class AdvancedCarController : MonoBehaviour
     [SerializeField] private bool autoAssignAxles = true;
     [SerializeField] private List<Axle> axles = new();
     [SerializeField] private float wheelVisualLerp = 1f;
+    [SerializeField] private bool simpleDriveMode = true;
 
     [Header("Engine / Transmission")]
     [SerializeField] private float maxForwardSpeedKmh = 170f;
@@ -69,6 +72,7 @@ public class AdvancedCarController : MonoBehaviour
     [SerializeField] private Vector3 centerOfMassOffset = new(0f, -0.45f, 0f);
 
     public float SpeedKmh => rb != null ? rb.linearVelocity.magnitude * 3.6f : 0f;
+    public float MaxForwardSpeedKmh => maxForwardSpeedKmh;
     public bool HasDriver => currentDriverInput != null;
 
     private Rigidbody rb;
@@ -83,6 +87,7 @@ public class AdvancedCarController : MonoBehaviour
     private float brakeInput;
     private float handbrakeInput;
     private float smoothedSteer;
+    private bool warnedBadSetup;
 
     private void Awake()
     {
@@ -145,9 +150,31 @@ public class AdvancedCarController : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if (!HasUsableAxles())
+        {
+            WarnBadSetup("No valid axle setup found.");
+            ApplyParkedState();
+            return;
+        }
+
+        if (HasHugeScale())
+        {
+            WarnBadSetup("Car root scale is too large for WheelColliders. Keep physics root near 1,1,1.");
+            ApplyParkedState();
+            return;
+        }
+
         if (requireDriver && !HasDriver)
         {
             ApplyParkedState();
+            return;
+        }
+
+        if (simpleDriveMode)
+        {
+            ApplySteering();
+            ApplyDriveAndBrakesSimple();
+            ApplyDownforce();
             return;
         }
 
@@ -365,7 +392,90 @@ public class AdvancedCarController : MonoBehaviour
 
     private void ApplyDownforce()
     {
-        rb.AddForce(-transform.up * downforce * rb.linearVelocity.magnitude, ForceMode.Force);
+        rb.AddForce(Vector3.down * downforce * rb.linearVelocity.magnitude, ForceMode.Force);
+    }
+
+    private void ApplyDriveAndBrakesSimple()
+    {
+        float localSpeedKmh = transform.InverseTransformDirection(rb.linearVelocity).z * 3.6f;
+        float absSpeed = Mathf.Abs(localSpeedKmh);
+        float speedFactor = Mathf.Clamp01(absSpeed / Mathf.Max(1f, maxForwardSpeedKmh));
+        float torqueScale = torqueBySpeed != null ? torqueBySpeed.Evaluate(speedFactor) : 1f;
+
+        float motorTorque = 0f;
+        float serviceBrakeTorque = 0f;
+
+        if (throttleInput > 0.01f && localSpeedKmh < maxForwardSpeedKmh)
+            motorTorque = throttleInput * maxMotorTorque * torqueScale;
+
+        if (brakeInput > 0.01f)
+        {
+            if (localSpeedKmh > 1.5f)
+            {
+                // Brake while moving forward.
+                serviceBrakeTorque = brakeInput * maxBrakeTorque;
+            }
+            else if (localSpeedKmh > -maxReverseSpeedKmh)
+            {
+                // Reverse when nearly stopped.
+                motorTorque = -brakeInput * maxReverseTorque * torqueScale;
+            }
+        }
+
+        float handBrakeTorque = handbrakeInput * maxHandbrakeTorque;
+
+        foreach (var axle in axles)
+        {
+            if (axle == null || axle.leftWheel == null || axle.rightWheel == null)
+                continue;
+
+            float wheelBrake = axle.brake ? serviceBrakeTorque : 0f;
+            if (axle.handbrake)
+                wheelBrake += handBrakeTorque;
+
+            if (axle.motor)
+            {
+                axle.leftWheel.motorTorque = motorTorque;
+                axle.rightWheel.motorTorque = motorTorque;
+            }
+            else
+            {
+                axle.leftWheel.motorTorque = 0f;
+                axle.rightWheel.motorTorque = 0f;
+            }
+
+            axle.leftWheel.brakeTorque = wheelBrake;
+            axle.rightWheel.brakeTorque = wheelBrake;
+        }
+    }
+
+    private bool HasUsableAxles()
+    {
+        if (axles == null || axles.Count == 0)
+            return false;
+
+        for (int i = 0; i < axles.Count; i++)
+        {
+            if (axles[i] != null && axles[i].leftWheel != null && axles[i].rightWheel != null)
+                return true;
+        }
+
+        return false;
+    }
+
+    private bool HasHugeScale()
+    {
+        Vector3 s = transform.lossyScale;
+        return s.x > 10f || s.y > 10f || s.z > 10f;
+    }
+
+    private void WarnBadSetup(string message)
+    {
+        if (warnedBadSetup)
+            return;
+
+        warnedBadSetup = true;
+        Debug.LogWarning($"[AdvancedCarController] {message}", this);
     }
 
     private void UpdateWheelVisuals()
@@ -606,6 +716,748 @@ public class AdvancedCarController : MonoBehaviour
             {
                 Vector2 v = action.ReadValue<Vector2>();
                 return Mathf.Max(0f, v.y);
+            }
+            catch
+            {
+                return fallback;
+            }
+        }
+    }
+}
+#endif
+
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+[RequireComponent(typeof(Rigidbody))]
+public class AdvancedCarController : MonoBehaviour
+{
+    private const string SteerActionName = "VehicleSteer";
+    private const string ThrottleActionName = "VehicleThrottle";
+    private const string BrakeActionName = "VehicleBrake";
+    private const string HandbrakeActionName = "VehicleHandbrake";
+
+    [Header("Input")]
+    [SerializeField] private bool requireDriver = true;
+    [SerializeField] private bool keyboardFallback = true;
+
+    [Header("Speed")]
+    [SerializeField] private float maxForwardSpeedKmh = 140f;
+    [SerializeField] private float maxReverseSpeedKmh = 30f;
+
+    [Header("Acceleration")]
+    [SerializeField] private float forwardAcceleration = 12f;
+    [SerializeField] private float reverseAcceleration = 8f;
+    [SerializeField] private float brakeDeceleration = 20f;
+    [SerializeField] private float coastDeceleration = 3.5f;
+
+    [Header("Handling")]
+    [SerializeField] private float maxSteerAngle = 30f;
+    [SerializeField] private float steerResponsiveness = 8f;
+    [SerializeField] private float maxTurnRateDegPerSec = 95f;
+    [SerializeField] private float steerAtHighSpeedFactor = 0.45f;
+    [SerializeField] private float lateralGrip = 6f;
+    [SerializeField] private float handbrakeLateralGrip = 16f;
+
+    [Header("Extra Stability")]
+    [SerializeField] private float downforce = 25f;
+    [SerializeField] private float parkedBrakeDeceleration = 10f;
+    [SerializeField] private Vector3 centerOfMassOffset = new Vector3(0f, -0.35f, 0f);
+
+    public float SpeedKmh => rb != null ? rb.linearVelocity.magnitude * 3.6f : 0f;
+    public float MaxForwardSpeedKmh => maxForwardSpeedKmh;
+    public bool HasDriver => currentDriverInput != null;
+
+    private Rigidbody rb;
+    private PlayerInput currentDriverInput;
+    private InputAction steerAction;
+    private InputAction throttleAction;
+    private InputAction brakeAction;
+    private InputAction handbrakeAction;
+
+    private float steerInput;
+    private float throttleInput;
+    private float brakeInput;
+    private float handbrakeInput;
+    private float smoothedSteer;
+
+    private void Awake()
+    {
+        rb = GetComponent<Rigidbody>();
+        rb.centerOfMass += centerOfMassOffset;
+    }
+
+    private void OnEnable()
+    {
+        EnableAction(steerAction);
+        EnableAction(throttleAction);
+        EnableAction(brakeAction);
+        EnableAction(handbrakeAction);
+    }
+
+    private void OnDisable()
+    {
+        DisableAction(steerAction);
+        DisableAction(throttleAction);
+        DisableAction(brakeAction);
+        DisableAction(handbrakeAction);
+    }
+
+    private void Update()
+    {
+        ReadInputs();
+    }
+
+    private void FixedUpdate()
+    {
+        if (requireDriver && !HasDriver)
+        {
+            ApplyParkedState();
+            return;
+        }
+
+        ApplyDrive();
+        ApplySteering();
+        ApplyDownforce();
+    }
+
+    public void SetDriver(PlayerInput driverInput)
+    {
+        if (driverInput == null)
+            return;
+
+        UnbindDriverActions();
+        currentDriverInput = driverInput;
+
+        steerAction = currentDriverInput.actions.FindAction(SteerActionName);
+        throttleAction = currentDriverInput.actions.FindAction(ThrottleActionName);
+        brakeAction = currentDriverInput.actions.FindAction(BrakeActionName);
+        handbrakeAction = currentDriverInput.actions.FindAction(HandbrakeActionName);
+
+        EnableAction(steerAction);
+        EnableAction(throttleAction);
+        EnableAction(brakeAction);
+        EnableAction(handbrakeAction);
+    }
+
+    public void ClearDriver()
+    {
+        UnbindDriverActions();
+        currentDriverInput = null;
+
+        steerInput = 0f;
+        throttleInput = 0f;
+        brakeInput = 1f;
+        handbrakeInput = 1f;
+    }
+
+    private void ReadInputs()
+    {
+        if (requireDriver && !HasDriver)
+        {
+            steerInput = 0f;
+            throttleInput = 0f;
+            brakeInput = 1f;
+            handbrakeInput = 1f;
+            return;
+        }
+
+        float steer = ReadSignedAxis(steerAction, 0f);
+        float throttle = ReadPositiveAxis(throttleAction, 0f);
+        float brake = ReadPositiveAxis(brakeAction, 0f);
+        float handbrake = ReadPositiveAxis(handbrakeAction, 0f);
+
+        if (keyboardFallback && Keyboard.current != null)
+        {
+            if (Mathf.Abs(steer) < 0.01f)
+                steer = (Keyboard.current.aKey.isPressed ? -1f : 0f) + (Keyboard.current.dKey.isPressed ? 1f : 0f);
+
+            if (throttle < 0.01f && Keyboard.current.wKey.isPressed)
+                throttle = 1f;
+            if (brake < 0.01f && Keyboard.current.sKey.isPressed)
+                brake = 1f;
+            if (handbrake < 0.01f && Keyboard.current.spaceKey.isPressed)
+                handbrake = 1f;
+        }
+
+        steerInput = Mathf.Clamp(steer, -1f, 1f);
+        throttleInput = Mathf.Clamp01(throttle);
+        brakeInput = Mathf.Clamp01(brake);
+        handbrakeInput = Mathf.Clamp01(handbrake);
+    }
+
+    private void ApplyDrive()
+    {
+        Vector3 localVel = transform.InverseTransformDirection(rb.linearVelocity);
+        float forwardSpeed = localVel.z;
+
+        float targetForwardSpeed = forwardSpeed;
+        float maxForwardMps = maxForwardSpeedKmh / 3.6f;
+        float maxReverseMps = maxReverseSpeedKmh / 3.6f;
+
+        if (throttleInput > 0.01f)
+        {
+            targetForwardSpeed += forwardAcceleration * throttleInput * Time.fixedDeltaTime;
+        }
+        else if (brakeInput > 0.01f)
+        {
+            if (forwardSpeed > 0.5f)
+                targetForwardSpeed -= brakeDeceleration * brakeInput * Time.fixedDeltaTime;
+            else
+                targetForwardSpeed -= reverseAcceleration * brakeInput * Time.fixedDeltaTime;
+        }
+        else
+        {
+            targetForwardSpeed = Mathf.MoveTowards(targetForwardSpeed, 0f, coastDeceleration * Time.fixedDeltaTime);
+        }
+
+        if (handbrakeInput > 0.01f)
+            targetForwardSpeed = Mathf.MoveTowards(targetForwardSpeed, 0f, brakeDeceleration * handbrakeInput * Time.fixedDeltaTime);
+
+        targetForwardSpeed = Mathf.Clamp(targetForwardSpeed, -maxReverseMps, maxForwardMps);
+
+        float lateralDamping = handbrakeInput > 0.01f ? handbrakeLateralGrip : lateralGrip;
+        localVel.x = Mathf.MoveTowards(localVel.x, 0f, lateralDamping * Time.fixedDeltaTime);
+        localVel.z = targetForwardSpeed;
+
+        rb.linearVelocity = transform.TransformDirection(localVel);
+    }
+
+    private void ApplySteering()
+    {
+        Vector3 localVel = transform.InverseTransformDirection(rb.linearVelocity);
+        float absForwardSpeed = Mathf.Abs(localVel.z);
+        float maxForwardMps = Mathf.Max(0.1f, maxForwardSpeedKmh / 3.6f);
+
+        float speed01 = Mathf.Clamp01(absForwardSpeed / maxForwardMps);
+        float steerLimit = maxSteerAngle * Mathf.Lerp(1f, steerAtHighSpeedFactor, speed01);
+
+        smoothedSteer = Mathf.Lerp(smoothedSteer, steerInput, steerResponsiveness * Time.fixedDeltaTime);
+        float steerNormalized = Mathf.Clamp(smoothedSteer * (steerLimit / Mathf.Max(1f, maxSteerAngle)), -1f, 1f);
+
+        float speedTurnFactor = Mathf.Clamp01(absForwardSpeed / 3f) + 0.1f;
+        float yawRate = steerNormalized * maxTurnRateDegPerSec * speedTurnFactor;
+
+        if (localVel.z < -0.1f)
+            yawRate *= -1f;
+
+        Quaternion delta = Quaternion.Euler(0f, yawRate * Time.fixedDeltaTime, 0f);
+        rb.MoveRotation(rb.rotation * delta);
+    }
+
+    private void ApplyDownforce()
+    {
+        float speed = rb.linearVelocity.magnitude;
+        rb.AddForce(Vector3.down * downforce * speed, ForceMode.Force);
+    }
+
+    private void ApplyParkedState()
+    {
+        Vector3 localVel = transform.InverseTransformDirection(rb.linearVelocity);
+        localVel.x = Mathf.MoveTowards(localVel.x, 0f, lateralGrip * Time.fixedDeltaTime);
+        localVel.z = Mathf.MoveTowards(localVel.z, 0f, parkedBrakeDeceleration * Time.fixedDeltaTime);
+        rb.linearVelocity = transform.TransformDirection(localVel);
+
+        smoothedSteer = Mathf.MoveTowards(smoothedSteer, 0f, steerResponsiveness * Time.fixedDeltaTime);
+    }
+
+    private void UnbindDriverActions()
+    {
+        DisableAction(steerAction);
+        DisableAction(throttleAction);
+        DisableAction(brakeAction);
+        DisableAction(handbrakeAction);
+
+        steerAction = null;
+        throttleAction = null;
+        brakeAction = null;
+        handbrakeAction = null;
+    }
+
+    private static void EnableAction(InputAction action)
+    {
+        if (action != null)
+            action.Enable();
+    }
+
+    private static void DisableAction(InputAction action)
+    {
+        if (action != null)
+            action.Disable();
+    }
+
+    private static float ReadSignedAxis(InputAction action, float fallback)
+    {
+        if (action == null || !action.enabled || action.controls.Count == 0)
+            return fallback;
+
+        try
+        {
+            return action.ReadValue<float>();
+        }
+        catch
+        {
+            try
+            {
+                return action.ReadValue<Vector2>().x;
+            }
+            catch
+            {
+                return fallback;
+            }
+        }
+    }
+
+    private static float ReadPositiveAxis(InputAction action, float fallback)
+    {
+        if (action == null || !action.enabled || action.controls.Count == 0)
+            return fallback;
+
+        try
+        {
+            return Mathf.Max(0f, action.ReadValue<float>());
+        }
+        catch
+        {
+            try
+            {
+                return Mathf.Max(0f, action.ReadValue<Vector2>().y);
+            }
+            catch
+            {
+                return fallback;
+            }
+        }
+    }
+}
+
+#endif
+
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+[RequireComponent(typeof(Rigidbody))]
+public class AdvancedCarController : MonoBehaviour
+{
+    private const string SteerActionName = "VehicleSteer";
+    private const string ThrottleActionName = "VehicleThrottle";
+    private const string BrakeActionName = "VehicleBrake";
+    private const string HandbrakeActionName = "VehicleHandbrake";
+
+    [Header("Input")]
+    [SerializeField] private bool requireDriver = true;
+    [SerializeField] private bool keyboardFallback = true;
+
+    [Header("Wheel Setup")]
+    [SerializeField] private bool autoFindWheels = true;
+    [SerializeField] private WheelCollider frontLeftWheel;
+    [SerializeField] private WheelCollider frontRightWheel;
+    [SerializeField] private WheelCollider rearLeftWheel;
+    [SerializeField] private WheelCollider rearRightWheel;
+
+    [SerializeField] private Transform frontLeftVisual;
+    [SerializeField] private Transform frontRightVisual;
+    [SerializeField] private Transform rearLeftVisual;
+    [SerializeField] private Transform rearRightVisual;
+
+    [Header("Drive")]
+    [SerializeField] private bool rearWheelDrive = true;
+    [SerializeField] private float maxForwardSpeedKmh = 140f;
+    [SerializeField] private float maxReverseSpeedKmh = 30f;
+    [SerializeField] private float maxMotorTorque = 1300f;
+    [SerializeField] private float maxReverseTorque = 650f;
+    [SerializeField] private float maxBrakeTorque = 3000f;
+    [SerializeField] private float maxHandbrakeTorque = 5000f;
+
+    [Header("Steering")]
+    [SerializeField] private float maxSteerAngle = 30f;
+    [SerializeField] private float steerResponsiveness = 8f;
+
+    [Header("Stability")]
+    [SerializeField] private float downforce = 35f;
+    [SerializeField] private float parkedBrakeTorque = 8000f;
+
+    [Header("Rigidbody")]
+    [SerializeField] private Vector3 centerOfMassOffset = new Vector3(0f, -0.35f, 0f);
+
+    public float SpeedKmh => rb != null ? rb.linearVelocity.magnitude * 3.6f : 0f;
+    public float MaxForwardSpeedKmh => maxForwardSpeedKmh;
+    public bool HasDriver => currentDriverInput != null;
+
+    private Rigidbody rb;
+    private PlayerInput currentDriverInput;
+    private InputAction steerAction;
+    private InputAction throttleAction;
+    private InputAction brakeAction;
+    private InputAction handbrakeAction;
+
+    private float steerInput;
+    private float throttleInput;
+    private float brakeInput;
+    private float handbrakeInput;
+    private float smoothedSteer;
+    private bool warnedInvalidSetup;
+
+    private void Awake()
+    {
+        rb = GetComponent<Rigidbody>();
+        rb.centerOfMass += centerOfMassOffset;
+
+        if (autoFindWheels)
+            AutoFindWheels();
+    }
+
+    private void OnEnable()
+    {
+        EnableAction(steerAction);
+        EnableAction(throttleAction);
+        EnableAction(brakeAction);
+        EnableAction(handbrakeAction);
+    }
+
+    private void OnDisable()
+    {
+        DisableAction(steerAction);
+        DisableAction(throttleAction);
+        DisableAction(brakeAction);
+        DisableAction(handbrakeAction);
+    }
+
+    private void Update()
+    {
+        ReadInputs();
+        UpdateWheelVisuals();
+    }
+
+    private void FixedUpdate()
+    {
+        if (!HasValidWheelSetup())
+        {
+            WarnInvalidSetup("Missing WheelColliders. Need FL/FR/RL/RR.");
+            ApplyParkedState();
+            return;
+        }
+
+        if (HasHugeScale())
+        {
+            WarnInvalidSetup("Car root scale is too large. Keep physics root near 1,1,1.");
+            ApplyParkedState();
+            return;
+        }
+
+        if (requireDriver && !HasDriver)
+        {
+            ApplyParkedState();
+            return;
+        }
+
+        ApplySteering();
+        ApplyDriveAndBrakes();
+        ApplyDownforce();
+    }
+
+    public void SetDriver(PlayerInput driverInput)
+    {
+        if (driverInput == null)
+            return;
+
+        UnbindDriverActions();
+        currentDriverInput = driverInput;
+
+        steerAction = currentDriverInput.actions.FindAction(SteerActionName);
+        throttleAction = currentDriverInput.actions.FindAction(ThrottleActionName);
+        brakeAction = currentDriverInput.actions.FindAction(BrakeActionName);
+        handbrakeAction = currentDriverInput.actions.FindAction(HandbrakeActionName);
+
+        EnableAction(steerAction);
+        EnableAction(throttleAction);
+        EnableAction(brakeAction);
+        EnableAction(handbrakeAction);
+    }
+
+    public void ClearDriver()
+    {
+        UnbindDriverActions();
+        currentDriverInput = null;
+        steerInput = 0f;
+        throttleInput = 0f;
+        brakeInput = 1f;
+        handbrakeInput = 1f;
+    }
+
+    private void ReadInputs()
+    {
+        if (requireDriver && !HasDriver)
+        {
+            steerInput = 0f;
+            throttleInput = 0f;
+            brakeInput = 1f;
+            handbrakeInput = 1f;
+            return;
+        }
+
+        float steer = ReadSignedAxis(steerAction, 0f);
+        float throttle = ReadPositiveAxis(throttleAction, 0f);
+        float brake = ReadPositiveAxis(brakeAction, 0f);
+        float handbrake = ReadPositiveAxis(handbrakeAction, 0f);
+
+        if (keyboardFallback && Keyboard.current != null)
+        {
+            if (Mathf.Abs(steer) < 0.01f)
+                steer = (Keyboard.current.aKey.isPressed ? -1f : 0f) + (Keyboard.current.dKey.isPressed ? 1f : 0f);
+
+            if (throttle < 0.01f && Keyboard.current.wKey.isPressed)
+                throttle = 1f;
+            if (brake < 0.01f && Keyboard.current.sKey.isPressed)
+                brake = 1f;
+            if (handbrake < 0.01f && Keyboard.current.spaceKey.isPressed)
+                handbrake = 1f;
+        }
+
+        steerInput = Mathf.Clamp(steer, -1f, 1f);
+        throttleInput = Mathf.Clamp01(throttle);
+        brakeInput = Mathf.Clamp01(brake);
+        handbrakeInput = Mathf.Clamp01(handbrake);
+    }
+
+    private void ApplySteering()
+    {
+        smoothedSteer = Mathf.Lerp(smoothedSteer, steerInput, steerResponsiveness * Time.fixedDeltaTime);
+        float steerAngle = smoothedSteer * maxSteerAngle;
+
+        if (frontLeftWheel != null) frontLeftWheel.steerAngle = steerAngle;
+        if (frontRightWheel != null) frontRightWheel.steerAngle = steerAngle;
+    }
+
+    private void ApplyDriveAndBrakes()
+    {
+        float localSpeedKmh = transform.InverseTransformDirection(rb.linearVelocity).z * 3.6f;
+        float absSpeed = Mathf.Abs(localSpeedKmh);
+
+        float motorTorque = 0f;
+        float brakeTorque = 0f;
+
+        if (throttleInput > 0.01f && localSpeedKmh < maxForwardSpeedKmh)
+        {
+            float speedFactor = Mathf.Clamp01(absSpeed / Mathf.Max(1f, maxForwardSpeedKmh));
+            motorTorque = maxMotorTorque * throttleInput * (1f - speedFactor * 0.8f);
+        }
+
+        if (brakeInput > 0.01f)
+        {
+            if (localSpeedKmh > 1.5f)
+            {
+                brakeTorque = maxBrakeTorque * brakeInput;
+            }
+            else if (localSpeedKmh > -maxReverseSpeedKmh)
+            {
+                float reverseFactor = Mathf.Clamp01(absSpeed / Mathf.Max(1f, maxReverseSpeedKmh));
+                motorTorque = -maxReverseTorque * brakeInput * (1f - reverseFactor * 0.75f);
+            }
+        }
+
+        float rearBrake = brakeTorque + handbrakeInput * maxHandbrakeTorque;
+
+        if (rearWheelDrive)
+            ApplyMotorTorque(0f, 0f, motorTorque, motorTorque);
+        else
+            ApplyMotorTorque(motorTorque, motorTorque, 0f, 0f);
+
+        ApplyBrakeTorque(brakeTorque, brakeTorque, rearBrake, rearBrake);
+    }
+
+    private void ApplyDownforce()
+    {
+        rb.AddForce(Vector3.down * downforce * rb.linearVelocity.magnitude, ForceMode.Force);
+    }
+
+    private void ApplyParkedState()
+    {
+        ApplyMotorTorque(0f, 0f, 0f, 0f);
+        ApplyBrakeTorque(parkedBrakeTorque, parkedBrakeTorque, parkedBrakeTorque, parkedBrakeTorque);
+
+        if (frontLeftWheel != null) frontLeftWheel.steerAngle = 0f;
+        if (frontRightWheel != null) frontRightWheel.steerAngle = 0f;
+    }
+
+    private void ApplyMotorTorque(float fl, float fr, float rl, float rr)
+    {
+        if (frontLeftWheel != null) frontLeftWheel.motorTorque = fl;
+        if (frontRightWheel != null) frontRightWheel.motorTorque = fr;
+        if (rearLeftWheel != null) rearLeftWheel.motorTorque = rl;
+        if (rearRightWheel != null) rearRightWheel.motorTorque = rr;
+    }
+
+    private void ApplyBrakeTorque(float fl, float fr, float rl, float rr)
+    {
+        if (frontLeftWheel != null) frontLeftWheel.brakeTorque = fl;
+        if (frontRightWheel != null) frontRightWheel.brakeTorque = fr;
+        if (rearLeftWheel != null) rearLeftWheel.brakeTorque = rl;
+        if (rearRightWheel != null) rearRightWheel.brakeTorque = rr;
+    }
+
+    private void UpdateWheelVisuals()
+    {
+        SyncWheelVisual(frontLeftWheel, frontLeftVisual);
+        SyncWheelVisual(frontRightWheel, frontRightVisual);
+        SyncWheelVisual(rearLeftWheel, rearLeftVisual);
+        SyncWheelVisual(rearRightWheel, rearRightVisual);
+    }
+
+    private static void SyncWheelVisual(WheelCollider wheel, Transform visual)
+    {
+        if (wheel == null || visual == null)
+            return;
+
+        wheel.GetWorldPose(out Vector3 pos, out Quaternion rot);
+        visual.SetPositionAndRotation(pos, rot);
+    }
+
+    private bool HasValidWheelSetup()
+    {
+        return frontLeftWheel != null
+               && frontRightWheel != null
+               && rearLeftWheel != null
+               && rearRightWheel != null;
+    }
+
+    private bool HasHugeScale()
+    {
+        Vector3 s = transform.lossyScale;
+        return s.x > 10f || s.y > 10f || s.z > 10f;
+    }
+
+    private void WarnInvalidSetup(string message)
+    {
+        if (warnedInvalidSetup)
+            return;
+
+        warnedInvalidSetup = true;
+        Debug.LogWarning($"[AdvancedCarController] {message}", this);
+    }
+
+    private void AutoFindWheels()
+    {
+        WheelCollider[] wheels = GetComponentsInChildren<WheelCollider>(true);
+        if (wheels == null || wheels.Length < 4)
+            return;
+
+        WheelCollider fl = null;
+        WheelCollider fr = null;
+        WheelCollider rl = null;
+        WheelCollider rr = null;
+
+        float flZ = float.MinValue;
+        float frZ = float.MinValue;
+        float rlZ = float.MaxValue;
+        float rrZ = float.MaxValue;
+
+        for (int i = 0; i < wheels.Length; i++)
+        {
+            WheelCollider w = wheels[i];
+            Vector3 local = transform.InverseTransformPoint(w.transform.position);
+            bool isLeft = local.x <= 0f;
+
+            if (isLeft)
+            {
+                if (local.z > flZ)
+                {
+                    flZ = local.z;
+                    fl = w;
+                }
+
+                if (local.z < rlZ)
+                {
+                    rlZ = local.z;
+                    rl = w;
+                }
+            }
+            else
+            {
+                if (local.z > frZ)
+                {
+                    frZ = local.z;
+                    fr = w;
+                }
+
+                if (local.z < rrZ)
+                {
+                    rrZ = local.z;
+                    rr = w;
+                }
+            }
+        }
+
+        if (fl == null || fr == null || rl == null || rr == null)
+            return;
+
+        frontLeftWheel = fl;
+        frontRightWheel = fr;
+        rearLeftWheel = rl;
+        rearRightWheel = rr;
+    }
+
+    private void UnbindDriverActions()
+    {
+        DisableAction(steerAction);
+        DisableAction(throttleAction);
+        DisableAction(brakeAction);
+        DisableAction(handbrakeAction);
+
+        steerAction = null;
+        throttleAction = null;
+        brakeAction = null;
+        handbrakeAction = null;
+    }
+
+    private static void EnableAction(InputAction action)
+    {
+        if (action != null)
+            action.Enable();
+    }
+
+    private static void DisableAction(InputAction action)
+    {
+        if (action != null)
+            action.Disable();
+    }
+
+    private static float ReadSignedAxis(InputAction action, float fallback)
+    {
+        if (action == null || !action.enabled || action.controls.Count == 0)
+            return fallback;
+
+        try
+        {
+            return action.ReadValue<float>();
+        }
+        catch
+        {
+            try
+            {
+                return action.ReadValue<Vector2>().x;
+            }
+            catch
+            {
+                return fallback;
+            }
+        }
+    }
+
+    private static float ReadPositiveAxis(InputAction action, float fallback)
+    {
+        if (action == null || !action.enabled || action.controls.Count == 0)
+            return fallback;
+
+        try
+        {
+            return Mathf.Max(0f, action.ReadValue<float>());
+        }
+        catch
+        {
+            try
+            {
+                return Mathf.Max(0f, action.ReadValue<Vector2>().y);
             }
             catch
             {

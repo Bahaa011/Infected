@@ -28,6 +28,12 @@ public class ThirdPersonController : MonoBehaviour
     [SerializeField] private float normalHeight = 2f;
     [SerializeField] private InputActionReference sprintAction;
 
+    [Header("Stealth Noise")]
+    [SerializeField] private float walkNoiseRadius = 7f;
+    [SerializeField] private float sprintNoiseRadius = 13f;
+    [SerializeField] private float crouchNoiseRadius = 3f;
+    [SerializeField] private float footstepNoiseInterval = 0.38f;
+
     [Header("Cameras")]
     [SerializeField] private CinemachineCamera mainCamera;
     [SerializeField] private CinemachineCamera aimingCamera;
@@ -72,6 +78,7 @@ public class ThirdPersonController : MonoBehaviour
     private float runShakeTimer;
     private float currentShakeAmplitude;
     private float currentShakeOffsetY;
+    private float nextFootstepNoiseTime;
 
     private void Awake()
     {
@@ -86,26 +93,92 @@ public class ThirdPersonController : MonoBehaviour
 
     private void Start()
     {
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        // Only lock cursor if menu didn't already
+        if (Cursor.lockState != CursorLockMode.Locked)
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
 
         if (cameraTarget != null)
             baseCameraHeight = cameraTarget.localPosition.y;
     }
 
+    private void OnValidate()
+    {
+        // Ensure serialized action refs are visible in editor sanity checks
+    }
+
 
     void OnEnable()
     {
-        if (sprintAction != null)
+        // Enable ALL action maps
+        try
+        {
+            var pi = GetComponent<UnityEngine.InputSystem.PlayerInput>();
+            if (pi == null && player != null)
+                pi = player.GetComponent<UnityEngine.InputSystem.PlayerInput>();
+            
+            if (pi != null)
+            {
+                UnityEngine.Debug.Log($"[ThirdPersonController] OnEnable: Found {pi.actions.actionMaps.Count} action maps");
+                foreach (var map in pi.actions.actionMaps)
+                {
+                    UnityEngine.Debug.Log($"  - Action map: {map.name}");
+                    if (!map.enabled)
+                        map.Enable();
+                }
+            }
+        }
+        catch (System.Exception ex)
+        {
+            UnityEngine.Debug.LogWarning($"[ThirdPersonController] OnEnable action map setup error: {ex.Message}");
+        }
+
+        if (sprintAction != null && sprintAction.action != null)
             sprintAction.action.Enable();
-        // Only enable lookAction if inventory is not open
-        if (lookAction != null)
+        
+        if (lookAction != null && lookAction.action != null)
         {
             if (!InventoryUIToolkit.IsInventoryOpen)
                 lookAction.action.Enable();
             else
                 lookAction.action.Disable();
         }
+
+        // Subscribe to world loading state changes so we can enable input when ready
+        try
+        {
+            WorldLoadingState.OnChanged += OnWorldLoadingChanged;
+        }
+        catch (System.Exception)
+        {
+            // In case namespace/type differences, fallback to direct checks
+        }
+
+        UnityEngine.Debug.Log($"[ThirdPersonController] OnEnable. IsWorldReady={WorldLoadingState.IsWorldReady}");
+        
+        // Log PlayerInput state
+        try
+        {
+            var pi = GetComponent<UnityEngine.InputSystem.PlayerInput>();
+            if (pi == null && player != null)
+                pi = player.GetComponent<UnityEngine.InputSystem.PlayerInput>();
+            
+            if (pi != null)
+            {
+                UnityEngine.Debug.Log($"[ThirdPersonController] OnEnable PlayerInput status: Enabled={pi.enabled}, ActionMaps={pi.actions.actionMaps.Count}, Active={pi.currentActionMap?.name}");
+            }
+            else
+            {
+                UnityEngine.Debug.LogWarning("[ThirdPersonController] OnEnable: PlayerInput not found!");
+            }
+        }
+        catch { }
+
+        // If the world is already ready by the time this component enables, ensure inputs are enabled
+        if (WorldLoadingState.IsWorldReady)
+            OnWorldLoadingChanged(true);
     }
 
     void OnDisable()
@@ -114,6 +187,89 @@ public class ThirdPersonController : MonoBehaviour
             sprintAction.action.Disable();
         if (lookAction != null)
             lookAction.action.Disable();
+        try { WorldLoadingState.OnChanged -= OnWorldLoadingChanged; } catch (System.Exception) { }
+    }
+
+    private void OnWorldLoadingChanged(bool ready)
+    {
+        UnityEngine.Debug.Log($"[ThirdPersonController] World loading changed -> ready={ready}");
+        if (ready)
+        {
+            // Make sure cursor is locked and hidden when gameplay resumes
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+
+            // Ensure PlayerInput component is enabled and ALL action maps are active
+            try
+            {
+                var pi = GetComponent<UnityEngine.InputSystem.PlayerInput>();
+                if (pi == null && player != null)
+                    pi = player.GetComponent<UnityEngine.InputSystem.PlayerInput>();
+                
+                if (pi != null)
+                {
+                    UnityEngine.Debug.Log($"[ThirdPersonController] Found PlayerInput. Enabled={pi.enabled}");
+                    
+                    if (!pi.enabled)
+                    {
+                        pi.enabled = true;
+                        UnityEngine.Debug.Log("[ThirdPersonController] Enabled PlayerInput component.");
+                    }
+                    
+                    // Enable ALL action maps (gameplay + UI)
+                    foreach (var map in pi.actions.actionMaps)
+                    {
+                        if (!map.enabled)
+                        {
+                            map.Enable();
+                            UnityEngine.Debug.Log($"[ThirdPersonController] Enabled action map '{map.name}'");
+                        }
+                    }
+
+                    // Enable ALL individual actions in the input system
+                    foreach (var action in pi.actions)
+                    {
+                        if (!action.enabled)
+                        {
+                            action.Enable();
+                            UnityEngine.Debug.Log($"[ThirdPersonController] Enabled action '{action.name}'");
+                        }
+                    }
+                }
+                else
+                {
+                    UnityEngine.Debug.LogError("[ThirdPersonController] PlayerInput component not found!");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                UnityEngine.Debug.LogError("[ThirdPersonController] Failed to enable PlayerInput/actions: " + ex.Message);
+            }
+
+            // Also ensure specific action references are enabled
+            if (sprintAction != null && sprintAction.action != null && !sprintAction.action.enabled)
+            {
+                sprintAction.action.Enable();
+                UnityEngine.Debug.Log("[ThirdPersonController] Re-enabled sprintAction");
+            }
+            
+            if (lookAction != null && lookAction.action != null && !lookAction.action.enabled)
+            {
+                lookAction.action.Enable();
+                UnityEngine.Debug.Log("[ThirdPersonController] Re-enabled lookAction");
+            }
+
+            // Enable inventory toggle action if available
+            try
+            {
+                var inventoryUI = FindAnyObjectByType<InventoryUIToolkit>();
+                if (inventoryUI != null)
+                {
+                    UnityEngine.Debug.Log("[ThirdPersonController] Found InventoryUIToolkit, will trigger rebind");
+                }
+            }
+            catch { }
+        }
     }
 
     public void OnMove(InputValue value)
@@ -123,6 +279,9 @@ public class ThirdPersonController : MonoBehaviour
 
     private void Update()
     {
+        if (!WorldLoadingState.IsWorldReady)
+            return;
+
         // Lock yaw when inventory opens to prevent camera from rotating
         if (InventoryUIToolkit.IsInventoryOpen)
         {
@@ -154,6 +313,9 @@ public class ThirdPersonController : MonoBehaviour
 
     private void LateUpdate()
     {
+        if (!WorldLoadingState.IsWorldReady)
+            return;
+
         // Detach camera from player when inventory is open to prevent rotation
         if (cameraYawLocked && cameraTarget != null && cameraTarget.parent == transform)
         {
@@ -222,6 +384,9 @@ public class ThirdPersonController : MonoBehaviour
 
     void HandleMovementAndGravity()
     {
+        if (!WorldLoadingState.IsWorldReady)
+            return;
+
         Vector3 move = Vector3.zero;
         bool isMoving = moveInput.sqrMagnitude >= IDLE_THRESHOLD;
 
@@ -285,6 +450,37 @@ public class ThirdPersonController : MonoBehaviour
         // Final move vector: XZ from input, Y from gravity
         Vector3 finalMove = new Vector3(move.x, velocity.y, move.z) * Time.deltaTime;
         controller.Move(finalMove);
+
+        EmitMovementNoise(isMoving);
+    }
+
+    private void EmitMovementNoise(bool isMoving)
+    {
+        if (!isMoving || controller == null || !controller.isGrounded)
+            return;
+
+        if (Time.time < nextFootstepNoiseTime)
+            return;
+
+        float radius = walkNoiseRadius;
+        float strength = 0.75f;
+
+        if (player != null)
+        {
+            if (player.IsCrouching())
+            {
+                radius = crouchNoiseRadius;
+                strength = 0.35f;
+            }
+            else if (player.IsCurrentlySprinting())
+            {
+                radius = sprintNoiseRadius;
+                strength = 1f;
+            }
+        }
+
+        ZombieNoiseSystem.EmitNoise(transform.position, radius, strength, ZombieNoiseSystem.NoiseType.Footstep);
+        nextFootstepNoiseTime = Time.time + footstepNoiseInterval;
     }
 
     void UpdateAiming()

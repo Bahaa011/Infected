@@ -44,6 +44,7 @@ public class StorageContainer : MonoBehaviour, IInteractionPromptSource
     [Header("Storage")]
     [SerializeField] private string storageDisplayName = "Loot Box";
     [SerializeField] private string containerIdOverride = string.Empty;
+    [SerializeField] private float interactionDistance = 2.5f;
 
     [Header("Auto Loot Generation")]
     [SerializeField] private bool autoGenerateLoot = true;
@@ -127,6 +128,20 @@ public class StorageContainer : MonoBehaviour, IInteractionPromptSource
         if (autoGenerateLoot)
             TryRespawnLootIfDue();
 
+        if (playerInRange != null && !IsViewerWithinInteractionDistance(playerInRange.transform))
+        {
+            playerInRange = null;
+
+            if (storageWindow != null && storageWindow.IsOpenFor(storageInventory))
+            {
+                storageWindow.CloseStorage();
+                if (activeContainer == this)
+                    activeContainer = null;
+            }
+
+            return;
+        }
+
         if (playerInRange == null)
             return;
 
@@ -140,6 +155,9 @@ public class StorageContainer : MonoBehaviour, IInteractionPromptSource
             return;
 
         bool isThisContainerOpen = storageWindow.IsOpenFor(storageInventory);
+
+        if (!isThisContainerOpen && !IsPlayerPointingAtThisContainer(playerInRange))
+            return;
 
         // If another loot box is currently active, ignore this key press entirely.
         if (activeContainer != null && activeContainer != this && !isThisContainerOpen)
@@ -436,7 +454,7 @@ public class StorageContainer : MonoBehaviour, IInteractionPromptSource
     private void OnTriggerEnter(Collider other)
     {
         Player player = other.GetComponent<Player>();
-        if (player != null)
+        if (player != null && IsViewerWithinInteractionDistance(player.transform))
             playerInRange = player;
     }
 
@@ -463,11 +481,10 @@ public class StorageContainer : MonoBehaviour, IInteractionPromptSource
         if (viewer == null || playerInRange == null)
             return false;
 
-        if (activeContainer != null && activeContainer != this)
+        if (!IsViewerWithinInteractionDistance(viewer))
             return false;
 
-        float range = Vector3.Distance(transform.position, viewer.position);
-        if (range > 3.5f)
+        if (activeContainer != null && activeContainer != this)
             return false;
 
         string displayName = string.IsNullOrWhiteSpace(storageDisplayName) ? "Loot Box" : storageDisplayName;
@@ -476,5 +493,40 @@ public class StorageContainer : MonoBehaviour, IInteractionPromptSource
             ? $"Press E to close {displayName}"
             : $"Press E to open {displayName}";
         return true;
+    }
+
+    private bool IsViewerWithinInteractionDistance(Transform viewer)
+    {
+        if (viewer == null)
+            return false;
+
+        return Vector3.Distance(transform.position, viewer.position) <= Mathf.Max(0.25f, interactionDistance);
+    }
+
+    private bool IsPlayerPointingAtThisContainer(Player player)
+    {
+        if (player == null)
+            return false;
+
+        ThirdPersonController controller = player.GetComponent<ThirdPersonController>();
+        Camera cam = controller != null && controller.MainUnityCamera != null
+            ? controller.MainUnityCamera
+            : Camera.main;
+
+        if (cam == null)
+            return false;
+
+        Ray ray = new Ray(cam.transform.position, cam.transform.forward);
+        float maxDistance = Mathf.Max(0.25f, interactionDistance);
+        if (!Physics.Raycast(ray, out RaycastHit hit, maxDistance, ~0, QueryTriggerInteraction.Collide))
+            return false;
+
+        if (hit.collider == null)
+            return false;
+
+        if (hit.collider.transform.IsChildOf(player.transform))
+            return false;
+
+        return hit.collider.GetComponentInParent<StorageContainer>() == this;
     }
 }

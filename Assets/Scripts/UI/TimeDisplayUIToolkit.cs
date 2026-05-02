@@ -6,17 +6,21 @@ public class TimeDisplayUIToolkit : MonoBehaviour
     [SerializeField] private UIDocument uiDocument;
     [SerializeField] private DayNightManager dayNightManager;
 
+    private VisualElement root;
     private Label timeLabel;
     private Label dayPhaseLabel;
+    private int lastScreenWidth;
+    private int lastScreenHeight;
 
     private void Awake()
     {
         if (uiDocument == null)
             uiDocument = GetComponent<UIDocument>();
 
-        var root = uiDocument.rootVisualElement;
+        root = uiDocument.rootVisualElement;
         timeLabel = root.Q<Label>(className: "time-display");
         dayPhaseLabel = root.Q<Label>(className: "day-phase");
+        RefreshResponsiveScale(true);
     }
 
     private void OnEnable()
@@ -27,6 +31,8 @@ public class TimeDisplayUIToolkit : MonoBehaviour
 
     private void Update()
     {
+        RefreshResponsiveScale();
+
         if (dayNightManager == null || timeLabel == null) return;
 
         timeLabel.text = dayNightManager.GetTimeFormatted();
@@ -38,5 +44,20 @@ public class TimeDisplayUIToolkit : MonoBehaviour
                 new StyleColor(new Color(0.67f, 0.92f, 0.49f, 1f)) : 
                 new StyleColor(new Color(0.72f, 0.58f, 1f, 1f));
         }
+    }
+
+    private void RefreshResponsiveScale(bool force = false)
+    {
+        if (!force && Screen.width == lastScreenWidth && Screen.height == lastScreenHeight)
+            return;
+
+        lastScreenWidth = Screen.width;
+        lastScreenHeight = Screen.height;
+
+        if (root == null)
+            return;
+
+        // Root is fullscreen; transform scaling causes anchored elements to drift.
+        root.style.scale = new Scale(Vector3.one);
     }
 }

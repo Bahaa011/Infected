@@ -108,10 +108,10 @@ public class InteractionPromptUIToolkit : MonoBehaviour
             panel.pickingMode = PickingMode.Ignore;
             panel.style.position = Position.Absolute;
             panel.style.display = DisplayStyle.None;
-            panel.style.paddingTop = 6;
-            panel.style.paddingRight = 10;
-            panel.style.paddingBottom = 6;
-            panel.style.paddingLeft = 10;
+            panel.style.paddingTop = ResponsiveUiUtility.Scale(6f);
+            panel.style.paddingRight = ResponsiveUiUtility.Scale(10f);
+            panel.style.paddingBottom = ResponsiveUiUtility.Scale(6f);
+            panel.style.paddingLeft = ResponsiveUiUtility.Scale(10f);
             panel.style.backgroundColor = new StyleColor(new Color(0.08f, 0.08f, 0.08f, 0.94f));
             panel.style.borderTopWidth = 1;
             panel.style.borderRightWidth = 1;
@@ -128,7 +128,7 @@ public class InteractionPromptUIToolkit : MonoBehaviour
 
             label = new Label();
             label.name = "interaction-prompt-label";
-            label.style.fontSize = 11;
+            label.style.fontSize = ResponsiveUiUtility.Scale(11f);
             label.style.unityFontStyleAndWeight = FontStyle.Bold;
             label.style.color = new StyleColor(new Color(0.96f, 0.96f, 0.96f, 1f));
             label.style.whiteSpace = WhiteSpace.Normal;
@@ -204,8 +204,9 @@ public class InteractionPromptUIToolkit : MonoBehaviour
 
         panel.style.right = StyleKeyword.Auto;
         panel.style.bottom = StyleKeyword.Auto;
-        panel.style.left = Mathf.Clamp(left, 8f, Mathf.Max(8f, rootWidth - panelWidth - 8f));
-        panel.style.top = Mathf.Clamp(top, 8f, Mathf.Max(8f, rootHeight - panelHeight - 8f));
+        float margin = ResponsiveUiUtility.Scale(8f);
+        panel.style.left = Mathf.Clamp(left, margin, Mathf.Max(margin, rootWidth - panelWidth - margin));
+        panel.style.top = Mathf.Clamp(top, margin, Mathf.Max(margin, rootHeight - panelHeight - margin));
     }
 
     private void HidePrompt()

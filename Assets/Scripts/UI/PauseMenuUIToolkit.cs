@@ -45,10 +45,14 @@ public class PauseMenuUIToolkit : MonoBehaviour
 
     private Label activeSlotLabel;
 
-    private readonly List<Button> slotSelectButtons = new List<Button>();
-    private readonly List<Button> slotSaveButtons = new List<Button>();
-    private readonly List<Button> slotLoadButtons = new List<Button>();
-    private readonly List<Button> slotDeleteButtons = new List<Button>();
+    private readonly List<VisualElement> slotRows = new List<VisualElement>();
+    private readonly List<int> slotRowIndexes = new List<int>();
+
+    private VisualElement saveConfirmOverlay;
+    private Label saveConfirmMessageLabel;
+    private Button saveConfirmYesButton;
+    private Button saveConfirmNoButton;
+    private int pendingSaveSlotIndex = -1;
 
     private readonly List<PlayerInput> pausedInputs = new List<PlayerInput>();
     private readonly List<bool> pausedInputStates = new List<bool>();
@@ -86,6 +90,12 @@ public class PauseMenuUIToolkit : MonoBehaviour
 
         if (!Keyboard.current.escapeKey.wasPressedThisFrame)
             return;
+
+        if (saveConfirmOverlay != null && saveConfirmOverlay.style.display == DisplayStyle.Flex)
+        {
+            HideSaveConfirmDialog();
+            return;
+        }
 
         if (!IsPaused)
         {
@@ -171,6 +181,8 @@ public class PauseMenuUIToolkit : MonoBehaviour
         if (qualityDropdown != null)
             qualityDropdown.RegisterValueChangedCallback(evt => ApplyQuality(evt.newValue, true));
 
+        StyleSaveSlotsScrollBar();
+        BuildSaveConfirmDialog();
         BuildSaveSlotsList();
     }
 
@@ -242,7 +254,7 @@ public class PauseMenuUIToolkit : MonoBehaviour
         pausedInputs.Clear();
         pausedInputStates.Clear();
 
-        PlayerInput[] allInputs = FindObjectsByType<PlayerInput>(FindObjectsSortMode.None);
+        PlayerInput[] allInputs = FindObjectsByType<PlayerInput>();
         for (int i = 0; i < allInputs.Length; i++)
         {
             PlayerInput input = allInputs[i];
@@ -314,6 +326,7 @@ public class PauseMenuUIToolkit : MonoBehaviour
         if (saveSlotsPanel != null)
             saveSlotsPanel.style.display = DisplayStyle.Flex;
 
+        StyleSaveSlotsScrollBar();
         RefreshSaveSlotsUi();
     }
 
@@ -323,10 +336,8 @@ public class PauseMenuUIToolkit : MonoBehaviour
             return;
 
         saveSlotsList.Clear();
-        slotSelectButtons.Clear();
-        slotSaveButtons.Clear();
-        slotLoadButtons.Clear();
-        slotDeleteButtons.Clear();
+        slotRows.Clear();
+        slotRowIndexes.Clear();
 
         GameSaveManager.SaveSlotInfo[] infos = saveManager.GetSaveSlotInfos();
         for (int i = 0; i < infos.Length; i++)
@@ -337,68 +348,47 @@ public class PauseMenuUIToolkit : MonoBehaviour
 
             var row = new VisualElement();
             row.style.flexDirection = FlexDirection.Column;
-            row.style.paddingTop = 8;
-            row.style.paddingRight = 8;
-            row.style.paddingBottom = 8;
-            row.style.paddingLeft = 8;
-            row.style.marginBottom = 8;
-            row.style.backgroundColor = new StyleColor(new Color(0.08f, 0.08f, 0.08f, 0.95f));
-            row.style.borderTopLeftRadius = 6;
-            row.style.borderTopRightRadius = 6;
-            row.style.borderBottomLeftRadius = 6;
-            row.style.borderBottomRightRadius = 6;
+            row.style.paddingTop = 10;
+            row.style.paddingRight = 10;
+            row.style.paddingBottom = 10;
+            row.style.paddingLeft = 10;
+            row.style.marginBottom = 6;
+            row.style.backgroundColor = new StyleColor(new Color(0.08f, 0.08f, 0.08f, 0.78f));
+            row.style.borderTopLeftRadius = 2;
+            row.style.borderTopRightRadius = 2;
+            row.style.borderBottomLeftRadius = 2;
+            row.style.borderBottomRightRadius = 2;
             row.style.borderTopWidth = 1;
             row.style.borderRightWidth = 1;
             row.style.borderBottomWidth = 1;
             row.style.borderLeftWidth = 1;
-            row.style.borderTopColor = new StyleColor(new Color(0.45f, 0.45f, 0.45f, 0.16f));
-            row.style.borderRightColor = new StyleColor(new Color(0.45f, 0.45f, 0.45f, 0.16f));
-            row.style.borderBottomColor = new StyleColor(new Color(0.45f, 0.45f, 0.45f, 0.1f));
-            row.style.borderLeftColor = new StyleColor(new Color(0.45f, 0.45f, 0.45f, 0.1f));
+            row.style.borderTopColor = new StyleColor(new Color(0.72f, 0.45f, 0.24f, 0.2f));
+            row.style.borderRightColor = new StyleColor(new Color(0.72f, 0.45f, 0.24f, 0.2f));
+            row.style.borderBottomColor = new StyleColor(new Color(0.2f, 0.2f, 0.2f, 0.28f));
+            row.style.borderLeftColor = new StyleColor(new Color(0.2f, 0.2f, 0.2f, 0.28f));
+            row.RegisterCallback<ClickEvent>(evt =>
+            {
+                if (evt.target is Button)
+                    return;
+
+                SaveSlot(info.slotIndex);
+            });
 
             var title = new Label();
             title.name = $"pause-slot-title-{info.slotIndex}";
-            title.style.fontSize = 13;
+            title.style.fontSize = ResponsiveUiUtility.Scale(11f);
             title.style.unityFontStyleAndWeight = FontStyle.Bold;
-            title.style.color = new StyleColor(new Color(0.96f, 0.96f, 0.96f, 1f));
+            title.style.color = new StyleColor(new Color(0.9f, 0.9f, 0.9f, 0.95f));
             row.Add(title);
 
             var sub = new Label();
             sub.name = $"pause-slot-sub-{info.slotIndex}";
-            sub.style.fontSize = 10;
-            sub.style.color = new StyleColor(new Color(0.8f, 0.8f, 0.8f, 0.95f));
-            sub.style.marginBottom = 6;
+            sub.style.fontSize = ResponsiveUiUtility.Scale(10f);
+            sub.style.color = new StyleColor(new Color(0.72f, 0.72f, 0.72f, 0.84f));
             row.Add(sub);
 
-            var buttons = new VisualElement();
-            buttons.style.flexDirection = FlexDirection.Row;
-            buttons.style.gap = 6;
-
-            Button selectButton = new Button(() => SelectSlot(info.slotIndex));
-            selectButton.text = "Select";
-            selectButton.style.flexGrow = 1;
-            buttons.Add(selectButton);
-            slotSelectButtons.Add(selectButton);
-
-            Button saveSlotButton = new Button(() => SaveSlot(info.slotIndex));
-            saveSlotButton.text = "Save";
-            saveSlotButton.style.flexGrow = 1;
-            buttons.Add(saveSlotButton);
-            slotSaveButtons.Add(saveSlotButton);
-
-            Button loadSlotButton = new Button(() => LoadSlot(info.slotIndex));
-            loadSlotButton.text = "Load";
-            loadSlotButton.style.flexGrow = 1;
-            buttons.Add(loadSlotButton);
-            slotLoadButtons.Add(loadSlotButton);
-
-            Button deleteSlotButton = new Button(() => DeleteSlot(info.slotIndex));
-            deleteSlotButton.text = "Delete";
-            deleteSlotButton.style.flexGrow = 1;
-            buttons.Add(deleteSlotButton);
-            slotDeleteButtons.Add(deleteSlotButton);
-
-            row.Add(buttons);
+            slotRows.Add(row);
+            slotRowIndexes.Add(info.slotIndex);
             saveSlotsList.Add(row);
         }
 
@@ -435,6 +425,7 @@ public class PauseMenuUIToolkit : MonoBehaviour
                 else
                     sub.text = $"Saved: {info.savedAtUtc} | Day: {info.totalGameDays:0.##}";
             }
+
         }
 
         StyleSlotButtons();
@@ -447,35 +438,211 @@ public class PauseMenuUIToolkit : MonoBehaviour
 
         int activeSlot = saveManager.ActiveSlotIndex;
 
-        for (int i = 0; i < slotSelectButtons.Count; i++)
+        for (int i = 0; i < slotRows.Count; i++)
         {
-            if (slotSelectButtons[i] != null)
-                slotSelectButtons[i].text = i + 1 == activeSlot ? "Selected" : "Select";
+            if (slotRows[i] != null)
+            {
+                int slotIndex = i < slotRowIndexes.Count ? slotRowIndexes[i] : i + 1;
+                bool isSelected = slotIndex == activeSlot;
+
+                if (isSelected)
+                {
+                    slotRows[i].style.backgroundColor = new StyleColor(new Color(0.16f, 0.12f, 0.08f, 0.92f));
+                    slotRows[i].style.borderTopColor = new StyleColor(new Color(0.95f, 0.7f, 0.45f, 0.52f));
+                    slotRows[i].style.borderRightColor = new StyleColor(new Color(0.95f, 0.7f, 0.45f, 0.52f));
+                    slotRows[i].style.borderBottomColor = new StyleColor(new Color(0.2f, 0.2f, 0.2f, 0.34f));
+                    slotRows[i].style.borderLeftColor = new StyleColor(new Color(0.2f, 0.2f, 0.2f, 0.34f));
+                }
+                else
+                {
+                    slotRows[i].style.backgroundColor = new StyleColor(new Color(0.08f, 0.08f, 0.08f, 0.78f));
+                    slotRows[i].style.borderTopColor = new StyleColor(new Color(0.72f, 0.45f, 0.24f, 0.2f));
+                    slotRows[i].style.borderRightColor = new StyleColor(new Color(0.72f, 0.45f, 0.24f, 0.2f));
+                    slotRows[i].style.borderBottomColor = new StyleColor(new Color(0.2f, 0.2f, 0.2f, 0.28f));
+                    slotRows[i].style.borderLeftColor = new StyleColor(new Color(0.2f, 0.2f, 0.2f, 0.28f));
+                }
+            }
         }
     }
 
-    private void SelectSlot(int slotIndex)
+    private void StyleSaveSlotsScrollBar()
     {
-        saveManager?.SetActiveSlot(slotIndex);
-        RefreshSaveSlotsUi();
+        if (saveSlotsList == null)
+            return;
+
+        var scroller = saveSlotsList.verticalScroller;
+        if (scroller == null)
+            return;
+
+        scroller.style.width = ResponsiveUiUtility.Scale(10f);
+        scroller.style.minWidth = ResponsiveUiUtility.Scale(10f);
+        scroller.style.marginLeft = ResponsiveUiUtility.Scale(8f);
+        scroller.style.backgroundColor = new StyleColor(new Color(0f, 0f, 0f, 0f));
+
+        VisualElement lowButton = scroller.Q<VisualElement>(className: "unity-scroller__low-button");
+        if (lowButton != null)
+            lowButton.style.display = DisplayStyle.None;
+
+        VisualElement highButton = scroller.Q<VisualElement>(className: "unity-scroller__high-button");
+        if (highButton != null)
+            highButton.style.display = DisplayStyle.None;
+
+        VisualElement tracker = scroller.Q<VisualElement>(className: "unity-base-slider__tracker");
+        if (tracker != null)
+        {
+            tracker.style.backgroundColor = new StyleColor(new Color(0.1f, 0.1f, 0.1f, 0.85f));
+            tracker.style.borderTopLeftRadius = 5;
+            tracker.style.borderTopRightRadius = 5;
+            tracker.style.borderBottomLeftRadius = 5;
+            tracker.style.borderBottomRightRadius = 5;
+        }
+
+        VisualElement dragger = scroller.Q<VisualElement>(className: "unity-base-slider__dragger");
+        if (dragger != null)
+        {
+            dragger.style.backgroundColor = new StyleColor(new Color(0.72f, 0.45f, 0.24f, 0.92f));
+            dragger.style.borderTopLeftRadius = 5;
+            dragger.style.borderTopRightRadius = 5;
+            dragger.style.borderBottomLeftRadius = 5;
+            dragger.style.borderBottomRightRadius = 5;
+            dragger.style.minHeight = 36;
+        }
+    }
+
+    private void ApplySlotButtonBaseStyle(Button button, Color backgroundColor, Color textColor)
+    {
+        if (button == null)
+            return;
+
+        button.style.fontSize = ResponsiveUiUtility.Scale(11f);
+        button.style.backgroundColor = new StyleColor(backgroundColor);
+        button.style.color = new StyleColor(textColor);
+        button.style.borderTopLeftRadius = 3;
+        button.style.borderTopRightRadius = 3;
+        button.style.borderBottomLeftRadius = 3;
+        button.style.borderBottomRightRadius = 3;
+        button.style.borderTopWidth = 1;
+        button.style.borderRightWidth = 1;
+        button.style.borderBottomWidth = 1;
+        button.style.borderLeftWidth = 1;
+        button.style.borderTopColor = new StyleColor(new Color(0.72f, 0.45f, 0.24f, 0.3f));
+        button.style.borderRightColor = new StyleColor(new Color(0.72f, 0.45f, 0.24f, 0.3f));
+        button.style.borderBottomColor = new StyleColor(new Color(0f, 0f, 0f, 0.42f));
+        button.style.borderLeftColor = new StyleColor(new Color(0f, 0f, 0f, 0.42f));
     }
 
     private void SaveSlot(int slotIndex)
     {
-        saveManager?.SaveGameToSlot(slotIndex);
+        GameSaveManager.SaveSlotInfo info = saveManager != null ? saveManager.GetSlotInfo(slotIndex) : null;
+        bool hasData = info != null && info.exists && !info.corrupted;
+        ShowSaveConfirmDialog(slotIndex, hasData);
+    }
+
+    private void ConfirmSaveToSlot()
+    {
+        if (pendingSaveSlotIndex <= 0)
+            return;
+
+        saveManager?.SetActiveSlot(pendingSaveSlotIndex);
+        saveManager?.SaveGameToSlot(pendingSaveSlotIndex);
+        pendingSaveSlotIndex = -1;
+        HideSaveConfirmDialog();
         RefreshSaveSlotsUi();
     }
 
-    private void LoadSlot(int slotIndex)
+    private void ShowSaveConfirmDialog(int slotIndex, bool hasExistingSave)
     {
-        saveManager?.LoadGameFromSlot(slotIndex);
-        RefreshSaveSlotsUi();
+        pendingSaveSlotIndex = slotIndex;
+
+        if (saveConfirmMessageLabel != null)
+        {
+            saveConfirmMessageLabel.text = hasExistingSave
+                ? $"Slot {slotIndex} already has a save. Override it?"
+                : $"Save your current progress to Slot {slotIndex}?";
+        }
+
+        if (saveConfirmOverlay != null)
+            saveConfirmOverlay.style.display = DisplayStyle.Flex;
     }
 
-    private void DeleteSlot(int slotIndex)
+    private void HideSaveConfirmDialog()
     {
-        saveManager?.DeleteSlot(slotIndex);
-        RefreshSaveSlotsUi();
+        pendingSaveSlotIndex = -1;
+
+        if (saveConfirmOverlay != null)
+            saveConfirmOverlay.style.display = DisplayStyle.None;
+    }
+
+    private void BuildSaveConfirmDialog()
+    {
+        if (overlay == null || saveConfirmOverlay != null)
+            return;
+
+        saveConfirmOverlay = new VisualElement();
+        saveConfirmOverlay.style.position = Position.Absolute;
+        saveConfirmOverlay.style.left = 0;
+        saveConfirmOverlay.style.top = 0;
+        saveConfirmOverlay.style.right = 0;
+        saveConfirmOverlay.style.bottom = 0;
+        saveConfirmOverlay.style.justifyContent = Justify.Center;
+        saveConfirmOverlay.style.alignItems = Align.Center;
+        saveConfirmOverlay.style.backgroundColor = new StyleColor(new Color(0f, 0f, 0f, 0.6f));
+        saveConfirmOverlay.style.display = DisplayStyle.None;
+
+        VisualElement panel = new VisualElement();
+        panel.style.width = ResponsiveUiUtility.Scale(430f);
+        panel.style.paddingTop = ResponsiveUiUtility.Scale(16f);
+        panel.style.paddingRight = ResponsiveUiUtility.Scale(16f);
+        panel.style.paddingBottom = ResponsiveUiUtility.Scale(16f);
+        panel.style.paddingLeft = ResponsiveUiUtility.Scale(16f);
+        panel.style.backgroundColor = new StyleColor(new Color(0.12f, 0.1f, 0.08f, 0.98f));
+        panel.style.borderTopLeftRadius = 4;
+        panel.style.borderTopRightRadius = 4;
+        panel.style.borderBottomLeftRadius = 4;
+        panel.style.borderBottomRightRadius = 4;
+        panel.style.borderTopWidth = 1;
+        panel.style.borderRightWidth = 1;
+        panel.style.borderBottomWidth = 1;
+        panel.style.borderLeftWidth = 1;
+        panel.style.borderTopColor = new StyleColor(new Color(0.95f, 0.7f, 0.45f, 0.55f));
+        panel.style.borderRightColor = new StyleColor(new Color(0.95f, 0.7f, 0.45f, 0.55f));
+        panel.style.borderBottomColor = new StyleColor(new Color(0f, 0f, 0f, 0.48f));
+        panel.style.borderLeftColor = new StyleColor(new Color(0f, 0f, 0f, 0.48f));
+
+        Label title = new Label("Confirm Save");
+        title.style.fontSize = ResponsiveUiUtility.Scale(16f);
+        title.style.unityFontStyleAndWeight = FontStyle.Bold;
+        title.style.color = new StyleColor(new Color(0.95f, 0.9f, 0.82f, 1f));
+        panel.Add(title);
+
+        saveConfirmMessageLabel = new Label("Save to this slot?");
+        saveConfirmMessageLabel.style.fontSize = ResponsiveUiUtility.Scale(12f);
+        saveConfirmMessageLabel.style.color = new StyleColor(new Color(0.87f, 0.82f, 0.77f, 0.92f));
+        saveConfirmMessageLabel.style.marginTop = 6;
+        saveConfirmMessageLabel.style.marginBottom = 12;
+        panel.Add(saveConfirmMessageLabel);
+
+        VisualElement buttonsRow = new VisualElement();
+        buttonsRow.style.flexDirection = FlexDirection.Row;
+
+        saveConfirmYesButton = new Button(ConfirmSaveToSlot);
+        saveConfirmYesButton.text = "Yes";
+        saveConfirmYesButton.style.flexGrow = 1;
+        saveConfirmYesButton.style.height = ResponsiveUiUtility.Scale(34f);
+        ApplySlotButtonBaseStyle(saveConfirmYesButton, new Color(0.47f, 0.3f, 0.16f, 0.95f), new Color(0.98f, 0.93f, 0.86f, 1f));
+        buttonsRow.Add(saveConfirmYesButton);
+
+        saveConfirmNoButton = new Button(HideSaveConfirmDialog);
+        saveConfirmNoButton.text = "No";
+        saveConfirmNoButton.style.flexGrow = 1;
+        saveConfirmNoButton.style.height = ResponsiveUiUtility.Scale(34f);
+        saveConfirmNoButton.style.marginLeft = 8;
+        ApplySlotButtonBaseStyle(saveConfirmNoButton, new Color(0.27f, 0.29f, 0.31f, 0.95f), new Color(0.92f, 0.9f, 0.86f, 1f));
+        buttonsRow.Add(saveConfirmNoButton);
+
+        panel.Add(buttonsRow);
+        saveConfirmOverlay.Add(panel);
+        overlay.Add(saveConfirmOverlay);
     }
 
     private void ApplyMasterVolume(float value, bool persist)

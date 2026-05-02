@@ -3,6 +3,9 @@ using UnityEngine.UIElements;
 
 public class VitalsUIToolkit : MonoBehaviour
 {
+    private const float ReferenceWidth = 1920f;
+    private const float ReferenceHeight = 1080f;
+
     [SerializeField] private UIDocument uiDocument;
     [SerializeField] private Player player;
     [SerializeField] private Sprite healthIcon;
@@ -14,6 +17,9 @@ public class VitalsUIToolkit : MonoBehaviour
     private RadialProgressElement hungerWheel;
     private RadialProgressElement thirstWheel;
     private RadialProgressElement staminaWheel;
+    private int lastScreenWidth;
+    private int lastScreenHeight;
+    private float uiScale = 1f;
 
     private void Awake()
     {
@@ -26,7 +32,7 @@ public class VitalsUIToolkit : MonoBehaviour
         if (panel == null)
             panel = root;
 
-        BuildCircularVitals(panel);
+        RebuildCircularVitals(panel);
     }
 
     private void OnEnable()
@@ -43,6 +49,7 @@ public class VitalsUIToolkit : MonoBehaviour
     private void Update()
     {
         BindPlayer(ResolvePlayer());
+        RefreshResponsiveScale();
         RefreshAllVitals();
     }
 
@@ -121,6 +128,10 @@ public class VitalsUIToolkit : MonoBehaviour
     {
         panel.Clear();
 
+        uiScale = CalculateUiScale();
+        lastScreenWidth = Screen.width;
+        lastScreenHeight = Screen.height;
+
         // Keep vitals floating, no background card.
         panel.style.backgroundColor = new StyleColor(new Color(0f, 0f, 0f, 0f));
         panel.style.borderTopWidth = 0;
@@ -131,13 +142,13 @@ public class VitalsUIToolkit : MonoBehaviour
         panel.style.paddingRight = 0;
         panel.style.paddingBottom = 0;
         panel.style.paddingLeft = 0;
-        panel.style.width = 429;
-        panel.style.height = 303;
+        panel.style.width = Scale(429f);
+        panel.style.height = Scale(303f);
 
         var cluster = new VisualElement();
         cluster.style.position = Position.Relative;
-        cluster.style.width = 429;
-        cluster.style.height = 303;
+        cluster.style.width = Scale(429f);
+        cluster.style.height = Scale(303f);
         panel.Add(cluster);
 
         var healthNode = CreateVitalCircle("HP", true, healthIcon, new Color(0.88f, 0.33f, 0.42f, 1f), 168f, 12f, 12, 13);
@@ -151,10 +162,10 @@ public class VitalsUIToolkit : MonoBehaviour
         staminaWheel = staminaNode.wheel;
 
         // Subnautica-like shape: large top-right with three smaller around lower-left arc.
-        PlaceNode(cluster, healthNode.container, 156, 18);
-        PlaceNode(cluster, hungerNode.container, 54, 54);
-        PlaceNode(cluster, thirstNode.container, 37.5f, 168);
-        PlaceNode(cluster, staminaNode.container, 147, 193.5f);
+        PlaceNode(cluster, healthNode.container, Scale(156f), Scale(18f));
+        PlaceNode(cluster, hungerNode.container, Scale(54f), Scale(54f));
+        PlaceNode(cluster, thirstNode.container, Scale(37.5f), Scale(168f));
+        PlaceNode(cluster, staminaNode.container, Scale(147f), Scale(193.5f));
     }
 
     private void PlaceNode(VisualElement parent, VisualElement node, float left, float top)
@@ -176,6 +187,11 @@ public class VitalsUIToolkit : MonoBehaviour
         int valueFont)
     {
         var container = new VisualElement();
+        size = Scale(size);
+        thickness = Scale(thickness);
+        shortNameFont = Mathf.Max(1, Mathf.RoundToInt(Scale(shortNameFont)));
+        valueFont = Mathf.Max(1, Mathf.RoundToInt(Scale(valueFont)));
+
         container.style.width = size;
         container.style.height = size;
         container.style.flexDirection = FlexDirection.Column;
@@ -261,7 +277,7 @@ public class VitalsUIToolkit : MonoBehaviour
         marker.style.position = Position.Absolute;
         marker.style.left = size * 0.47f;
         marker.style.top = size * 0.06f;
-        float markerSize = Mathf.Max(4f, size * 0.06f);
+        float markerSize = Mathf.Max(Scale(4f), size * 0.06f);
         marker.style.width = markerSize;
         marker.style.height = markerSize;
         float markerRadius = markerSize * 0.5f;
@@ -293,5 +309,36 @@ public class VitalsUIToolkit : MonoBehaviour
         container.Add(circleWrap);
 
         return (container, wheel);
+    }
+
+    private void RebuildCircularVitals(VisualElement panel)
+    {
+        BuildCircularVitals(panel);
+    }
+
+    private void RefreshResponsiveScale()
+    {
+        if (Screen.width == lastScreenWidth && Screen.height == lastScreenHeight)
+            return;
+
+        lastScreenWidth = Screen.width;
+        lastScreenHeight = Screen.height;
+
+        var root = uiDocument != null ? uiDocument.rootVisualElement : null;
+        var panel = root != null ? root.Q<VisualElement>(className: "vitals-panel") ?? root : null;
+        if (panel != null)
+            RebuildCircularVitals(panel);
+    }
+
+    private float CalculateUiScale()
+    {
+        float widthScale = Screen.width / ReferenceWidth;
+        float heightScale = Screen.height / ReferenceHeight;
+        return Mathf.Clamp(Mathf.Min(widthScale, heightScale), 0.75f, 1.35f);
+    }
+
+    private float Scale(float value)
+    {
+        return value * uiScale;
     }
 }

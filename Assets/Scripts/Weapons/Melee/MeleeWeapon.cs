@@ -230,7 +230,10 @@ public class MeleeWeapon : MonoBehaviour
         // Deal damage (zombies get melee-specific stun timing)
         Zombie zombie = targetObject.GetComponent<Zombie>();
         if (zombie != null)
+        {
             zombie.OnMeleeHit(finalDamage);
+            CrosshairUIToolkit.RegisterZombieHit();
+        }
         else
             damageable.TakeDamage(finalDamage);
 

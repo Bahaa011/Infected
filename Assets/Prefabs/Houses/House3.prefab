@@ -258,13 +258,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 568620119605289490}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: -0.38268343, w: 0.92387956}
   m_LocalPosition: {x: 0.0095644165, y: 0.016278466, z: 0.022491764}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6883135886201203789}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: -45}
 --- !u!33 &5769737088726480754
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -339,6 +339,8 @@ MonoBehaviour:
   rotationSpeed: 2
   isOpen: 0
   interactionRange: 3
+  disableMeshCollidersWhenOpen: 1
+  includeChildMeshColliders: 1
   openSound: {fileID: 0}
   closeSound: {fileID: 0}
   audioVolume: 1
@@ -802,13 +804,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1055206727641171622}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0.38268343, w: 0.92387956}
   m_LocalPosition: {x: -0.0026807843, y: -0.021399884, z: 0.05254163}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6883135886201203789}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 45}
 --- !u!33 &358951982725100642
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -883,6 +885,8 @@ MonoBehaviour:
   rotationSpeed: 2
   isOpen: 0
   interactionRange: 3
+  disableMeshCollidersWhenOpen: 1
+  includeChildMeshColliders: 1
   openSound: {fileID: 0}
   closeSound: {fileID: 0}
   audioVolume: 1
@@ -1707,13 +1711,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1669771130649993282}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: -0.38268343, w: 0.92387956}
   m_LocalPosition: {x: -0.022252778, y: 0.01759754, z: 0.05254163}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6883135886201203789}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: -45}
 --- !u!33 &3580270431022366971
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -1788,6 +1792,8 @@ MonoBehaviour:
   rotationSpeed: 2
   isOpen: 0
   interactionRange: 3
+  disableMeshCollidersWhenOpen: 1
+  includeChildMeshColliders: 1
   openSound: {fileID: 0}
   closeSound: {fileID: 0}
   audioVolume: 1
@@ -1839,7 +1845,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 1275.8772, y: 116.80179, z: 1502.5173}
-  m_LocalScale: {x: 120, y: 120, z: 120}
+  m_LocalScale: {x: 120.00004, y: 120.000015, z: 120.00003}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7528576975288405976}
@@ -2105,13 +2111,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1937596839170588245}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: -0.7071068, w: 0.7071068}
   m_LocalPosition: {x: -0.0026807827, y: -0.018059885, z: 0.05254163}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6883135886201203789}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: -90}
 --- !u!33 &5945432883544927142
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -2186,6 +2192,8 @@ MonoBehaviour:
   rotationSpeed: 2
   isOpen: 0
   interactionRange: 3
+  disableMeshCollidersWhenOpen: 1
+  includeChildMeshColliders: 1
   openSound: {fileID: 0}
   closeSound: {fileID: 0}
   audioVolume: 1
@@ -2636,6 +2644,8 @@ MonoBehaviour:
   rotationSpeed: 2
   isOpen: 0
   interactionRange: 3
+  disableMeshCollidersWhenOpen: 1
+  includeChildMeshColliders: 1
   openSound: {fileID: 0}
   closeSound: {fileID: 0}
   audioVolume: 1
@@ -2802,13 +2812,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2288544807900948591}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0.38268343, w: 0.92387956}
   m_LocalPosition: {x: 0.0062244106, y: 0.016278466, z: 0.05254163}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6883135886201203789}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 45}
 --- !u!33 &7822083460371579352
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -2883,6 +2893,8 @@ MonoBehaviour:
   rotationSpeed: 2
   isOpen: 0
   interactionRange: 3
+  disableMeshCollidersWhenOpen: 1
+  includeChildMeshColliders: 1
   openSound: {fileID: 0}
   closeSound: {fileID: 0}
   audioVolume: 1
@@ -3368,13 +3380,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2541961680270323679}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: -0.38268343, w: 0.92387956}
   m_LocalPosition: {x: 0.013358309, y: -0.006608112, z: 0.05254163}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6883135886201203789}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: -45}
 --- !u!33 &6369031199578980581
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -3449,6 +3461,8 @@ MonoBehaviour:
   rotationSpeed: 2
   isOpen: 0
   interactionRange: 3
+  disableMeshCollidersWhenOpen: 1
+  includeChildMeshColliders: 1
   openSound: {fileID: 0}
   closeSound: {fileID: 0}
   audioVolume: 1
@@ -3731,13 +3745,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2635309075143624675}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0.38268343, w: 0.92387956}
   m_LocalPosition: {x: 0.00622442, y: 0.016278464, z: 0.022491688}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6883135886201203789}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 45}
 --- !u!33 &2501282313305894696
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -3812,6 +3826,8 @@ MonoBehaviour:
   rotationSpeed: 2
   isOpen: 0
   interactionRange: 3
+  disableMeshCollidersWhenOpen: 1
+  includeChildMeshColliders: 1
   openSound: {fileID: 0}
   closeSound: {fileID: 0}
   audioVolume: 1
@@ -5452,13 +5468,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3931853602512773673}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: -0.38268343, w: 0.92387956}
   m_LocalPosition: {x: 0.0095644165, y: 0.016278466, z: 0.052541617}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6883135886201203789}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: -45}
 --- !u!33 &1011293134294557245
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -5533,6 +5549,8 @@ MonoBehaviour:
   rotationSpeed: 2
   isOpen: 0
   interactionRange: 3
+  disableMeshCollidersWhenOpen: 1
+  includeChildMeshColliders: 1
   openSound: {fileID: 0}
   closeSound: {fileID: 0}
   audioVolume: 1
@@ -6619,6 +6637,8 @@ MonoBehaviour:
   rotationSpeed: 2
   isOpen: 0
   interactionRange: 3
+  disableMeshCollidersWhenOpen: 1
+  includeChildMeshColliders: 1
   openSound: {fileID: 0}
   closeSound: {fileID: 0}
   audioVolume: 1
@@ -8600,13 +8620,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5650474033914572444}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0.38268343, w: 0.92387956}
   m_LocalPosition: {x: -0.018912783, y: 0.017597543, z: 0.05254163}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6883135886201203789}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 45}
 --- !u!33 &1208764405444118360
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -8681,6 +8701,8 @@ MonoBehaviour:
   rotationSpeed: 2
   isOpen: 0
   interactionRange: 3
+  disableMeshCollidersWhenOpen: 1
+  includeChildMeshColliders: 1
   openSound: {fileID: 0}
   closeSound: {fileID: 0}
   audioVolume: 1
@@ -9021,6 +9043,8 @@ MonoBehaviour:
   rotationSpeed: 2
   isOpen: 0
   interactionRange: 3
+  disableMeshCollidersWhenOpen: 1
+  includeChildMeshColliders: 1
   openSound: {fileID: 0}
   closeSound: {fileID: 0}
   audioVolume: 1
@@ -9155,6 +9179,8 @@ MonoBehaviour:
   rotationSpeed: 2
   isOpen: 0
   interactionRange: 3
+  disableMeshCollidersWhenOpen: 1
+  includeChildMeshColliders: 1
   openSound: {fileID: 0}
   closeSound: {fileID: 0}
   audioVolume: 1
@@ -9637,13 +9663,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6387522230277106281}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: -0.38268343, w: 0.92387956}
   m_LocalPosition: {x: 0.02588743, y: 0.015200109, z: 0.02249184}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6883135886201203789}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: -45}
 --- !u!33 &2296226829678720786
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -9718,6 +9744,8 @@ MonoBehaviour:
   rotationSpeed: 2
   isOpen: 0
   interactionRange: 3
+  disableMeshCollidersWhenOpen: 1
+  includeChildMeshColliders: 1
   openSound: {fileID: 0}
   closeSound: {fileID: 0}
   audioVolume: 1
@@ -10515,6 +10543,8 @@ MonoBehaviour:
   rotationSpeed: 2
   isOpen: 0
   interactionRange: 3
+  disableMeshCollidersWhenOpen: 1
+  includeChildMeshColliders: 1
   openSound: {fileID: 0}
   closeSound: {fileID: 0}
   audioVolume: 1
@@ -13145,6 +13175,8 @@ MonoBehaviour:
   rotationSpeed: 2
   isOpen: 0
   interactionRange: 3
+  disableMeshCollidersWhenOpen: 1
+  includeChildMeshColliders: 1
   openSound: {fileID: 0}
   closeSound: {fileID: 0}
   audioVolume: 1

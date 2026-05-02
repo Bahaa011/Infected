@@ -80,6 +80,7 @@ public class Bullet : MonoBehaviour
             if (zombie != null)
             {
                 zombie.OnBulletHit(damage);
+                CrosshairUIToolkit.RegisterZombieHit();
             }
             
             Destroy(gameObject);

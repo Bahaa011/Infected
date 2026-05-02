@@ -140,25 +140,25 @@ public class InjuryStatusUIToolkit : MonoBehaviour
 
         var divider = new VisualElement();
         divider.style.width = Length.Percent(100);
-        divider.style.height = 1f;
+        divider.style.height = ResponsiveUiUtility.Scale(1f);
         divider.style.backgroundColor = new Color(0.62f, 0.62f, 0.62f, 0.15f);
-        divider.style.marginTop = 8f;
-        divider.style.marginBottom = 6f;
+        divider.style.marginTop = ResponsiveUiUtility.Scale(8f);
+        divider.style.marginBottom = ResponsiveUiUtility.Scale(6f);
         injuryPanel.Add(divider);
 
         detailsTitleLabel = new Label("SELECT A BODY PART");
         detailsTitleLabel.style.color = new Color(0.9f, 0.9f, 0.9f, 1f);
         detailsTitleLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
-        detailsTitleLabel.style.fontSize = 13f;
-        detailsTitleLabel.style.marginBottom = 4f;
+        detailsTitleLabel.style.fontSize = ResponsiveUiUtility.Scale(13f);
+        detailsTitleLabel.style.marginBottom = ResponsiveUiUtility.Scale(4f);
         injuryPanel.Add(detailsTitleLabel);
 
         detailsContentLabel = new Label("Right-click a body part to open treatment menu.");
         detailsContentLabel.style.color = new Color(0.85f, 0.85f, 0.85f, 1f);
-        detailsContentLabel.style.fontSize = 12f;
+        detailsContentLabel.style.fontSize = ResponsiveUiUtility.Scale(12f);
         detailsContentLabel.style.whiteSpace = WhiteSpace.Normal;
         detailsContentLabel.style.unityTextAlign = TextAnchor.UpperLeft;
-        detailsContentLabel.style.marginBottom = 6f;
+        detailsContentLabel.style.marginBottom = ResponsiveUiUtility.Scale(6f);
         injuryPanel.Add(detailsContentLabel);
     }
 
@@ -170,7 +170,7 @@ public class InjuryStatusUIToolkit : MonoBehaviour
         contextMenu = new VisualElement();
         contextMenu.name = "injury-context-menu";
         contextMenu.style.position = Position.Absolute;
-        contextMenu.style.minWidth = 150f;
+        contextMenu.style.minWidth = ResponsiveUiUtility.Scale(150f);
         contextMenu.style.backgroundColor = new Color(0.13f, 0.13f, 0.13f, 0.98f);
         contextMenu.style.borderTopWidth = 1f;
         contextMenu.style.borderRightWidth = 1f;
@@ -180,10 +180,10 @@ public class InjuryStatusUIToolkit : MonoBehaviour
         contextMenu.style.borderRightColor = new Color(0.46f, 0.46f, 0.46f, 0.9f);
         contextMenu.style.borderBottomColor = new Color(0.46f, 0.46f, 0.46f, 0.9f);
         contextMenu.style.borderLeftColor = new Color(0.46f, 0.46f, 0.46f, 0.9f);
-        contextMenu.style.paddingTop = 4f;
-        contextMenu.style.paddingBottom = 4f;
-        contextMenu.style.paddingLeft = 4f;
-        contextMenu.style.paddingRight = 4f;
+        contextMenu.style.paddingTop = ResponsiveUiUtility.Scale(4f);
+        contextMenu.style.paddingBottom = ResponsiveUiUtility.Scale(4f);
+        contextMenu.style.paddingLeft = ResponsiveUiUtility.Scale(4f);
+        contextMenu.style.paddingRight = ResponsiveUiUtility.Scale(4f);
         contextMenu.style.display = DisplayStyle.None;
 
         var bandageButton = new Button(() =>
@@ -196,10 +196,10 @@ public class InjuryStatusUIToolkit : MonoBehaviour
         };
 
         bandageButton.style.unityTextAlign = TextAnchor.MiddleLeft;
-        bandageButton.style.fontSize = 12f;
-        bandageButton.style.paddingLeft = 8f;
-        bandageButton.style.paddingRight = 8f;
-        bandageButton.style.height = 28f;
+        bandageButton.style.fontSize = ResponsiveUiUtility.Scale(12f);
+        bandageButton.style.paddingLeft = ResponsiveUiUtility.Scale(8f);
+        bandageButton.style.paddingRight = ResponsiveUiUtility.Scale(8f);
+        bandageButton.style.height = ResponsiveUiUtility.Scale(28f);
 
         contextMenu.Add(bandageButton);
         root.Add(contextMenu);

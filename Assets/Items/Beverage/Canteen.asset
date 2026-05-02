@@ -16,7 +16,7 @@ MonoBehaviour:
   description: 
   weight: 0
   maxStackSize: 1
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 07585e009b532d25d844cf0976ff0f40, type: 3}
   prefab: {fileID: 1565698249407801112, guid: 2e650c6101e78f75595b54620b449cb3, type: 3}
   id: 0
   hungerRestore: 0

@@ -9373,6 +9373,30 @@ PrefabInstance:
       propertyPath: m_Name
       value: Lootbox
       objectReference: {fileID: 0}
+    - target: {fileID: 4924692241125882826, guid: 97cf87a9f7c20daf380ac15555685cf1, type: 3}
+      propertyPath: m_Size.x
+      value: 0.0018850355
+      objectReference: {fileID: 0}
+    - target: {fileID: 4924692241125882826, guid: 97cf87a9f7c20daf380ac15555685cf1, type: 3}
+      propertyPath: m_Size.y
+      value: 0.0064853537
+      objectReference: {fileID: 0}
+    - target: {fileID: 4924692241125882826, guid: 97cf87a9f7c20daf380ac15555685cf1, type: 3}
+      propertyPath: m_Size.z
+      value: 0.0034369468
+      objectReference: {fileID: 0}
+    - target: {fileID: 4924692241125882826, guid: 97cf87a9f7c20daf380ac15555685cf1, type: 3}
+      propertyPath: m_Center.x
+      value: -0.0000425179
+      objectReference: {fileID: 0}
+    - target: {fileID: 4924692241125882826, guid: 97cf87a9f7c20daf380ac15555685cf1, type: 3}
+      propertyPath: m_Center.y
+      value: -0.00006570599
+      objectReference: {fileID: 0}
+    - target: {fileID: 4924692241125882826, guid: 97cf87a9f7c20daf380ac15555685cf1, type: 3}
+      propertyPath: m_Center.z
+      value: 0.0012184735
+      objectReference: {fileID: 0}
     - target: {fileID: 6972835289618815951, guid: 97cf87a9f7c20daf380ac15555685cf1, type: 3}
       propertyPath: m_LocalScale.x
       value: 3

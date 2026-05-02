@@ -11,6 +11,12 @@ public class Inventory : MonoBehaviour
     [SerializeField] private float dropForwardDistance = 1.4f;
     [SerializeField] private float dropUpOffset = 0.4f;
     [SerializeField] private float droppedPickupRadius = 2f;
+
+    [Header("Debug - Inspector Add Item")]
+    [SerializeField] private Item debugItemToAdd;
+    [SerializeField] private int debugItemQuantity = 1;
+    [SerializeField] private bool debugAddImmediately;
+    [SerializeField] private bool debugClearBeforeAdd;
     
     private List<InventorySlot> slots = new List<InventorySlot>();
     private EquipmentManager equipmentManager;
@@ -28,6 +34,39 @@ public class Inventory : MonoBehaviour
     {
         gridColumns = Mathf.Max(1, gridColumns);
         gridRows = Mathf.Max(1, gridRows);
+        debugItemQuantity = Mathf.Max(1, debugItemQuantity);
+    }
+
+    private void Update()
+    {
+        if (!debugAddImmediately)
+            return;
+
+        debugAddImmediately = false;
+
+        if (!Application.isPlaying)
+            return;
+
+        DebugAddFromInspector();
+    }
+
+    [ContextMenu("Debug Add Item Now")]
+    private void DebugAddFromInspector()
+    {
+        if (debugItemToAdd == null)
+        {
+            Debug.LogWarning("[Inventory] Debug add failed: no item assigned.", this);
+            return;
+        }
+
+        EnsureSlotCapacity();
+
+        if (debugClearBeforeAdd)
+            ClearInventory();
+
+        bool added = AddItem(debugItemToAdd, Mathf.Max(1, debugItemQuantity));
+        if (!added)
+            Debug.LogWarning($"[Inventory] Debug add failed: inventory full for {debugItemToAdd.ItemName} x{Mathf.Max(1, debugItemQuantity)}.", this);
     }
 
     public int GetGridColumns() => Mathf.Max(1, gridColumns);
@@ -132,58 +171,6 @@ public class Inventory : MonoBehaviour
             OnInventoryChanged?.Invoke();
 
         return success;
-    }
-
-    public bool DropItem(Item item, int quantity = 1)
-    {
-        if (item == null || quantity <= 0)
-            return false;
-
-        int available = GetItemQuantity(item);
-        if (available <= 0)
-            return false;
-
-        int dropQty = Mathf.Clamp(quantity, 1, available);
-        if (!RemoveItem(item, dropQty))
-            return false;
-
-        if (equipmentManager == null)
-            equipmentManager = GetComponent<EquipmentManager>();
-        if (equipmentManager != null)
-            equipmentManager.HandleDroppedInventoryItem(item, dropQty);
-
-        SpawnDroppedPickup(item, dropQty);
-        return true;
-    }
-
-    public bool DropItemAtSlot(int slotIndex, int quantity = 1)
-    {
-        if (quantity <= 0)
-            return false;
-
-        EnsureSlotCapacity();
-
-        int anchorIndex = ResolveAnchorIndex(slotIndex);
-        if (anchorIndex < 0 || anchorIndex >= slots.Count)
-            return false;
-
-        InventorySlot anchor = slots[anchorIndex];
-        if (anchor == null || !anchor.isOccupied || anchor.item == null || !anchor.isAnchor)
-            return false;
-
-        int dropQty = Mathf.Clamp(quantity, 1, Mathf.Max(1, anchor.quantity));
-        int removed = RemoveFromAnchorIndex(anchorIndex, dropQty);
-        if (removed <= 0)
-            return false;
-
-        if (equipmentManager == null)
-            equipmentManager = GetComponent<EquipmentManager>();
-        if (equipmentManager != null)
-            equipmentManager.HandleDroppedInventoryItem(anchor.item, removed);
-
-        SpawnDroppedPickup(anchor.item, removed);
-        OnInventoryChanged?.Invoke();
-        return true;
     }
 
     public bool MoveItem(int fromSlotIndex, int toSlotIndex)

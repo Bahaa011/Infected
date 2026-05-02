@@ -111,6 +111,11 @@ public class ReloadWheelUIToolkit : MonoBehaviour
 
         var root = uiDocument.rootVisualElement;
 
+        float scale = ResponsiveUiUtility.GetScaleFactor();
+        wheelSize = wheelSize * scale;
+        screenOffset = screenOffset * scale;
+        thickness *= scale;
+
         container = root.Q<VisualElement>(className: "reload-wheel-container");
         label = root.Q<Label>(className: "reload-wheel-label");
 

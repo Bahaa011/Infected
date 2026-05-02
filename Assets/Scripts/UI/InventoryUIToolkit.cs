@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.UIElements;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.UI;
+using UnityEngine.EventSystems;
 using System.Collections.Generic;
 using System.Linq;
 using System;
@@ -38,8 +40,15 @@ public class InventoryUIToolkit : MonoBehaviour
     private VisualElement tabContentSkills;
     private VisualElement tabContentInjury;
     private VisualElement tabContentCrafting;
-    private VisualElement inventoryDragHandle;
+    // inventory drag handle removed; UI is static
     private ScrollView itemsScrollView;
+    private VisualElement itemDetailPanel;
+    private Image detailItemIcon;
+    private Label detailItemName;
+    private Label detailItemDescription;
+    private ScrollView detailItemProperties;
+    private Item selectedItem;
+    private int selectedItemSlotIndex = -1;
     private ScrollView skillsScrollView;
     private ScrollView injuryScrollView;
     private ScrollView craftingScrollView;
@@ -61,14 +70,18 @@ public class InventoryUIToolkit : MonoBehaviour
     private VisualElement itemDragGhost;
     private const float ItemDragStartThreshold = 8f;
     private InputAction runtimeToggleAction;
+    private float originalDocumentSortingOrder;
+    private bool hasCapturedDocumentSortingOrder;
+    private readonly Dictionary<UIDocument, PickingMode> suppressedOtherDocumentPickingModes = new();
+    private float lastInventoryViewportWidth;
+    private int lastScreenWidth;
+    private int lastScreenHeight;
 
-    private bool isWindowDragging;
-    private int windowDragPointerId = -1;
-    private Vector2 windowDragStartMouse;
-    private Vector2 windowDragStartPanelPos;
+    // window dragging disabled for static inventory UI
 
     private void Awake()
     {
+        EnsureRuntimeUIInput();
         ResolveReferences();
         if (uiDocument == null) return;
 
@@ -81,12 +94,50 @@ public class InventoryUIToolkit : MonoBehaviour
         ApplyInventoryScrollStyle(craftingScrollView);
         SetActiveTabInternal(InventoryTab.Inventory, false);
         SetInventoryPanelVisible(false);
+        RefreshResponsiveScale(true);
 
         if (rootVisual != null)
+        {
+            rootVisual.pickingMode = PickingMode.Position;
             ItemTooltipUtility.EnsureTooltipPanel(rootVisual);
+        }
 
         rootVisual.RegisterCallback<PointerMoveEvent>(OnRootPointerMoveItemDrag);
         rootVisual.RegisterCallback<PointerUpEvent>(OnRootPointerUpItemDrag);
+        rootVisual.RegisterCallback<PointerDownEvent>(OnRootPointerDownInventoryInput);
+        
+        Debug.Log("[InventoryUIToolkit] Initialized. Panel: " + (inventoryPanel != null) + ", Root: " + (rootVisual != null));
+    }
+
+    private static void EnsureRuntimeUIInput()
+    {
+        var eventSystem = EventSystem.current;
+        if (eventSystem == null)
+        {
+            var go = new GameObject("EventSystem");
+            eventSystem = go.AddComponent<EventSystem>();
+            go.AddComponent<InputSystemUIInputModule>();
+            DontDestroyOnLoad(go);
+            Debug.Log("[InventoryUIToolkit] Created runtime EventSystem with InputSystemUIInputModule for UI clicks.");
+        }
+
+        var inputModule = eventSystem.GetComponent<InputSystemUIInputModule>();
+        if (inputModule == null)
+        {
+            inputModule = eventSystem.gameObject.AddComponent<InputSystemUIInputModule>();
+            Debug.Log("[InventoryUIToolkit] Added InputSystemUIInputModule to existing EventSystem.");
+        }
+
+        if (inputModule != null)
+        {
+            // Ensure Point/Click/Scroll actions exist even if project UI actions were changed.
+            inputModule.AssignDefaultActions();
+            inputModule.enabled = true;
+        }
+
+        var playerInput = FindAnyObjectByType<PlayerInput>();
+        if (playerInput != null && inputModule != null && playerInput.uiInputModule != inputModule)
+            playerInput.uiInputModule = inputModule;
     }
 
     private void OnEnable()
@@ -106,26 +157,29 @@ public class InventoryUIToolkit : MonoBehaviour
     {
         UnsubscribeInventoryEvents();
 
-        if (inventoryDragHandle != null)
-        {
-            inventoryDragHandle.UnregisterCallback<PointerDownEvent>(OnInventoryDragPointerDown);
-            inventoryDragHandle.UnregisterCallback<PointerMoveEvent>(OnInventoryDragPointerMove);
-            inventoryDragHandle.UnregisterCallback<PointerUpEvent>(OnInventoryDragPointerUp);
-        }
+        // inventory drag callbacks removed
 
         if (rootVisual != null)
         {
             rootVisual.UnregisterCallback<PointerMoveEvent>(OnRootPointerMoveItemDrag);
             rootVisual.UnregisterCallback<PointerUpEvent>(OnRootPointerUpItemDrag);
+            rootVisual.UnregisterCallback<PointerDownEvent>(OnRootPointerDownInventoryInput);
         }
     }
 
     private void Update()
     {
+        RefreshResponsiveScale();
         ResolveReferences();
 
         if (!IsInventoryOpen)
             return;
+
+        // Keep cursor usable while inventory is open in case another system relocks it.
+        if (UnityEngine.Cursor.lockState != CursorLockMode.None)
+            UnityEngine.Cursor.lockState = CursorLockMode.None;
+        if (!UnityEngine.Cursor.visible)
+            UnityEngine.Cursor.visible = true;
 
         // Avoid rebuilding tab UI every frame; this can interrupt click events.
         // Only keep crafting tab live-updated while an active craft is running.
@@ -133,11 +187,27 @@ public class InventoryUIToolkit : MonoBehaviour
             UpdateCraftingTab();
     }
 
+    private void RefreshResponsiveScale(bool force = false)
+    {
+        if (!force && Screen.width == lastScreenWidth && Screen.height == lastScreenHeight)
+            return;
+
+        lastScreenWidth = Screen.width;
+        lastScreenHeight = Screen.height;
+
+        if (inventoryPanel == null)
+            return;
+
+        // Keep inventory anchored by layout percentages; avoid transform scaling that shifts position.
+        inventoryPanel.style.scale = new Scale(Vector3.one);
+    }
+
     private void BindToggleInput()
     {
         if (toggleInventoryAction != null)
         {
             runtimeToggleAction = toggleInventoryAction.action;
+            Debug.Log("[InventoryUIToolkit] Using assigned toggleInventoryAction");
         }
         else
         {
@@ -146,13 +216,17 @@ public class InventoryUIToolkit : MonoBehaviour
             {
                 runtimeToggleAction = playerInput.actions.FindAction("ToggleInventory")
                                      ?? playerInput.actions.FindAction("Inventory");
+                Debug.Log("[InventoryUIToolkit] Found action from PlayerInput: " + (runtimeToggleAction != null));
             }
         }
 
         if (runtimeToggleAction != null)
         {
+            Debug.Log($"[InventoryUIToolkit] runtimeToggleAction is: {runtimeToggleAction.name}, enabled before: {runtimeToggleAction.enabled}");
             runtimeToggleAction.performed += OnToggleInventory;
-            runtimeToggleAction.Enable();
+            if (!runtimeToggleAction.enabled)
+                runtimeToggleAction.Enable();
+            Debug.Log($"[InventoryUIToolkit] Input action bound successfully, enabled after: {runtimeToggleAction.enabled}");
         }
         else
         {
@@ -175,6 +249,7 @@ public class InventoryUIToolkit : MonoBehaviour
 
     private void OnToggleInventory(InputAction.CallbackContext _)
     {
+        Debug.Log("[InventoryUIToolkit] OnToggleInventory called");
         ToggleInventory();
     }
 
@@ -186,7 +261,11 @@ public class InventoryUIToolkit : MonoBehaviour
     public void SetInventoryPanelVisible(bool visible)
     {
         if (inventoryPanel != null)
+        {
             inventoryPanel.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
+            // Allow pointer events when visible, block when hidden
+            inventoryPanel.pickingMode = visible ? PickingMode.Position : PickingMode.Ignore;
+        }
     }
 
     public void SetActiveTab(InventoryTab tab) => SetActiveTabInternal(tab, true);
@@ -232,6 +311,7 @@ public class InventoryUIToolkit : MonoBehaviour
 
     private void SetInventoryOpen(bool open)
     {
+        Debug.Log("[InventoryUIToolkit] SetInventoryOpen: " + open);
         if (IsInventoryOpen == open) return;
         IsInventoryOpen = open;
 
@@ -241,8 +321,72 @@ public class InventoryUIToolkit : MonoBehaviour
         if (open)
             SetActiveTabInternal(InventoryTab.Inventory, false);
 
+        SetInventoryDocumentPriority(open);
+        SuppressOtherUIDocumentPicking(open);
+
         SetInventoryPanelVisible(open);
         if (open) RefreshCurrentTab(); else CancelItemDrag();
+    }
+
+    private void SetInventoryDocumentPriority(bool inventoryOpen)
+    {
+        if (uiDocument == null)
+            return;
+
+        if (inventoryOpen)
+        {
+            if (!hasCapturedDocumentSortingOrder)
+            {
+                originalDocumentSortingOrder = uiDocument.sortingOrder;
+                hasCapturedDocumentSortingOrder = true;
+            }
+
+            uiDocument.sortingOrder = Mathf.Max(uiDocument.sortingOrder, 9000);
+            rootVisual?.BringToFront();
+            inventoryPanel?.BringToFront();
+        }
+        else if (hasCapturedDocumentSortingOrder)
+        {
+            uiDocument.sortingOrder = originalDocumentSortingOrder;
+        }
+    }
+
+    private void SuppressOtherUIDocumentPicking(bool suppress)
+    {
+        if (suppress)
+        {
+            suppressedOtherDocumentPickingModes.Clear();
+            var allDocuments = FindObjectsByType<UIDocument>();
+            for (int i = 0; i < allDocuments.Length; i++)
+            {
+                var doc = allDocuments[i];
+                if (doc == null || doc == uiDocument)
+                    continue;
+
+                var root = doc.rootVisualElement;
+                if (root == null)
+                    continue;
+
+                suppressedOtherDocumentPickingModes[doc] = root.pickingMode;
+                root.pickingMode = PickingMode.Ignore;
+            }
+        }
+        else
+        {
+            foreach (var kvp in suppressedOtherDocumentPickingModes)
+            {
+                if (kvp.Key == null)
+                    continue;
+
+                var root = kvp.Key.rootVisualElement;
+                if (root == null)
+                    continue;
+
+                root.pickingMode = kvp.Value;
+            }
+
+            suppressedOtherDocumentPickingModes.Clear();
+        }
     }
 
     private void SetActiveTabInternal(InventoryTab tab, bool refresh)
@@ -254,9 +398,20 @@ public class InventoryUIToolkit : MonoBehaviour
         if (tabContentSkills != null) tabContentSkills.style.display = tab == InventoryTab.Skills ? DisplayStyle.Flex : DisplayStyle.None;
         if (tabContentInjury != null) tabContentInjury.style.display = tab == InventoryTab.Injury ? DisplayStyle.Flex : DisplayStyle.None;
         if (tabContentCrafting != null) tabContentCrafting.style.display = tab == InventoryTab.Crafting ? DisplayStyle.Flex : DisplayStyle.None;
+        if (itemDetailPanel != null) itemDetailPanel.style.display = tab == InventoryTab.Inventory ? DisplayStyle.Flex : DisplayStyle.None;
         UpdateTopTabVisualState();
 
         if (refresh && IsInventoryOpen) RefreshCurrentTab();
+
+        if (tab == InventoryTab.Inventory && itemsScrollView != null)
+        {
+            // Defer one frame so layout is finalized after tab visibility change.
+            itemsScrollView.schedule.Execute(() =>
+            {
+                if (IsInventoryOpen && ActiveTab == InventoryTab.Inventory)
+                    RefreshInventoryTab();
+            }).ExecuteLater(0);
+        }
     }
 
     private void CacheUiReferences()
@@ -267,7 +422,18 @@ public class InventoryUIToolkit : MonoBehaviour
         tabContentSkills = rootVisual.Q<VisualElement>("tab-content-skills");
         tabContentInjury = rootVisual.Q<VisualElement>("tab-content-injury");
         tabContentCrafting = rootVisual.Q<VisualElement>("tab-content-crafting");
-        inventoryDragHandle = rootVisual.Q<VisualElement>("inventory-drag-handle");
+        // ensure panel uses fullscreen-like sizing for a static UI
+        if (inventoryPanel != null)
+        {
+            inventoryPanel.style.width = Length.Percent(75);
+            inventoryPanel.style.height = Length.Percent(75);
+            inventoryPanel.style.left = Length.Percent(12.5f);
+            inventoryPanel.style.top = Length.Percent(12.5f);
+            inventoryPanel.style.marginLeft = 0;
+            inventoryPanel.style.marginTop = 0;
+            inventoryPanel.pickingMode = PickingMode.Position;
+            inventoryPanel.BringToFront();
+        }
         itemsScrollView = rootVisual.Q<ScrollView>(className: "items-list");
         skillsScrollView = rootVisual.Q<ScrollView>("skills-list");
         injuryScrollView = rootVisual.Q<ScrollView>("injury-list");
@@ -276,39 +442,53 @@ public class InventoryUIToolkit : MonoBehaviour
         skillsTabButton = rootVisual.Q<Button>("tab-skills");
         injuryTabButton = rootVisual.Q<Button>("tab-injury");
         craftingTabButton = rootVisual.Q<Button>("tab-crafting");
+        
+        // Ensure tab buttons can receive input
+        if (inventoryTabButton != null) inventoryTabButton.pickingMode = PickingMode.Position;
+        if (skillsTabButton != null) skillsTabButton.pickingMode = PickingMode.Position;
+        if (injuryTabButton != null) injuryTabButton.pickingMode = PickingMode.Position;
+        if (craftingTabButton != null) craftingTabButton.pickingMode = PickingMode.Position;
+        
+        itemDetailPanel = rootVisual.Q<VisualElement>("item-detail-panel");
+        detailItemName = rootVisual.Q<Label>("detail-item-name");
+        detailItemDescription = rootVisual.Q<Label>("detail-item-description");
+        detailItemProperties = rootVisual.Q<ScrollView>("detail-item-properties");
+
+        if (itemDetailPanel != null && detailItemName != null && detailItemIcon == null)
+        {
+            detailItemIcon = new Image
+            {
+                name = "detail-item-icon",
+                pickingMode = PickingMode.Ignore,
+                scaleMode = ScaleMode.ScaleToFit
+            };
+            detailItemIcon.style.height = 96;
+            detailItemIcon.style.marginBottom = 8;
+            detailItemIcon.style.unityBackgroundImageTintColor = Color.white;
+            itemDetailPanel.Insert(0, detailItemIcon);
+        }
     }
 
     private void HookTabButtons()
     {
-        if (inventoryDragHandle != null)
-        {
-            inventoryDragHandle.RegisterCallback<PointerDownEvent>(OnInventoryDragPointerDown);
-            inventoryDragHandle.RegisterCallback<PointerMoveEvent>(OnInventoryDragPointerMove);
-            inventoryDragHandle.RegisterCallback<PointerUpEvent>(OnInventoryDragPointerUp);
-        }
-
         if (inventoryTabButton != null)
         {
-            inventoryTabButton.clicked += () => SetActiveTab(InventoryTab.Inventory);
-            inventoryTabButton.RegisterCallback<ClickEvent>(_ => SetActiveTab(InventoryTab.Inventory));
+            inventoryTabButton.clicked += () => { Debug.Log("[InventoryUIToolkit] Inventory tab clicked"); SetActiveTab(InventoryTab.Inventory); };
         }
 
         if (skillsTabButton != null)
         {
-            skillsTabButton.clicked += () => SetActiveTab(InventoryTab.Skills);
-            skillsTabButton.RegisterCallback<ClickEvent>(_ => SetActiveTab(InventoryTab.Skills));
+            skillsTabButton.clicked += () => { Debug.Log("[InventoryUIToolkit] Skills tab clicked"); SetActiveTab(InventoryTab.Skills); };
         }
 
         if (injuryTabButton != null)
         {
-            injuryTabButton.clicked += () => SetActiveTab(InventoryTab.Injury);
-            injuryTabButton.RegisterCallback<ClickEvent>(_ => SetActiveTab(InventoryTab.Injury));
+            injuryTabButton.clicked += () => { Debug.Log("[InventoryUIToolkit] Injury tab clicked"); SetActiveTab(InventoryTab.Injury); };
         }
 
         if (craftingTabButton != null)
         {
-            craftingTabButton.clicked += () => SetActiveTab(InventoryTab.Crafting);
-            craftingTabButton.RegisterCallback<ClickEvent>(_ => SetActiveTab(InventoryTab.Crafting));
+            craftingTabButton.clicked += () => { Debug.Log("[InventoryUIToolkit] Crafting tab clicked"); SetActiveTab(InventoryTab.Crafting); };
         }
 
         UpdateTopTabVisualState();
@@ -327,76 +507,48 @@ public class InventoryUIToolkit : MonoBehaviour
         if (button == null)
             return;
 
-        button.style.backgroundColor = new StyleColor(isActive
-            ? new Color(0.2f, 0.2f, 0.2f, 0.98f)
-            : new Color(0.12f, 0.12f, 0.12f, 0.95f));
+        if (isActive)
+        {
+            // Active tab: darker, warmer (gold/brown) text
+            button.style.backgroundColor = new StyleColor(new Color(0.25f, 0.27f, 0.33f, 0.95f));
+            button.style.color = new StyleColor(new Color(0.95f, 0.85f, 0.55f, 1f));
+            button.style.borderTopWidth = 2;
+            button.style.borderRightWidth = 1;
+            button.style.borderBottomWidth = 3;
+            button.style.borderLeftWidth = 1;
+            button.style.borderTopColor = new StyleColor(new Color(0.8f, 0.7f, 0.4f, 0.7f));
+            button.style.borderRightColor = new StyleColor(new Color(0.5f, 0.5f, 0.5f, 0.35f));
+            button.style.borderBottomColor = new StyleColor(new Color(0.8f, 0.65f, 0.3f, 0.6f));
+            button.style.borderLeftColor = new StyleColor(new Color(0.5f, 0.5f, 0.5f, 0.35f));
+        }
+        else
+        {
+            // Inactive tab: very dark, washed out
+            button.style.backgroundColor = new StyleColor(new Color(0.15f, 0.16f, 0.2f, 0.8f));
+            button.style.color = new StyleColor(new Color(0.7f, 0.75f, 0.85f, 0.65f));
+            button.style.borderTopWidth = 1;
+            button.style.borderRightWidth = 1;
+            button.style.borderBottomWidth = 1;
+            button.style.borderLeftWidth = 1;
+            button.style.borderTopColor = new StyleColor(new Color(0.4f, 0.4f, 0.45f, 0.2f));
+            button.style.borderRightColor = new StyleColor(new Color(0.3f, 0.3f, 0.35f, 0.15f));
+            button.style.borderBottomColor = new StyleColor(new Color(0.3f, 0.3f, 0.35f, 0.1f));
+            button.style.borderLeftColor = new StyleColor(new Color(0.3f, 0.3f, 0.35f, 0.15f));
+        }
 
-        button.style.color = new StyleColor(isActive
-            ? new Color(0.96f, 0.96f, 0.96f, 1f)
-            : new Color(0.75f, 0.75f, 0.75f, 0.96f));
-
-        button.style.borderBottomWidth = isActive ? 2 : 1;
-        button.style.borderBottomColor = new StyleColor(isActive
-            ? new Color(0.68f, 0.68f, 0.68f, 0.9f)
-            : new Color(0.22f, 0.22f, 0.22f, 0.9f));
+        button.style.unityFontStyleAndWeight = FontStyle.Bold;
+        button.style.fontSize = 11;
+        button.style.borderTopLeftRadius = 2;
+        button.style.borderTopRightRadius = 2;
+        button.style.borderBottomLeftRadius = 2;
+        button.style.borderBottomRightRadius = 2;
+        button.style.paddingTop = 4;
+        button.style.paddingBottom = 4;
+        button.style.paddingLeft = 8;
+        button.style.paddingRight = 8;
     }
 
-    private void OnInventoryDragPointerDown(PointerDownEvent evt)
-    {
-        if (evt.button != 0 || inventoryPanel == null)
-            return;
-
-        isWindowDragging = true;
-        windowDragPointerId = evt.pointerId;
-        windowDragStartMouse = new Vector2(evt.position.x, evt.position.y);
-
-        float startLeft = inventoryPanel.resolvedStyle.left;
-        float startTop = inventoryPanel.resolvedStyle.top;
-        if (float.IsNaN(startLeft)) startLeft = inventoryPanel.worldBound.x;
-        if (float.IsNaN(startTop)) startTop = inventoryPanel.worldBound.y;
-        windowDragStartPanelPos = new Vector2(startLeft, startTop);
-
-        inventoryPanel.style.marginLeft = 0;
-        inventoryPanel.style.marginTop = 0;
-        inventoryPanel.style.left = windowDragStartPanelPos.x;
-        inventoryPanel.style.top = windowDragStartPanelPos.y;
-
-        inventoryDragHandle.CapturePointer(windowDragPointerId);
-        evt.StopPropagation();
-    }
-
-    private void OnInventoryDragPointerMove(PointerMoveEvent evt)
-    {
-        if (!isWindowDragging || evt.pointerId != windowDragPointerId || inventoryPanel == null || rootVisual == null)
-            return;
-
-        Vector2 currentMouse = new Vector2(evt.position.x, evt.position.y);
-        Vector2 delta = currentMouse - windowDragStartMouse;
-        float targetLeft = windowDragStartPanelPos.x + delta.x;
-        float targetTop = windowDragStartPanelPos.y + delta.y;
-
-        float maxLeft = Mathf.Max(0f, rootVisual.resolvedStyle.width - inventoryPanel.resolvedStyle.width);
-        float maxTop = Mathf.Max(0f, rootVisual.resolvedStyle.height - inventoryPanel.resolvedStyle.height);
-
-        inventoryPanel.style.left = Mathf.Clamp(targetLeft, 0f, maxLeft);
-        inventoryPanel.style.top = Mathf.Clamp(targetTop, 0f, maxTop);
-
-        evt.StopPropagation();
-    }
-
-    private void OnInventoryDragPointerUp(PointerUpEvent evt)
-    {
-        if (evt.pointerId != windowDragPointerId)
-            return;
-
-        isWindowDragging = false;
-
-        if (inventoryDragHandle != null && inventoryDragHandle.HasPointerCapture(windowDragPointerId))
-            inventoryDragHandle.ReleasePointer(windowDragPointerId);
-
-        windowDragPointerId = -1;
-        evt.StopPropagation();
-    }
+    // Window-dragging handlers removed; inventory is static.
 
     private void RefreshCurrentTab()
     {
@@ -491,24 +643,24 @@ public class InventoryUIToolkit : MonoBehaviour
         button.style.marginBottom = 6;
         button.style.unityFontStyleAndWeight = FontStyle.Bold;
         button.style.fontSize = 10;
-        button.style.borderTopLeftRadius = 6;
-        button.style.borderTopRightRadius = 6;
-        button.style.borderBottomLeftRadius = 6;
-        button.style.borderBottomRightRadius = 6;
+        button.style.borderTopLeftRadius = 4;
+        button.style.borderTopRightRadius = 4;
+        button.style.borderBottomLeftRadius = 4;
+        button.style.borderBottomRightRadius = 4;
         button.style.backgroundColor = new StyleColor(isActive
-            ? new Color(0.2f, 0.2f, 0.2f, 0.98f)
-            : new Color(0.11f, 0.11f, 0.11f, 0.96f));
+            ? new Color(0.17f, 0.2f, 0.24f, 0.98f)
+            : new Color(0.08f, 0.09f, 0.11f, 0.96f));
         button.style.color = new StyleColor(isActive
-            ? new Color(0.95f, 0.95f, 0.95f, 1f)
-            : new Color(0.73f, 0.73f, 0.73f, 0.96f));
+            ? new Color(0.91f, 0.95f, 0.99f, 1f)
+            : new Color(0.66f, 0.7f, 0.76f, 0.96f));
         button.style.borderTopWidth = 1;
         button.style.borderRightWidth = 1;
         button.style.borderBottomWidth = 1;
         button.style.borderLeftWidth = 1;
-        button.style.borderTopColor = new StyleColor(new Color(0.28f, 0.28f, 0.28f, 0.95f));
-        button.style.borderRightColor = new StyleColor(new Color(0.28f, 0.28f, 0.28f, 0.95f));
-        button.style.borderBottomColor = new StyleColor(new Color(0.2f, 0.2f, 0.2f, 0.95f));
-        button.style.borderLeftColor = new StyleColor(new Color(0.2f, 0.2f, 0.2f, 0.95f));
+        button.style.borderTopColor = new StyleColor(new Color(0.34f, 0.39f, 0.46f, isActive ? 0.66f : 0.25f));
+        button.style.borderRightColor = new StyleColor(new Color(0.34f, 0.39f, 0.46f, isActive ? 0.66f : 0.25f));
+        button.style.borderBottomColor = new StyleColor(new Color(0.21f, 0.24f, 0.29f, isActive ? 0.9f : 0.5f));
+        button.style.borderLeftColor = new StyleColor(new Color(0.21f, 0.24f, 0.29f, isActive ? 0.9f : 0.5f));
 
         return button;
     }
@@ -739,11 +891,11 @@ public class InventoryUIToolkit : MonoBehaviour
 
         int columns = Mathf.Max(1, inventory.GetGridColumns());
         int rows = Mathf.Max(1, inventory.GetGridRows());
-        float gap = 6f;
-        float viewportWidth = itemsScrollView.contentViewport != null ? itemsScrollView.contentViewport.resolvedStyle.width : itemsScrollView.resolvedStyle.width;
-        viewportWidth -= 14f; // Reserve width so items don't get covered by the vertical scroller.
-        if (viewportWidth <= 0f) viewportWidth = 700f;
-        float cellSize = Mathf.Max(60f, (viewportWidth - ((columns - 1) * gap) - 12f) / columns);
+        float gap = 4f;
+        float viewportWidth = GetInventoryViewportWidth();
+        // Calculate cell size to fill viewport evenly based on resolution
+        float cellSize = (viewportWidth - ((columns - 1) * gap)) / columns;
+        cellSize = Mathf.Max(40f, cellSize); // Ensure minimum 40px but scale up with viewport
         float gridWidth = (columns * cellSize) + ((columns - 1) * gap);
         float gridHeight = (rows * cellSize) + ((rows - 1) * gap);
 
@@ -762,23 +914,52 @@ public class InventoryUIToolkit : MonoBehaviour
             inventoryCellsByIndex[i] = bg;
             grid.Add(bg);
         }
-
+        // Add item tiles for anchor slots (items are represented by their anchor slot)
         for (int i = 0; i < slots.Count; i++)
         {
             var slot = slots[i];
-            if (slot == null || !slot.isOccupied || !slot.isAnchor || slot.item == null) continue;
-            var tile = CreateInventoryItemTile(slot, i, columns, cellSize, gap, root);
-            if (tile != null) grid.Add(tile);
+            if (slot != null && slot.isAnchor && slot.isOccupied && slot.item != null)
+            {
+                var tile = CreateInventoryItemTile(slot, i, columns, cellSize, gap, root);
+                grid.Add(tile);
+            }
         }
 
-        itemsScrollView.Add(grid);
+        // Add the fully built grid to the scroll view
+        if (itemsScrollView != null)
+            itemsScrollView.Add(grid);
     }
 
+    private float GetInventoryViewportWidth()
+    {
+        float viewportWidth = 0f;
+
+        if (itemsScrollView?.contentViewport != null)
+            viewportWidth = itemsScrollView.contentViewport.resolvedStyle.width;
+
+        if (viewportWidth <= 0f && itemsScrollView != null)
+            viewportWidth = itemsScrollView.resolvedStyle.width;
+
+        if (viewportWidth <= 0f && itemsScrollView != null)
+            viewportWidth = itemsScrollView.worldBound.width;
+
+        if (viewportWidth > 0f)
+            lastInventoryViewportWidth = viewportWidth;
+        else if (lastInventoryViewportWidth > 0f)
+            viewportWidth = lastInventoryViewportWidth;
+        else
+            viewportWidth = 900f;
+
+        viewportWidth -= 14f; // reserve width for vertical scrollbar
+        return Mathf.Max(120f, viewportWidth);
+    }
     private static void ApplyInventoryScrollStyle(ScrollView scrollView)
     {
         if (scrollView == null)
             return;
 
+        scrollView.pickingMode = PickingMode.Position;
+        
         scrollView.style.paddingTop = 0;
         scrollView.style.paddingRight = 0;
         scrollView.style.paddingBottom = 0;
@@ -786,6 +967,7 @@ public class InventoryUIToolkit : MonoBehaviour
 
         if (scrollView.contentContainer != null)
         {
+            scrollView.contentContainer.pickingMode = PickingMode.Position;
             scrollView.contentContainer.style.paddingTop = 8;
             scrollView.contentContainer.style.paddingRight = 16;
             scrollView.contentContainer.style.paddingBottom = 8;
@@ -798,6 +980,7 @@ public class InventoryUIToolkit : MonoBehaviour
         var verticalScroller = scrollView.verticalScroller;
         if (verticalScroller != null)
         {
+            verticalScroller.pickingMode = PickingMode.Position;
             verticalScroller.style.position = Position.Absolute;
             verticalScroller.style.top = 0;
             verticalScroller.style.bottom = 0;
@@ -818,6 +1001,7 @@ public class InventoryUIToolkit : MonoBehaviour
             var slider = verticalScroller.slider;
             if (slider != null)
             {
+                slider.pickingMode = PickingMode.Position;
                 slider.style.flexGrow = 1;
                 slider.style.height = StyleKeyword.Auto;
                 slider.style.minHeight = 0;
@@ -832,6 +1016,7 @@ public class InventoryUIToolkit : MonoBehaviour
                               ?? slider.Q<VisualElement>(className: "unity-base-slider__dragger");
                 if (dragger != null)
                 {
+                    dragger.pickingMode = PickingMode.Position;
                     dragger.style.backgroundColor = new StyleColor(new Color(0.76f, 0.76f, 0.76f, 1f));
                     dragger.style.unityBackgroundImageTintColor = new StyleColor(new Color(0.76f, 0.76f, 0.76f, 1f));
                     dragger.style.borderTopWidth = 0;
@@ -861,26 +1046,30 @@ public class InventoryUIToolkit : MonoBehaviour
         cell.style.top = row * (cellSize + gap);
         cell.style.width = cellSize;
         cell.style.height = cellSize;
-        cell.style.backgroundColor = new StyleColor(new Color(0.08f, 0.08f, 0.08f, 0.82f));
+        cell.style.backgroundColor = new StyleColor(new Color(0.1f, 0.11f, 0.14f, 0.88f));
         cell.style.borderTopWidth = 1;
         cell.style.borderRightWidth = 1;
         cell.style.borderBottomWidth = 1;
         cell.style.borderLeftWidth = 1;
-        cell.style.borderTopColor = new StyleColor(new Color(0.42f, 0.42f, 0.42f, 0.24f));
-        cell.style.borderRightColor = new StyleColor(new Color(0.42f, 0.42f, 0.42f, 0.24f));
-        cell.style.borderBottomColor = new StyleColor(new Color(0.42f, 0.42f, 0.42f, 0.18f));
-        cell.style.borderLeftColor = new StyleColor(new Color(0.42f, 0.42f, 0.42f, 0.18f));
-        cell.style.borderTopLeftRadius = 5;
-        cell.style.borderTopRightRadius = 5;
-        cell.style.borderBottomLeftRadius = 5;
-        cell.style.borderBottomRightRadius = 5;
+        cell.style.borderTopColor = new StyleColor(new Color(0.5f, 0.55f, 0.65f, 0.2f));
+        cell.style.borderRightColor = new StyleColor(new Color(0.5f, 0.55f, 0.65f, 0.2f));
+        cell.style.borderBottomColor = new StyleColor(new Color(0.3f, 0.33f, 0.4f, 0.12f));
+        cell.style.borderLeftColor = new StyleColor(new Color(0.3f, 0.33f, 0.4f, 0.12f));
+        cell.style.borderTopLeftRadius = 2;
+        cell.style.borderTopRightRadius = 2;
+        cell.style.borderBottomLeftRadius = 2;
+        cell.style.borderBottomRightRadius = 2;
+        cell.name = $"inventory-slot-cell-{slotIndex}";
+        cell.pickingMode = PickingMode.Position;  // Allow dragging detection over this cell
 
+        // Slot number label
         var slotLabel = new Label((slotIndex + 1).ToString());
         slotLabel.style.position = Position.Absolute;
-        slotLabel.style.left = 3;
-        slotLabel.style.top = 2;
+        slotLabel.style.left = 2;
+        slotLabel.style.top = 1;
         slotLabel.style.fontSize = 8;
-        slotLabel.style.color = new StyleColor(new Color(0.68f, 0.73f, 0.83f, 0.66f));
+        slotLabel.style.color = new StyleColor(new Color(0.5f, 0.6f, 0.75f, 0.5f));
+        slotLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
         cell.Add(slotLabel);
 
         return cell;
@@ -914,6 +1103,9 @@ public class InventoryUIToolkit : MonoBehaviour
         tile.style.borderTopRightRadius = 5;
         tile.style.borderBottomLeftRadius = 5;
         tile.style.borderBottomRightRadius = 5;
+        tile.name = $"inventory-item-tile-{anchorIndex}";
+        tile.pickingMode = PickingMode.Position;  // Allow mouse/pointer events
+        tile.focusable = true;
 
         if (slot.item.Icon != null)
         {
@@ -933,7 +1125,7 @@ public class InventoryUIToolkit : MonoBehaviour
             fallbackLabel.style.left = 6;
             fallbackLabel.style.right = 6;
             fallbackLabel.style.top = 6;
-            fallbackLabel.style.fontSize = 10;
+            fallbackLabel.style.fontSize = 15;
             fallbackLabel.style.color = new StyleColor(new Color(0.9f, 0.93f, 0.98f, 0.95f));
             fallbackLabel.style.whiteSpace = WhiteSpace.Normal;
             fallbackLabel.style.unityTextAlign = TextAnchor.UpperLeft;
@@ -947,7 +1139,7 @@ public class InventoryUIToolkit : MonoBehaviour
             qty.style.position = Position.Absolute;
             qty.style.right = 5;
             qty.style.bottom = 3;
-            qty.style.fontSize = 10;
+            qty.style.fontSize = 13;
             qty.style.unityFontStyleAndWeight = FontStyle.Bold;
             qty.pickingMode = PickingMode.Ignore;
             tile.Add(qty);
@@ -964,10 +1156,23 @@ public class InventoryUIToolkit : MonoBehaviour
         });
 
         tile.RegisterCallback<MouseLeaveEvent>(_ => ItemTooltipUtility.HideTooltip(root));
-        tile.RegisterCallback<MouseUpEvent>(evt => { if (evt.button == 1) ShowInventoryContextMenu(slot, anchorIndex, root, evt); });
+        tile.RegisterCallback<MouseUpEvent>(evt => 
+        { 
+            if (evt.button == 0)
+            {
+                ShowItemDetail(slot, anchorIndex);
+                return;
+            }
+
+            Debug.Log("[InventoryUIToolkit] Right click on item");
+            if (evt.button == 1) ShowInventoryContextMenu(slot, anchorIndex, root, evt); 
+        });
         tile.RegisterCallback<PointerDownEvent>(evt =>
         {
+            Debug.Log("[InventoryUIToolkit] Pointer down on item, button: " + evt.button + ", pointerId: " + evt.pointerId);
             if (evt.button != 0) return;
+
+            ShowItemDetail(slot, anchorIndex);
             ItemTooltipUtility.HideTooltip(rootVisual);
             BeginItemDragCandidate(slot.item, slot.quantity, anchorIndex, evt.pointerId, evt.position);
             evt.StopPropagation();
@@ -978,6 +1183,71 @@ public class InventoryUIToolkit : MonoBehaviour
     private static Vector2 GetTooltipAnchorPoint(VisualElement element, Vector2 localPointerPosition)
     {
         return localPointerPosition;
+    }
+
+    private void OnRootPointerDownInventoryInput(PointerDownEvent evt)
+    {
+        if (!IsInventoryOpen || rootVisual == null || inventoryPanel == null)
+            return;
+
+        var picked = rootVisual.panel?.Pick(evt.position) as VisualElement;
+        if (picked == null)
+            return;
+
+        if (evt.button == 0)
+            CloseInventoryContextMenuIfClickedOutside(picked);
+
+        var target = picked;
+        while (target != null)
+        {
+            if (target == inventoryTabButton)
+            {
+                SetActiveTab(InventoryTab.Inventory);
+                evt.StopPropagation();
+                return;
+            }
+            else if (target == skillsTabButton)
+            {
+                SetActiveTab(InventoryTab.Skills);
+                evt.StopPropagation();
+                return;
+            }
+            else if (target == injuryTabButton)
+            {
+                SetActiveTab(InventoryTab.Injury);
+                evt.StopPropagation();
+                return;
+            }
+            else if (target == craftingTabButton)
+            {
+                SetActiveTab(InventoryTab.Crafting);
+                evt.StopPropagation();
+                return;
+            }
+
+            target = target.parent;
+        }
+    }
+
+    private void CloseInventoryContextMenuIfClickedOutside(VisualElement picked)
+    {
+        if (rootVisual == null || picked == null)
+            return;
+
+        var menu = rootVisual.Q("inventory-context-menu");
+        if (menu == null)
+            return;
+
+        var current = picked;
+        while (current != null)
+        {
+            if (current == menu)
+                return;
+
+            current = current.parent;
+        }
+
+        menu.RemoveFromHierarchy();
     }
 
     private void BeginItemDragCandidate(Item item, int quantity, int sourceSlotIndex, int pointerId, Vector2 pointerPos)
@@ -1031,6 +1301,7 @@ public class InventoryUIToolkit : MonoBehaviour
     {
         if (rootVisual == null || itemDragItem == null) return;
         itemDragGhost = new VisualElement();
+        itemDragGhost.pickingMode = PickingMode.Ignore;
         itemDragGhost.style.position = Position.Absolute;
         itemDragGhost.style.width = 52;
         itemDragGhost.style.height = 52;
@@ -1063,6 +1334,130 @@ public class InventoryUIToolkit : MonoBehaviour
         itemDragGhost?.RemoveFromHierarchy();
         itemDragGhost = null;
         ItemTooltipUtility.HideTooltip(rootVisual);
+    }
+
+    private void ShowItemDetail(InventorySlot slot, int slotIndex)
+    {
+        if (slot == null || slot.item == null)
+        {
+            ClearItemDetail();
+            return;
+        }
+
+        selectedItem = slot.item;
+        selectedItemSlotIndex = slotIndex;
+
+        if (detailItemIcon != null)
+            detailItemIcon.image = slot.item.Icon != null ? slot.item.Icon.texture : null;
+
+        if (detailItemName != null)
+            detailItemName.text = slot.item.ItemName ?? "Unknown Item";
+
+        if (detailItemDescription != null)
+            detailItemDescription.text = slot.item.Description ?? "No description available.";
+
+        if (detailItemProperties != null)
+        {
+            detailItemProperties.Clear();
+
+            // Show quantity
+            var qtyLabel = new Label($"Quantity: {slot.quantity}");
+            qtyLabel.style.fontSize = 10;
+            qtyLabel.style.color = new StyleColor(new Color(0.85f, 0.85f, 0.9f, 0.9f));
+            qtyLabel.style.marginBottom = 4;
+            detailItemProperties.Add(qtyLabel);
+
+            // Show item type/category
+            if (slot.item is GunItem gun)
+            {
+                var typeLabel = new Label($"Type: {gun.GunType}");
+                typeLabel.style.fontSize = 10;
+                typeLabel.style.color = new StyleColor(new Color(0.85f, 0.85f, 0.9f, 0.9f));
+                typeLabel.style.marginBottom = 4;
+                detailItemProperties.Add(typeLabel);
+            }
+            else if (slot.item is FoodItem food)
+            {
+                var typeLabel = new Label($"Type: Food");
+                typeLabel.style.fontSize = 10;
+                typeLabel.style.color = new StyleColor(new Color(0.85f, 0.85f, 0.9f, 0.9f));
+                typeLabel.style.marginBottom = 2;
+                detailItemProperties.Add(typeLabel);
+
+                if (!Mathf.Approximately(food.HungerRestore, 0))
+                {
+                    var hungerLabel = new Label($"+{food.HungerRestore:F1} Hunger");
+                    hungerLabel.style.fontSize = 9;
+                    hungerLabel.style.color = new StyleColor(new Color(0.7f, 0.9f, 0.7f, 0.85f));
+                    hungerLabel.style.marginBottom = 2;
+                    detailItemProperties.Add(hungerLabel);
+                }
+                if (!Mathf.Approximately(food.ThirstRestore, 0))
+                {
+                    var thirstLabel = new Label($"+{food.ThirstRestore:F1} Thirst");
+                    thirstLabel.style.fontSize = 9;
+                    thirstLabel.style.color = new StyleColor(new Color(0.7f, 0.9f, 0.7f, 0.85f));
+                    detailItemProperties.Add(thirstLabel);
+                }
+            }
+            else if (slot.item is WaterItem water)
+            {
+                var typeLabel = new Label($"Type: Water");
+                typeLabel.style.fontSize = 10;
+                typeLabel.style.color = new StyleColor(new Color(0.85f, 0.85f, 0.9f, 0.9f));
+                typeLabel.style.marginBottom = 2;
+                detailItemProperties.Add(typeLabel);
+
+                if (!Mathf.Approximately(water.ThirstRestore, 0))
+                {
+                    var thirstLabel = new Label($"+{water.ThirstRestore:F1} Thirst");
+                    thirstLabel.style.fontSize = 9;
+                    thirstLabel.style.color = new StyleColor(new Color(0.7f, 0.9f, 0.7f, 0.85f));
+                    detailItemProperties.Add(thirstLabel);
+                }
+            }
+
+            AddDetailActionButtons(slot, slotIndex);
+        }
+    }
+
+    private void ClearItemDetail()
+    {
+        selectedItem = null;
+        selectedItemSlotIndex = -1;
+        if (detailItemIcon != null) detailItemIcon.image = null;
+        if (detailItemName != null) detailItemName.text = "Select an item";
+        if (detailItemDescription != null) detailItemDescription.text = "";
+        if (detailItemProperties != null) detailItemProperties.Clear();
+    }
+
+    private void AddDetailActionButtons(InventorySlot slot, int slotIndex)
+    {
+        if (detailItemProperties == null || slot == null || slot.item == null)
+            return;
+
+        var actionsHeader = new Label("Actions:");
+        actionsHeader.style.fontSize = 10;
+        actionsHeader.style.unityFontStyleAndWeight = FontStyle.Bold;
+        actionsHeader.style.color = new StyleColor(new Color(0.82f, 0.82f, 0.9f, 0.95f));
+        actionsHeader.style.marginTop = 6;
+        actionsHeader.style.marginBottom = 4;
+        detailItemProperties.Add(actionsHeader);
+
+        var actionsContainer = new VisualElement();
+        actionsContainer.style.flexDirection = FlexDirection.Column;
+        actionsContainer.style.marginTop = 2;
+        detailItemProperties.Add(actionsContainer);
+
+        AddContextActions(slot, slotIndex, actionsContainer);
+
+        if (actionsContainer.childCount == 0)
+        {
+            var noActions = new Label("No actions available");
+            noActions.style.fontSize = 10;
+            noActions.style.color = new StyleColor(new Color(0.72f, 0.72f, 0.75f, 0.9f));
+            actionsContainer.Add(noActions);
+        }
     }
 
     private void ShowInventoryContextMenu(InventorySlot slot, int slotIndex, VisualElement root, MouseUpEvent evt)

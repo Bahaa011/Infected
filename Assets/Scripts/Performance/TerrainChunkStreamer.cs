@@ -27,7 +27,10 @@ public class TerrainChunkStreamer : MonoBehaviour
     [SerializeField] private float checkInterval = 0.25f;
     [SerializeField] private bool unloadPreloadedTileScenesOnStart = true;
 
+    public static bool IsWorldReady { get; private set; } = true;
+
     private float checkTimer;
+    private float initialLoadTimeout;
 
     private readonly Dictionary<Vector2Int, string> coordToSceneName = new Dictionary<Vector2Int, string>();
     private readonly HashSet<Vector2Int> loadedCoords = new HashSet<Vector2Int>();
@@ -35,6 +38,7 @@ public class TerrainChunkStreamer : MonoBehaviour
     private readonly HashSet<Vector2Int> unloadingCoords = new HashSet<Vector2Int>();
     private Vector2Int lastCenterCoord;
     private bool hasLastCenterCoord;
+    private bool initialLoadCompleted;
 
     private void OnEnable()
     {
@@ -64,6 +68,10 @@ public class TerrainChunkStreamer : MonoBehaviour
         if (activeInstance != null && activeInstance != this)
             return;
 
+        IsWorldReady = false;
+        initialLoadCompleted = false;
+        initialLoadTimeout = 0f;
+
         ResolvePlayer();
         BuildSceneIndex();
         SyncLoadedTileScenes();
@@ -73,6 +81,8 @@ public class TerrainChunkStreamer : MonoBehaviour
 
         if (unloadPreloadedTileScenesOnStart)
             ForceRefresh();
+
+        TryMarkInitialLoadComplete();
     }
 
     private void Update()
@@ -86,6 +96,20 @@ public class TerrainChunkStreamer : MonoBehaviour
         if (player == null || coordToSceneName.Count == 0)
             return;
 
+        // Safety timeout for initial load - unblock movement if it takes too long
+        if (!initialLoadCompleted && initialLoadTimeout < 3f)
+        {
+            initialLoadTimeout += Time.deltaTime;
+            if (initialLoadTimeout >= 3f)
+            {
+                Debug.LogWarning("[TerrainChunkStreamer] Initial load timeout - marking world ready");
+                initialLoadCompleted = true;
+                IsWorldReady = true;
+                WorldLoadingState.MarkWorldReady();
+                return;
+            }
+        }
+
         checkTimer += Time.deltaTime;
         if (checkTimer < checkInterval)
             return;
@@ -97,11 +121,16 @@ public class TerrainChunkStreamer : MonoBehaviour
         bool hasPendingOps = loadingCoords.Count > 0 || unloadingCoords.Count > 0;
 
         if (!centerChanged && !hasPendingOps)
+        {
+            TryMarkInitialLoadComplete();
             return;
+        }
 
         hasLastCenterCoord = true;
         lastCenterCoord = center;
         UpdateChunkVisibility(center);
+
+        TryMarkInitialLoadComplete();
     }
 
     [ContextMenu("Build Scene Index")]
@@ -145,6 +174,8 @@ public class TerrainChunkStreamer : MonoBehaviour
         checkTimer = checkInterval;
         if (player != null)
             UpdateChunkVisibility(WorldToChunkCoord(player.position));
+
+        TryMarkInitialLoadComplete();
     }
 
     private void ResolvePlayer()
@@ -236,6 +267,8 @@ public class TerrainChunkStreamer : MonoBehaviour
     {
         if (TryParseCoord(scene.name, scenePrefix, out Vector2Int coord) && coordToSceneName.ContainsKey(coord))
             loadedCoords.Add(coord);
+
+        TryMarkInitialLoadComplete();
     }
 
     private void OnSceneUnloaded(Scene scene)
@@ -275,6 +308,8 @@ public class TerrainChunkStreamer : MonoBehaviour
             loadedCoords.Add(coord);
         else
             Debug.LogWarning($"Scene did not finish loading correctly: {sceneName}");
+
+        TryMarkInitialLoadComplete();
     }
 
     private IEnumerator UnloadTileScene(Vector2Int coord)
@@ -303,6 +338,27 @@ public class TerrainChunkStreamer : MonoBehaviour
 
         unloadingCoords.Remove(coord);
         loadedCoords.Remove(coord);
+
+        TryMarkInitialLoadComplete();
+    }
+
+    private void TryMarkInitialLoadComplete()
+    {
+        if (initialLoadCompleted)
+            return;
+
+        if (coordToSceneName.Count == 0)
+            return;
+
+        if (loadingCoords.Count > 0 || unloadingCoords.Count > 0)
+            return;
+
+        if (!hasLastCenterCoord)
+            return;
+
+        initialLoadCompleted = true;
+        IsWorldReady = true;
+        WorldLoadingState.MarkWorldReady();
     }
 
     private static bool TryParseCoord(string sceneName, string prefix, out Vector2Int coord)
