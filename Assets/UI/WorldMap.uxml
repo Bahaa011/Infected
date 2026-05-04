@@ -6,23 +6,21 @@
     xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd"
 >
     <ui:VisualElement class="world-map-root" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none;">
-        <ui:VisualElement name="world-map-minimap-panel" style="position: absolute; left: 16px; top: 16px; width: 220px; height: 220px; flex-direction: column; align-items: stretch; justify-content: flex-start; border-radius: 8px; padding: 10px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px;">
-            <ui:Label text="Map" style="font-size: 12px; color: rgb(235, 235, 235); -unity-font-style: bold; margin-bottom: 6px;" />
-            <ui:VisualElement name="world-map-minimap-frame" style="position: relative; flex-grow: 1; border-radius: 4px; overflow: hidden; background-color: rgba(18, 18, 18, 0.92);">
+        <ui:VisualElement name="world-map-minimap-panel" style="position: absolute; left: 16px; top: 16px; width: 220px; height: 220px; flex-direction: column; align-items: stretch; justify-content: flex-start; background-color: rgba(0, 0, 0, 0); padding: 0px;">
+            <ui:VisualElement name="world-map-minimap-frame" style="position: relative; width: 220px; height: 220px; border-radius: 8px; overflow: hidden; background-color: rgb(0, 0, 0); border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(255, 255, 255, 0.16); border-right-color: rgba(255, 255, 255, 0.16); border-bottom-color: rgba(255, 255, 255, 0.1); border-left-color: rgba(255, 255, 255, 0.1);">
                 <ui:Image name="world-map-minimap-image" style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; unity-background-scale-mode: scale-and-crop; opacity: 0.95;" />
                 <ui:VisualElement name="world-map-minimap-marker" style="position: absolute; left: 0; top: 0; pointer-events: none;" />
             </ui:VisualElement>
-            <ui:Label text="M to expand" style="font-size: 9px; color: rgba(220, 220, 220, 0.8); margin-top: 6px;" />
         </ui:VisualElement>
 
         <ui:VisualElement name="world-map-overlay" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: none; justify-content: center; align-items: center; pointer-events: auto;">
-            <ui:VisualElement name="world-map-big-panel" style="width: 780px; height: 820px; flex-direction: column; align-items: stretch; justify-content: flex-start; border-radius: 10px; padding: 14px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px;">
+            <ui:VisualElement name="world-map-big-panel" style="width: 780px; height: 820px; flex-direction: column; align-items: stretch; justify-content: flex-start; border-radius: 8px; padding: 14px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px;">
                 <ui:VisualElement style="flex-direction: row; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <ui:Label text="World Map" style="font-size: 16px; color: rgb(245, 245, 245); -unity-font-style: bold;" />
                     <ui:Label text="Press M to close" style="font-size: 11px; color: rgba(225, 225, 225, 0.9);" />
                 </ui:VisualElement>
 
-                <ui:VisualElement name="world-map-big-frame" style="position: relative; flex-grow: 1; border-radius: 6px; overflow: hidden; align-self: stretch; background-color: rgba(18, 18, 18, 0.92);">
+                <ui:VisualElement name="world-map-big-frame" style="position: relative; flex-grow: 1; border-radius: 6px; overflow: hidden; align-self: stretch; background-color: rgb(0, 0, 0);">
                     <ui:Image name="world-map-big-image" style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; unity-background-scale-mode: scale-and-crop; opacity: 0.95;" />
                     <ui:VisualElement name="world-map-big-marker" style="position: absolute; left: 0; top: 0; pointer-events: none;" />
                 </ui:VisualElement>

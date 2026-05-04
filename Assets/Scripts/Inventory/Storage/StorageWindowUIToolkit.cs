@@ -31,6 +31,8 @@ public class StorageWindowUIToolkit : MonoBehaviour
     private Item itemDragItem;
     private int itemDragQuantity;
     private VisualElement itemDragGhost;
+    private Dictionary<int, VisualElement> highlightedDropCellMap;
+    private int highlightedDropSlotIndex = -1;
     private const float ItemDragStartThreshold = 8f;
 
     private void Awake()
@@ -167,27 +169,24 @@ public class StorageWindowUIToolkit : MonoBehaviour
         storagePanel = new VisualElement();
         storagePanel.name = "storage-transfer-panel";
         storagePanel.style.position = Position.Absolute;
-        const float panelWidth = 950f;
-        const float panelHeight = 500f;
+        const float panelWidth = 1300f;
+        const float panelHeight = 520f;
         storagePanel.style.left = Length.Percent(50);
         storagePanel.style.top = Length.Percent(50);
         storagePanel.style.width = panelWidth;
         storagePanel.style.height = panelHeight;
         storagePanel.style.marginLeft = -panelWidth * 0.5f;
         storagePanel.style.marginTop = -panelHeight * 0.5f;
-        storagePanel.style.backgroundColor = new StyleColor(new Color(0.05f, 0.05f, 0.05f, 0.97f));
-        storagePanel.style.borderTopLeftRadius = 8;
-        storagePanel.style.borderTopRightRadius = 8;
-        storagePanel.style.borderBottomLeftRadius = 8;
-        storagePanel.style.borderBottomRightRadius = 8;
+        storagePanel.style.backgroundColor = new StyleColor(new Color(0.035f, 0.038f, 0.043f, 0.98f));
+        storagePanel.style.borderTopLeftRadius = 5;
+        storagePanel.style.borderTopRightRadius = 5;
+        storagePanel.style.borderBottomLeftRadius = 5;
+        storagePanel.style.borderBottomRightRadius = 5;
         storagePanel.style.borderTopWidth = 1;
         storagePanel.style.borderRightWidth = 1;
         storagePanel.style.borderBottomWidth = 1;
         storagePanel.style.borderLeftWidth = 1;
-        storagePanel.style.borderTopColor = new StyleColor(new Color(0.45f, 0.45f, 0.45f, 0.24f));
-        storagePanel.style.borderRightColor = new StyleColor(new Color(0.45f, 0.45f, 0.45f, 0.24f));
-        storagePanel.style.borderBottomColor = new StyleColor(new Color(0.45f, 0.45f, 0.45f, 0.14f));
-        storagePanel.style.borderLeftColor = new StyleColor(new Color(0.45f, 0.45f, 0.45f, 0.14f));
+        SetBorderColor(storagePanel, new Color(0.62f, 0.52f, 0.32f, 0.34f), new Color(0f, 0f, 0f, 0.7f));
         storagePanel.style.paddingTop = 10;
         storagePanel.style.paddingRight = 10;
         storagePanel.style.paddingBottom = 10;
@@ -195,10 +194,11 @@ public class StorageWindowUIToolkit : MonoBehaviour
         storagePanel.style.display = DisplayStyle.None;
 
         storageTitle = new Label("STORAGE");
-        storageTitle.style.fontSize = 14;
+        storageTitle.style.fontSize = 22;
+        storageTitle.style.letterSpacing = 2;
         storageTitle.style.unityFontStyleAndWeight = FontStyle.Bold;
-        storageTitle.style.color = new StyleColor(new Color(0.95f, 0.95f, 0.95f, 1f));
-        storageTitle.style.marginBottom = 8;
+        storageTitle.style.color = new StyleColor(new Color(0.92f, 0.82f, 0.62f, 1f));
+        storageTitle.style.marginBottom = 10;
         storagePanel.Add(storageTitle);
 
         var content = new VisualElement();
@@ -223,29 +223,27 @@ public class StorageWindowUIToolkit : MonoBehaviour
         pane.style.flexGrow = 1;
 
         var title = new Label(label);
-        title.style.fontSize = 10;
+        title.style.fontSize = 14;
+        title.style.letterSpacing = 1;
         title.style.unityFontStyleAndWeight = FontStyle.Bold;
-        title.style.color = new StyleColor(new Color(0.82f, 0.82f, 0.82f, 0.95f));
-        title.style.marginBottom = 4;
+        title.style.color = new StyleColor(new Color(0.7f, 0.64f, 0.5f, 0.95f));
+        title.style.marginBottom = 5;
         pane.Add(title);
 
         scrollView = new ScrollView(ScrollViewMode.VerticalAndHorizontal);
         scrollView.verticalScrollerVisibility = ScrollerVisibility.Auto;
         scrollView.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
         scrollView.style.flexGrow = 1;
-        scrollView.style.backgroundColor = new StyleColor(new Color(0.07f, 0.07f, 0.07f, 0.95f));
-        scrollView.style.borderTopLeftRadius = 6;
-        scrollView.style.borderTopRightRadius = 6;
-        scrollView.style.borderBottomLeftRadius = 6;
-        scrollView.style.borderBottomRightRadius = 6;
+        scrollView.style.backgroundColor = new StyleColor(new Color(0.02f, 0.023f, 0.027f, 0.95f));
+        scrollView.style.borderTopLeftRadius = 3;
+        scrollView.style.borderTopRightRadius = 3;
+        scrollView.style.borderBottomLeftRadius = 3;
+        scrollView.style.borderBottomRightRadius = 3;
         scrollView.style.borderTopWidth = 1;
         scrollView.style.borderRightWidth = 1;
         scrollView.style.borderBottomWidth = 1;
         scrollView.style.borderLeftWidth = 1;
-        scrollView.style.borderTopColor = new StyleColor(new Color(0.45f, 0.45f, 0.45f, 0.16f));
-        scrollView.style.borderRightColor = new StyleColor(new Color(0.45f, 0.45f, 0.45f, 0.16f));
-        scrollView.style.borderBottomColor = new StyleColor(new Color(0.45f, 0.45f, 0.45f, 0.1f));
-        scrollView.style.borderLeftColor = new StyleColor(new Color(0.45f, 0.45f, 0.45f, 0.1f));
+        SetBorderColor(scrollView, new Color(0.44f, 0.38f, 0.26f, 0.2f), new Color(0f, 0f, 0f, 0.52f));
         ApplyInventoryLikeScrollStyle(scrollView);
         pane.Add(scrollView);
 
@@ -414,7 +412,7 @@ public class StorageWindowUIToolkit : MonoBehaviour
         if (viewportWidth <= 0f)
             viewportWidth = 380f;
 
-        float cellSize = Mathf.Max(50f, (viewportWidth - ((columns - 1) * gap) - 4f) / columns);
+        float cellSize = Mathf.Max(70f, (viewportWidth - ((columns - 1) * gap) - 4f) / columns);
 
         var container = new VisualElement();
         container.style.position = Position.Relative;
@@ -454,23 +452,40 @@ public class StorageWindowUIToolkit : MonoBehaviour
         cell.style.top = row * (cellSize + gap);
         cell.style.width = cellSize;
         cell.style.height = cellSize;
-        cell.style.backgroundColor = isStorageGrid
-            ? new StyleColor(new Color(0.09f, 0.09f, 0.09f, 0.78f))
-            : new StyleColor(new Color(0.08f, 0.08f, 0.08f, 0.78f));
+        StyleStorageSlotCell(cell, false, false, isStorageGrid);
         cell.style.borderTopWidth = 1;
         cell.style.borderRightWidth = 1;
         cell.style.borderBottomWidth = 1;
         cell.style.borderLeftWidth = 1;
-        cell.style.borderTopColor = new StyleColor(new Color(0.45f, 0.45f, 0.45f, 0.16f));
-        cell.style.borderRightColor = new StyleColor(new Color(0.45f, 0.45f, 0.45f, 0.16f));
-        cell.style.borderBottomColor = new StyleColor(new Color(0.45f, 0.45f, 0.45f, 0.1f));
-        cell.style.borderLeftColor = new StyleColor(new Color(0.45f, 0.45f, 0.45f, 0.1f));
-        cell.style.borderTopLeftRadius = 5;
-        cell.style.borderTopRightRadius = 5;
-        cell.style.borderBottomLeftRadius = 5;
-        cell.style.borderBottomRightRadius = 5;
+        SetBorderColor(cell, new Color(0.44f, 0.39f, 0.28f, 0.2f), new Color(0f, 0f, 0f, 0.48f));
+        cell.style.borderTopLeftRadius = 3;
+        cell.style.borderTopRightRadius = 3;
+        cell.style.borderBottomLeftRadius = 3;
+        cell.style.borderBottomRightRadius = 3;
 
         return cell;
+    }
+
+    private static void StyleStorageSlotCell(VisualElement cell, bool isDropTarget, bool isValidTarget, bool isStorageGrid)
+    {
+        if (cell == null)
+            return;
+
+        if (isDropTarget)
+        {
+            cell.style.backgroundColor = new StyleColor(isValidTarget
+                ? new Color(0.1f, 0.16f, 0.11f, 0.98f)
+                : new Color(0.16f, 0.065f, 0.055f, 0.98f));
+            SetBorderColor(cell,
+                isValidTarget ? new Color(0.54f, 0.86f, 0.42f, 0.8f) : new Color(0.9f, 0.28f, 0.22f, 0.8f),
+                new Color(0f, 0f, 0f, 0.65f));
+            return;
+        }
+
+        cell.style.backgroundColor = isStorageGrid
+            ? new StyleColor(new Color(0.06f, 0.058f, 0.052f, 0.92f))
+            : new StyleColor(new Color(0.052f, 0.058f, 0.068f, 0.92f));
+        SetBorderColor(cell, new Color(0.44f, 0.39f, 0.28f, 0.2f), new Color(0f, 0f, 0f, 0.48f));
     }
 
     private VisualElement CreateItemTile(InventorySlot slot, int anchorIndex, int columns, float cellSize, float gap, Inventory sourceInventory)
@@ -489,19 +504,17 @@ public class StorageWindowUIToolkit : MonoBehaviour
         tile.style.top = row * (cellSize + gap);
         tile.style.width = tileWidth;
         tile.style.height = tileHeight;
-        tile.style.backgroundColor = new StyleColor(new Color(0.13f, 0.13f, 0.13f, 0.96f));
+        Color itemAccent = GetItemAccentColor(slot.item);
+        tile.style.backgroundColor = new StyleColor(new Color(0.085f, 0.082f, 0.074f, 0.98f));
         tile.style.borderTopWidth = 1;
         tile.style.borderRightWidth = 1;
         tile.style.borderBottomWidth = 1;
         tile.style.borderLeftWidth = 1;
-        tile.style.borderTopColor = new StyleColor(new Color(0.5f, 0.5f, 0.5f, 0.22f));
-        tile.style.borderRightColor = new StyleColor(new Color(0.5f, 0.5f, 0.5f, 0.22f));
-        tile.style.borderBottomColor = new StyleColor(new Color(0.5f, 0.5f, 0.5f, 0.15f));
-        tile.style.borderLeftColor = new StyleColor(new Color(0.5f, 0.5f, 0.5f, 0.15f));
-        tile.style.borderTopLeftRadius = 5;
-        tile.style.borderTopRightRadius = 5;
-        tile.style.borderBottomLeftRadius = 5;
-        tile.style.borderBottomRightRadius = 5;
+        SetBorderColor(tile, new Color(itemAccent.r, itemAccent.g, itemAccent.b, 0.42f), new Color(0f, 0f, 0f, 0.62f));
+        tile.style.borderTopLeftRadius = 4;
+        tile.style.borderTopRightRadius = 4;
+        tile.style.borderBottomLeftRadius = 4;
+        tile.style.borderBottomRightRadius = 4;
 
         if (slot.item.Icon != null)
         {
@@ -523,7 +536,7 @@ public class StorageWindowUIToolkit : MonoBehaviour
             fallbackLabel.style.left = 6;
             fallbackLabel.style.right = 6;
             fallbackLabel.style.top = 6;
-            fallbackLabel.style.fontSize = 10;
+            fallbackLabel.style.fontSize = 12;
             fallbackLabel.style.color = new StyleColor(new Color(0.92f, 0.92f, 0.92f, 0.95f));
             fallbackLabel.style.whiteSpace = WhiteSpace.Normal;
             fallbackLabel.style.unityTextAlign = TextAnchor.UpperLeft;
@@ -537,15 +550,26 @@ public class StorageWindowUIToolkit : MonoBehaviour
             qtyLabel.style.position = Position.Absolute;
             qtyLabel.style.right = 5;
             qtyLabel.style.bottom = 3;
-            qtyLabel.style.fontSize = 10;
+            qtyLabel.style.fontSize = 12;
             qtyLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
-            qtyLabel.style.color = new StyleColor(new Color(0.92f, 0.95f, 1f, 1f));
+            qtyLabel.style.color = new StyleColor(new Color(0.96f, 0.9f, 0.76f, 1f));
+            qtyLabel.style.backgroundColor = new StyleColor(new Color(0.015f, 0.014f, 0.012f, 0.88f));
+            qtyLabel.style.paddingLeft = 5;
+            qtyLabel.style.paddingRight = 5;
+            qtyLabel.style.paddingTop = 1;
+            qtyLabel.style.paddingBottom = 1;
+            qtyLabel.style.borderTopLeftRadius = 2;
+            qtyLabel.style.borderTopRightRadius = 2;
+            qtyLabel.style.borderBottomLeftRadius = 2;
+            qtyLabel.style.borderBottomRightRadius = 2;
             qtyLabel.pickingMode = PickingMode.Ignore;
             tile.Add(qtyLabel);
         }
 
         tile.RegisterCallback<MouseEnterEvent>(evt =>
         {
+            tile.style.backgroundColor = new StyleColor(new Color(0.13f, 0.12f, 0.1f, 0.98f));
+            SetBorderColor(tile, new Color(0.92f, 0.76f, 0.42f, 0.72f), new Color(0f, 0f, 0f, 0.65f));
             ItemTooltipUtility.ShowTooltip(root, slot.item, slot.quantity, GetTooltipAnchorPoint(tile, evt.mousePosition));
         });
 
@@ -554,7 +578,12 @@ public class StorageWindowUIToolkit : MonoBehaviour
             ItemTooltipUtility.ShowTooltip(root, slot.item, slot.quantity, GetTooltipAnchorPoint(tile, evt.mousePosition));
         });
 
-        tile.RegisterCallback<MouseLeaveEvent>(_ => ItemTooltipUtility.HideTooltip(root));
+        tile.RegisterCallback<MouseLeaveEvent>(_ =>
+        {
+            tile.style.backgroundColor = new StyleColor(new Color(0.085f, 0.082f, 0.074f, 0.98f));
+            SetBorderColor(tile, new Color(itemAccent.r, itemAccent.g, itemAccent.b, 0.42f), new Color(0f, 0f, 0f, 0.62f));
+            ItemTooltipUtility.HideTooltip(root);
+        });
 
         tile.RegisterCallback<PointerDownEvent>(evt =>
         {
@@ -572,6 +601,31 @@ public class StorageWindowUIToolkit : MonoBehaviour
     private static Vector2 GetTooltipAnchorPoint(VisualElement element, Vector2 localPointerPosition)
     {
         return localPointerPosition;
+    }
+
+    private static void SetBorderColor(VisualElement element, Color topAndSide, Color bottom)
+    {
+        if (element == null)
+            return;
+
+        element.style.borderTopColor = new StyleColor(topAndSide);
+        element.style.borderRightColor = new StyleColor(topAndSide);
+        element.style.borderBottomColor = new StyleColor(bottom);
+        element.style.borderLeftColor = new StyleColor(topAndSide);
+    }
+
+    private static Color GetItemAccentColor(Item item)
+    {
+        return item switch
+        {
+            GunItem => new Color(0.98f, 0.74f, 0.38f, 1f),
+            MeleeWeaponItem => new Color(0.9f, 0.52f, 0.32f, 1f),
+            MagazineItem => new Color(0.78f, 0.72f, 0.58f, 1f),
+            BandageItem => new Color(0.9f, 0.36f, 0.32f, 1f),
+            FoodItem => new Color(0.74f, 0.88f, 0.46f, 1f),
+            WaterItem => new Color(0.48f, 0.74f, 1f, 1f),
+            _ => new Color(0.66f, 0.62f, 0.5f, 1f)
+        };
     }
 
     private void BeginItemDragCandidate(Item item, int quantity, int sourceSlotIndex, Inventory sourceInventory, int pointerId, Vector2 pointerPos)
@@ -610,6 +664,7 @@ public class StorageWindowUIToolkit : MonoBehaviour
         }
 
         UpdateItemDragGhostPosition(pointerPos);
+        UpdateDropSlotHighlight(pointerPos);
     }
 
     private void OnRootPointerUpItemDrag(PointerUpEvent evt)
@@ -672,28 +727,26 @@ public class StorageWindowUIToolkit : MonoBehaviour
         itemDragGhost = new VisualElement();
         itemDragGhost.name = "storage-item-drag-ghost";
         itemDragGhost.style.position = Position.Absolute;
-        itemDragGhost.style.width = 52;
-        itemDragGhost.style.height = 52;
-        itemDragGhost.style.backgroundColor = new StyleColor(new Color(0.12f, 0.12f, 0.12f, 0.9f));
-        itemDragGhost.style.borderTopLeftRadius = 6;
-        itemDragGhost.style.borderTopRightRadius = 6;
-        itemDragGhost.style.borderBottomLeftRadius = 6;
-        itemDragGhost.style.borderBottomRightRadius = 6;
+        itemDragGhost.style.width = 90;
+        itemDragGhost.style.height = 90;
+        itemDragGhost.style.backgroundColor = new StyleColor(new Color(0.025f, 0.024f, 0.022f, 0.82f));
+        itemDragGhost.style.borderTopLeftRadius = 4;
+        itemDragGhost.style.borderTopRightRadius = 4;
+        itemDragGhost.style.borderBottomLeftRadius = 4;
+        itemDragGhost.style.borderBottomRightRadius = 4;
         itemDragGhost.style.borderTopWidth = 1;
         itemDragGhost.style.borderRightWidth = 1;
         itemDragGhost.style.borderBottomWidth = 1;
         itemDragGhost.style.borderLeftWidth = 1;
-        itemDragGhost.style.borderTopColor = new StyleColor(new Color(0.55f, 0.55f, 0.55f, 0.35f));
-        itemDragGhost.style.borderRightColor = new StyleColor(new Color(0.55f, 0.55f, 0.55f, 0.35f));
-        itemDragGhost.style.borderBottomColor = new StyleColor(new Color(0.55f, 0.55f, 0.55f, 0.2f));
-        itemDragGhost.style.borderLeftColor = new StyleColor(new Color(0.55f, 0.55f, 0.55f, 0.2f));
+        SetBorderColor(itemDragGhost, new Color(0.88f, 0.72f, 0.42f, 0.72f), new Color(0f, 0f, 0f, 0.65f));
+        itemDragGhost.style.opacity = 0.9f;
         itemDragGhost.pickingMode = PickingMode.Ignore;
 
         var icon = new Image();
         icon.image = itemDragItem.Icon != null ? itemDragItem.Icon.texture : null;
         icon.scaleMode = ScaleMode.ScaleToFit;
-        icon.style.width = 42;
-        icon.style.height = 42;
+        icon.style.width = 80;
+        icon.style.height = 80;
         icon.style.marginLeft = 5;
         icon.style.marginTop = 5;
         itemDragGhost.Add(icon);
@@ -704,9 +757,10 @@ public class StorageWindowUIToolkit : MonoBehaviour
             qty.style.position = Position.Absolute;
             qty.style.right = 4;
             qty.style.bottom = 2;
-            qty.style.fontSize = 10;
+            qty.style.fontSize = 12;
             qty.style.unityFontStyleAndWeight = FontStyle.Bold;
-            qty.style.color = new StyleColor(new Color(0.95f, 0.97f, 1f, 1f));
+            qty.style.color = new StyleColor(new Color(0.96f, 0.9f, 0.76f, 1f));
+            qty.style.backgroundColor = new StyleColor(new Color(0.015f, 0.014f, 0.012f, 0.88f));
             itemDragGhost.Add(qty);
         }
 
@@ -744,8 +798,113 @@ public class StorageWindowUIToolkit : MonoBehaviour
         if (itemDragGhost == null)
             return;
 
-        itemDragGhost.style.left = mouseWorldPos.x - 26f;
-        itemDragGhost.style.top = mouseWorldPos.y - 26f;
+        itemDragGhost.style.left = mouseWorldPos.x - 29f;
+        itemDragGhost.style.top = mouseWorldPos.y - 29f;
+    }
+
+    private void UpdateDropSlotHighlight(Vector2 worldPosition)
+    {
+        int playerTargetSlot = GetSlotIndexAtWorldPosition(worldPosition, playerCellsByIndex);
+        Dictionary<int, VisualElement> targetMap = null;
+        int targetSlot = -1;
+        Inventory targetInventory = null;
+
+        if (playerTargetSlot >= 0)
+        {
+            targetMap = playerCellsByIndex;
+            targetSlot = playerTargetSlot;
+            targetInventory = playerInventory;
+        }
+        else
+        {
+            int storageTargetSlot = GetSlotIndexAtWorldPosition(worldPosition, storageCellsByIndex);
+            if (storageTargetSlot >= 0)
+            {
+                targetMap = storageCellsByIndex;
+                targetSlot = storageTargetSlot;
+                targetInventory = activeStorageInventory;
+            }
+        }
+
+        if (targetMap == highlightedDropCellMap && targetSlot == highlightedDropSlotIndex)
+            return;
+
+        ClearDropSlotHighlight();
+        highlightedDropCellMap = targetMap;
+        highlightedDropSlotIndex = targetSlot;
+
+        if (targetMap == null || targetSlot < 0 || !targetMap.TryGetValue(targetSlot, out VisualElement cell) || cell == null)
+            return;
+
+        bool isStorageGrid = targetMap == storageCellsByIndex;
+        StyleStorageSlotCell(cell, true, CanDropDraggedItemAt(targetInventory, targetSlot), isStorageGrid);
+    }
+
+    private void ClearDropSlotHighlight()
+    {
+        if (highlightedDropCellMap != null
+            && highlightedDropSlotIndex >= 0
+            && highlightedDropCellMap.TryGetValue(highlightedDropSlotIndex, out VisualElement previous)
+            && previous != null)
+        {
+            StyleStorageSlotCell(previous, false, false, highlightedDropCellMap == storageCellsByIndex);
+        }
+
+        highlightedDropCellMap = null;
+        highlightedDropSlotIndex = -1;
+    }
+
+    private bool CanDropDraggedItemAt(Inventory targetInventory, int targetSlot)
+    {
+        if (targetInventory == null || itemDragSourceInventory == null || targetSlot < 0)
+            return false;
+
+        int sourceAnchor = itemDragSourceInventory.ResolveAnchorSlotIndex(itemDragSourceSlotIndex);
+        InventorySlot source = itemDragSourceInventory.GetSlot(sourceAnchor);
+        if (source == null || !source.isAnchor || source.item == null)
+            return false;
+
+        int columns = Mathf.Max(1, targetInventory.GetGridColumns());
+        int rows = Mathf.Max(1, targetInventory.GetGridRows());
+        int width = Mathf.Max(1, source.footprintWidth);
+        int height = Mathf.Max(1, source.footprintHeight);
+        int targetCol = targetSlot % columns;
+        int targetRow = targetSlot / columns;
+
+        if (targetCol + width > columns || targetRow + height > rows)
+            return false;
+
+        var slots = targetInventory.GetAllItems();
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                int checkIndex = (targetRow + y) * columns + targetCol + x;
+                if (checkIndex < 0 || checkIndex >= slots.Count)
+                    return false;
+
+                if (targetInventory == itemDragSourceInventory && IsIndexWithinFootprint(sourceAnchor, checkIndex, width, height, columns))
+                    continue;
+
+                InventorySlot occupied = slots[checkIndex];
+                if (occupied != null && occupied.isOccupied)
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool IsIndexWithinFootprint(int anchorIndex, int index, int width, int height, int columns)
+    {
+        if (anchorIndex < 0 || index < 0 || columns <= 0)
+            return false;
+
+        int anchorCol = anchorIndex % columns;
+        int anchorRow = anchorIndex / columns;
+        int col = index % columns;
+        int row = index / columns;
+        return col >= anchorCol && col < anchorCol + width && row >= anchorRow && row < anchorRow + height;
     }
 
     private void CancelItemDrag()
@@ -761,6 +920,7 @@ public class StorageWindowUIToolkit : MonoBehaviour
         itemDragSourceInventory = null;
         itemDragItem = null;
         itemDragQuantity = 0;
+        ClearDropSlotHighlight();
 
         if (itemDragGhost != null)
         {

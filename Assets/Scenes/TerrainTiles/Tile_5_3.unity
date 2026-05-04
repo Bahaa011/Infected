@@ -9,7 +9,7 @@ OcclusionCullingSettings:
     smallestHole: 0.25
     backfaceThreshold: 100
   m_SceneGUID: a01fa087d5436ce17a65231b1f4601fd
-  m_OcclusionCullingData: {fileID: 36300000, guid: 36643fdec40899737a297f63111befa8, type: 2}
+  m_OcclusionCullingData: {fileID: 36300000, guid: ef0e60a3e67c2b78e9652c681baa84c6, type: 2}
 --- !u!104 &2
 RenderSettings:
   m_ObjectHideFlags: 0
@@ -135,7 +135,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 125
   m_IsActive: 1
 --- !u!154 &261152077
 TerrainCollider:
@@ -275,38 +275,8 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 7037837637483193793, guid: 53228eb794e1944ec9af8c20aa87f805, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1662143697}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 53228eb794e1944ec9af8c20aa87f805, type: 3}
---- !u!1 &1662143692 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 7037837637483193793, guid: 53228eb794e1944ec9af8c20aa87f805, type: 3}
-  m_PrefabInstance: {fileID: 1012609814}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1662143697
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1662143692}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3531d3a2f42011db9a7a18f9ec20d16e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DoorController
-  openAngle: 90
-  closeAngle: 0
-  rotationSpeed: 2
-  isOpen: 0
-  interactionRange: 3
-  disableMeshCollidersWhenOpen: 1
-  includeChildMeshColliders: 1
-  openSound: {fileID: 0}
-  closeSound: {fileID: 0}
-  audioVolume: 1
 --- !u!1001 &1674256677
 PrefabInstance:
   m_ObjectHideFlags: 0

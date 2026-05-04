@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8680897de59a52f18a4fadac407a223, type: 3}
+  m_Name: IndoorWalk
+  m_EditorClassIdentifier: Assembly-CSharp::MovementAudioSet
+  walkClips:
+  - {fileID: 8300000, guid: 3a50653584f8bfc5d911a82ffc43f4fe, type: 3}
+  runClips:
+  - {fileID: 8300000, guid: 9ea710a43aa3776b08a4984e023e1c21, type: 3}
+  crouchWalkClips: []

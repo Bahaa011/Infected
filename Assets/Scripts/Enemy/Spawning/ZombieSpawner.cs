@@ -12,6 +12,7 @@ public class ZombieSpawner : MonoBehaviour
 
     [Header("Spawn Timing")]
     [SerializeField] private float spawnIntervalSeconds = 20f;
+    [SerializeField] private float respawnDelayAfterKillSeconds = 18f;
     [SerializeField] private int spawnBatchCount = 1;
     [SerializeField] private int maxAliveZombies = 20;
 
@@ -109,10 +110,26 @@ public class ZombieSpawner : MonoBehaviour
 
             GameObject zombie = Instantiate(zombiePrefab, navPoint, Quaternion.identity);
             aliveZombies.Add(zombie);
+            Zombie zombieComponent = zombie.GetComponent<Zombie>();
+            if (zombieComponent != null)
+                zombieComponent.Died += HandleZombieDied;
             return true;
         }
 
         return false;
+    }
+
+    private void HandleZombieDied(Zombie zombie)
+    {
+        if (zombie == null)
+            return;
+
+        zombie.Died -= HandleZombieDied;
+        aliveZombies.Remove(zombie.gameObject);
+
+        float delay = Mathf.Max(0f, respawnDelayAfterKillSeconds);
+        if (delay > 0f)
+            nextSpawnTime = Mathf.Max(nextSpawnTime, Time.time + delay);
     }
 
     private Vector3 GetRandomPointAroundPlayer()

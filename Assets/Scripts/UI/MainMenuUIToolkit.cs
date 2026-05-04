@@ -9,9 +9,11 @@ using UnityEngine.UIElements;
 public class MainMenuUIToolkit : MonoBehaviour
 {
     private const string PrefSelectedSlotIndex = "save.selectedSlotIndex";
+    private const int FixedSaveSlotCount = 3;
     private const string PrefMasterVolume = "settings.masterVolume";
     private const string PrefFullscreen = "settings.fullscreen";
-    private const string PrefQualityIndex = "settings.qualityIndex";
+    private const string PrefResolutionWidth = "settings.resolutionWidth";
+    private const string PrefResolutionHeight = "settings.resolutionHeight";
 
     [Header("References")]
     [SerializeField] private UIDocument uiDocument;
@@ -53,10 +55,15 @@ public class MainMenuUIToolkit : MonoBehaviour
 
     private Slider masterVolumeSlider;
     private Toggle fullscreenToggle;
-    private DropdownField qualityDropdown;
+    private DropdownField resolutionDropdown;
+    private VisualElement deleteConfirmOverlay;
+    private Label deleteConfirmMessageLabel;
+    private Button deleteConfirmYesButton;
+    private Button deleteConfirmNoButton;
 
     private readonly List<VisualElement> slotRows = new List<VisualElement>();
     private readonly List<int> slotRowIndexes = new List<int>();
+    private readonly List<Vector2Int> resolutionOptions = new List<Vector2Int>();
 
     private readonly Dictionary<Button, float> buttonHoverTargets = new Dictionary<Button, float>();
     private readonly Dictionary<Button, float> buttonHoverValues = new Dictionary<Button, float>();
@@ -69,6 +76,7 @@ public class MainMenuUIToolkit : MonoBehaviour
     private bool isLoadingWorld;
     private float loadingVisualProgress;
     private float finishLoadingDelay;
+    private int pendingDeleteSlotIndex = -1;
 
     private void Awake()
     {
@@ -114,6 +122,12 @@ public class MainMenuUIToolkit : MonoBehaviour
             && !isLoadingWorld
             && (optionsPanelBlendTarget > 0.5f || (saveSlotsPanel != null && saveSlotsPanel.style.display == DisplayStyle.Flex)))
         {
+            if (deleteConfirmOverlay != null && deleteConfirmOverlay.style.display == DisplayStyle.Flex)
+            {
+                HideDeleteConfirmDialog();
+                return;
+            }
+
             ShowMainPanel();
         }
     }
@@ -137,7 +151,7 @@ public class MainMenuUIToolkit : MonoBehaviour
 
         masterVolumeSlider = root.Q<Slider>("mainmenu-master-volume-slider");
         fullscreenToggle = root.Q<Toggle>("mainmenu-fullscreen-toggle");
-        qualityDropdown = root.Q<DropdownField>("mainmenu-quality-dropdown");
+        resolutionDropdown = root.Q<DropdownField>("mainmenu-resolution-dropdown");
 
         saveSlotsList = root.Q<ScrollView>("mainmenu-save-slots-list");
         loadingTitleLabel = root.Q<Label>("mainmenu-loading-title");
@@ -206,12 +220,13 @@ public class MainMenuUIToolkit : MonoBehaviour
         if (fullscreenToggle != null)
             fullscreenToggle.RegisterValueChangedCallback(evt => ApplyFullscreen(evt.newValue, true));
 
-        if (qualityDropdown != null)
-            qualityDropdown.RegisterValueChangedCallback(evt => ApplyQuality(evt.newValue, true));
+        if (resolutionDropdown != null)
+            resolutionDropdown.RegisterValueChangedCallback(evt => ApplyResolution(evt.newValue, true));
 
         ConfigureMainButtonHover(playButton);
         ConfigureMainButtonHover(optionsButton);
         ConfigureMainButtonHover(quitButton);
+        BuildDeleteConfirmDialog();
     }
 
     private void ConfigureMainButtonHover(Button button)
@@ -240,19 +255,21 @@ public class MainMenuUIToolkit : MonoBehaviour
         if (button == null)
             return;
 
-        Color normalBackground = new Color(0f, 0f, 0f, 0.2f);
-        Color hoverBackground = new Color(1f, 1f, 1f, 0.16f);
+        Color normalBackground = new Color(16f / 255f, 16f / 255f, 16f / 255f, 0.82f);
+        Color hoverBackground = new Color(138f / 255f, 75f / 255f, 32f / 255f, 0.72f);
         Color normalText = new Color(250f / 255f, 250f / 255f, 250f / 255f, 0.95f);
         Color hoverText = Color.white;
-        Color normalBorder = new Color(230f / 255f, 230f / 255f, 230f / 255f, 0.55f);
-        Color hoverBorder = new Color(1f, 1f, 1f, 0.98f);
+        Color normalBorder = new Color(230f / 255f, 230f / 255f, 230f / 255f, 0.32f);
+        Color hoverBorder = new Color(236f / 255f, 161f / 255f, 83f / 255f, 0.95f);
 
         float targetScale = pressed ? buttonPressedScale : Mathf.Lerp(1f, buttonHoverScale, hoverT);
 
         button.style.backgroundColor = Color.Lerp(normalBackground, hoverBackground, hoverT);
         button.style.color = Color.Lerp(normalText, hoverText, hoverT);
         button.style.borderTopColor = Color.Lerp(normalBorder, hoverBorder, hoverT);
+        button.style.borderRightColor = Color.Lerp(normalBorder, hoverBorder, hoverT);
         button.style.borderBottomColor = Color.Lerp(normalBorder, hoverBorder, hoverT);
+        button.style.borderLeftColor = Color.Lerp(normalBorder, hoverBorder, hoverT);
         button.style.scale = new Scale(new Vector3(targetScale, targetScale, 1f));
     }
 
@@ -329,18 +346,15 @@ public class MainMenuUIToolkit : MonoBehaviour
 
     private void InitializeOptionsUi()
     {
-        if (qualityDropdown != null)
-            qualityDropdown.choices = new List<string>(QualitySettings.names);
+        BuildResolutionOptions();
 
         float masterVolume = PlayerPrefs.GetFloat(PrefMasterVolume, Mathf.Clamp01(defaultMasterVolume));
         bool fullscreen = PlayerPrefs.GetInt(PrefFullscreen, Screen.fullScreen ? 1 : 0) == 1;
-
-        int qualityCount = Mathf.Max(1, QualitySettings.names.Length);
-        int qualityIndex = Mathf.Clamp(PlayerPrefs.GetInt(PrefQualityIndex, QualitySettings.GetQualityLevel()), 0, qualityCount - 1);
+        int resolutionWidth = PlayerPrefs.GetInt(PrefResolutionWidth, Screen.width);
+        int resolutionHeight = PlayerPrefs.GetInt(PrefResolutionHeight, Screen.height);
 
         ApplyMasterVolume(masterVolume, false);
-        ApplyFullscreen(fullscreen, false);
-        ApplyQualityByIndex(qualityIndex, false);
+        ApplyResolution(resolutionWidth, resolutionHeight, fullscreen, false);
 
         if (masterVolumeSlider != null)
             masterVolumeSlider.value = masterVolume;
@@ -348,8 +362,8 @@ public class MainMenuUIToolkit : MonoBehaviour
         if (fullscreenToggle != null)
             fullscreenToggle.value = fullscreen;
 
-        if (qualityDropdown != null)
-            qualityDropdown.index = qualityIndex;
+        if (resolutionDropdown != null)
+            resolutionDropdown.SetValueWithoutNotify(FormatResolution(GetClosestResolutionIndex(resolutionWidth, resolutionHeight)));
 
         BuildSaveSlotsList();
         RefreshSaveSlotsUi();
@@ -365,6 +379,8 @@ public class MainMenuUIToolkit : MonoBehaviour
 
     private void ShowMainPanel()
     {
+        HideDeleteConfirmDialog();
+
         if (saveSlotsPanel != null)
             saveSlotsPanel.style.display = DisplayStyle.None;
 
@@ -379,6 +395,8 @@ public class MainMenuUIToolkit : MonoBehaviour
 
     private void ShowOptionsPanel()
     {
+        HideDeleteConfirmDialog();
+
         if (saveSlotsPanel != null)
             saveSlotsPanel.style.display = DisplayStyle.None;
 
@@ -413,10 +431,13 @@ public class MainMenuUIToolkit : MonoBehaviour
 
     private void StartGameFromSlot(int slotIndex)
     {
-        slotIndex = Mathf.Clamp(slotIndex, 1, Mathf.Max(1, saveSlotCount));
+        slotIndex = Mathf.Clamp(slotIndex, 1, FixedSaveSlotCount);
 
         PlayerPrefs.SetInt(PrefSelectedSlotIndex, slotIndex);
         PlayerPrefs.Save();
+
+        if (!File.Exists(GetSaveFilePath(slotIndex)))
+            StorageContainer.ClearPersistentLootRuntimeState();
 
         if (string.IsNullOrWhiteSpace(gameplaySceneName))
         {
@@ -431,6 +452,32 @@ public class MainMenuUIToolkit : MonoBehaviour
         }
 
         StartWorldLoad(slotIndex);
+    }
+
+    private void RequestDeleteSaveSlot(int slotIndex)
+    {
+        string savePath = GetSaveFilePath(slotIndex);
+        if (!File.Exists(savePath))
+            return;
+
+        pendingDeleteSlotIndex = Mathf.Clamp(slotIndex, 1, FixedSaveSlotCount);
+
+        if (deleteConfirmMessageLabel != null)
+            deleteConfirmMessageLabel.text = $"Delete Slot {pendingDeleteSlotIndex}? This cannot be undone.";
+
+        if (deleteConfirmOverlay != null)
+            deleteConfirmOverlay.style.display = DisplayStyle.Flex;
+    }
+
+    private void ConfirmDeleteSaveSlot()
+    {
+        if (pendingDeleteSlotIndex <= 0)
+            return;
+
+        int slotIndex = pendingDeleteSlotIndex;
+        pendingDeleteSlotIndex = -1;
+        HideDeleteConfirmDialog();
+        DeleteSaveSlot(slotIndex);
     }
 
     private void DeleteSaveSlot(int slotIndex)
@@ -448,10 +495,20 @@ public class MainMenuUIToolkit : MonoBehaviour
         RefreshSaveSlotsUi();
     }
 
+    private void HideDeleteConfirmDialog()
+    {
+        pendingDeleteSlotIndex = -1;
+
+        if (deleteConfirmOverlay != null)
+            deleteConfirmOverlay.style.display = DisplayStyle.None;
+    }
+
     private void StartWorldLoad(int slotIndex)
     {
         if (isLoadingWorld)
             return;
+
+        HideDeleteConfirmDialog();
 
         WorldLoadingState.BeginLoading();
         isLoadingWorld = true;
@@ -567,7 +624,7 @@ public class MainMenuUIToolkit : MonoBehaviour
         slotRows.Clear();
         slotRowIndexes.Clear();
 
-        int count = Mathf.Max(1, saveSlotCount);
+        int count = FixedSaveSlotCount;
         for (int slotIndex = 1; slotIndex <= count; slotIndex++)
         {
             GameSaveData saveData = ReadSaveData(GetSaveFilePath(slotIndex));
@@ -644,7 +701,7 @@ public class MainMenuUIToolkit : MonoBehaviour
             deleteBtn.style.borderBottomRightRadius = 2;
             
             int deleteSlot = slotIndex;
-            deleteBtn.clicked += () => DeleteSaveSlot(deleteSlot);
+            deleteBtn.clicked += () => RequestDeleteSaveSlot(deleteSlot);
             
             buttonContainer.Add(deleteBtn);
             row.Add(buttonContainer);
@@ -655,10 +712,104 @@ public class MainMenuUIToolkit : MonoBehaviour
         }
     }
 
+    private void BuildDeleteConfirmDialog()
+    {
+        if (saveSlotsPanel == null || deleteConfirmOverlay != null)
+            return;
+
+        deleteConfirmOverlay = new VisualElement();
+        deleteConfirmOverlay.style.position = Position.Absolute;
+        deleteConfirmOverlay.style.left = 0;
+        deleteConfirmOverlay.style.top = 0;
+        deleteConfirmOverlay.style.right = 0;
+        deleteConfirmOverlay.style.bottom = 0;
+        deleteConfirmOverlay.style.justifyContent = Justify.Center;
+        deleteConfirmOverlay.style.alignItems = Align.Center;
+        deleteConfirmOverlay.style.backgroundColor = new StyleColor(new Color(0f, 0f, 0f, 0.62f));
+        deleteConfirmOverlay.style.display = DisplayStyle.None;
+
+        VisualElement panel = new VisualElement();
+        panel.style.width = 430;
+        panel.style.paddingTop = 16;
+        panel.style.paddingRight = 16;
+        panel.style.paddingBottom = 16;
+        panel.style.paddingLeft = 16;
+        panel.style.backgroundColor = new StyleColor(new Color(0.12f, 0.1f, 0.08f, 0.98f));
+        panel.style.borderTopLeftRadius = 4;
+        panel.style.borderTopRightRadius = 4;
+        panel.style.borderBottomLeftRadius = 4;
+        panel.style.borderBottomRightRadius = 4;
+        panel.style.borderTopWidth = 1;
+        panel.style.borderRightWidth = 1;
+        panel.style.borderBottomWidth = 1;
+        panel.style.borderLeftWidth = 1;
+        panel.style.borderTopColor = new StyleColor(new Color(0.95f, 0.7f, 0.45f, 0.55f));
+        panel.style.borderRightColor = new StyleColor(new Color(0.95f, 0.7f, 0.45f, 0.55f));
+        panel.style.borderBottomColor = new StyleColor(new Color(0f, 0f, 0f, 0.48f));
+        panel.style.borderLeftColor = new StyleColor(new Color(0f, 0f, 0f, 0.48f));
+
+        Label title = new Label("Confirm Delete");
+        title.style.fontSize = 16;
+        title.style.unityFontStyleAndWeight = FontStyle.Bold;
+        title.style.color = new StyleColor(new Color(0.95f, 0.9f, 0.82f, 1f));
+        panel.Add(title);
+
+        deleteConfirmMessageLabel = new Label("Delete this save?");
+        deleteConfirmMessageLabel.style.fontSize = 12;
+        deleteConfirmMessageLabel.style.color = new StyleColor(new Color(0.87f, 0.82f, 0.77f, 0.92f));
+        deleteConfirmMessageLabel.style.marginTop = 6;
+        deleteConfirmMessageLabel.style.marginBottom = 12;
+        panel.Add(deleteConfirmMessageLabel);
+
+        VisualElement buttonsRow = new VisualElement();
+        buttonsRow.style.flexDirection = FlexDirection.Row;
+
+        deleteConfirmYesButton = new Button(ConfirmDeleteSaveSlot);
+        deleteConfirmYesButton.text = "Delete";
+        deleteConfirmYesButton.style.flexGrow = 1;
+        deleteConfirmYesButton.style.height = 34;
+        ApplyDeleteConfirmButtonStyle(deleteConfirmYesButton, new Color(0.6f, 0.2f, 0.2f, 0.95f), new Color(0.98f, 0.93f, 0.9f, 1f));
+        buttonsRow.Add(deleteConfirmYesButton);
+
+        deleteConfirmNoButton = new Button(HideDeleteConfirmDialog);
+        deleteConfirmNoButton.text = "Cancel";
+        deleteConfirmNoButton.style.flexGrow = 1;
+        deleteConfirmNoButton.style.height = 34;
+        deleteConfirmNoButton.style.marginLeft = 8;
+        ApplyDeleteConfirmButtonStyle(deleteConfirmNoButton, new Color(0.27f, 0.29f, 0.31f, 0.95f), new Color(0.92f, 0.9f, 0.86f, 1f));
+        buttonsRow.Add(deleteConfirmNoButton);
+
+        panel.Add(buttonsRow);
+        deleteConfirmOverlay.Add(panel);
+        saveSlotsPanel.Add(deleteConfirmOverlay);
+    }
+
+    private void ApplyDeleteConfirmButtonStyle(Button button, Color backgroundColor, Color textColor)
+    {
+        if (button == null)
+            return;
+
+        button.style.fontSize = 11;
+        button.style.backgroundColor = new StyleColor(backgroundColor);
+        button.style.color = new StyleColor(textColor);
+        button.style.borderTopLeftRadius = 3;
+        button.style.borderTopRightRadius = 3;
+        button.style.borderBottomLeftRadius = 3;
+        button.style.borderBottomRightRadius = 3;
+        button.style.borderTopWidth = 1;
+        button.style.borderRightWidth = 1;
+        button.style.borderBottomWidth = 1;
+        button.style.borderLeftWidth = 1;
+        button.style.borderTopColor = new StyleColor(new Color(0.72f, 0.45f, 0.24f, 0.3f));
+        button.style.borderRightColor = new StyleColor(new Color(0.72f, 0.45f, 0.24f, 0.3f));
+        button.style.borderBottomColor = new StyleColor(new Color(0f, 0f, 0f, 0.42f));
+        button.style.borderLeftColor = new StyleColor(new Color(0f, 0f, 0f, 0.42f));
+    }
+
     private void RefreshSaveSlotsUi()
     {
         int selectedSlot = GetSelectedSlotIndex();
-        int count = Mathf.Max(1, saveSlotCount);
+        int count = FixedSaveSlotCount;
 
         for (int slotIndex = 1; slotIndex <= count; slotIndex++)
         {
@@ -714,12 +865,12 @@ public class MainMenuUIToolkit : MonoBehaviour
 
     private int GetSelectedSlotIndex()
     {
-        return Mathf.Clamp(PlayerPrefs.GetInt(PrefSelectedSlotIndex, 1), 1, Mathf.Max(1, saveSlotCount));
+        return Mathf.Clamp(PlayerPrefs.GetInt(PrefSelectedSlotIndex, 1), 1, FixedSaveSlotCount);
     }
 
     private string GetSaveFilePath(int slotIndex)
     {
-        int clamped = Mathf.Clamp(slotIndex, 1, Mathf.Max(1, saveSlotCount));
+        int clamped = Mathf.Clamp(slotIndex, 1, FixedSaveSlotCount);
         return Path.Combine(Application.persistentDataPath, $"{saveFilePrefix}{clamped:00}.json");
     }
 
@@ -761,7 +912,9 @@ public class MainMenuUIToolkit : MonoBehaviour
 
     private void ApplyFullscreen(bool value, bool persist)
     {
-        Screen.fullScreen = value;
+        int width = PlayerPrefs.GetInt(PrefResolutionWidth, Screen.width);
+        int height = PlayerPrefs.GetInt(PrefResolutionHeight, Screen.height);
+        ApplyResolution(width, height, value, false);
 
         if (persist)
         {
@@ -770,27 +923,110 @@ public class MainMenuUIToolkit : MonoBehaviour
         }
     }
 
-    private void ApplyQuality(string qualityName, bool persist)
+    private void BuildResolutionOptions()
     {
-        if (string.IsNullOrWhiteSpace(qualityName))
-            return;
+        resolutionOptions.Clear();
 
-        int index = System.Array.IndexOf(QualitySettings.names, qualityName);
-        if (index < 0)
-            return;
+        Resolution[] supportedResolutions = Screen.resolutions;
+        for (int i = 0; i < supportedResolutions.Length; i++)
+            AddResolutionOption(supportedResolutions[i].width, supportedResolutions[i].height);
 
-        ApplyQualityByIndex(index, persist);
+        AddResolutionOption(Screen.currentResolution.width, Screen.currentResolution.height);
+        AddResolutionOption(Screen.width, Screen.height);
+
+        resolutionOptions.Sort((a, b) =>
+        {
+            int widthCompare = a.x.CompareTo(b.x);
+            return widthCompare != 0 ? widthCompare : a.y.CompareTo(b.y);
+        });
+
+        if (resolutionDropdown != null)
+        {
+            List<string> choices = new List<string>();
+            for (int i = 0; i < resolutionOptions.Count; i++)
+                choices.Add(FormatResolution(i));
+
+            resolutionDropdown.choices = choices;
+        }
     }
 
-    private void ApplyQualityByIndex(int index, bool persist)
+    private void AddResolutionOption(int width, int height)
     {
-        int qualityCount = Mathf.Max(1, QualitySettings.names.Length);
-        int clamped = Mathf.Clamp(index, 0, qualityCount - 1);
-        QualitySettings.SetQualityLevel(clamped, true);
+        if (width <= 0 || height <= 0)
+            return;
+
+        for (int i = 0; i < resolutionOptions.Count; i++)
+        {
+            if (resolutionOptions[i].x == width && resolutionOptions[i].y == height)
+                return;
+        }
+
+        resolutionOptions.Add(new Vector2Int(width, height));
+    }
+
+    private string FormatResolution(int index)
+    {
+        if (resolutionOptions.Count == 0)
+            return $"{Screen.width} x {Screen.height}";
+
+        int safeIndex = Mathf.Clamp(index, 0, resolutionOptions.Count - 1);
+        Vector2Int resolution = resolutionOptions[safeIndex];
+        return $"{resolution.x} x {resolution.y}";
+    }
+
+    private int GetClosestResolutionIndex(int width, int height)
+    {
+        if (resolutionOptions.Count == 0)
+            return 0;
+
+        int closestIndex = 0;
+        int closestDistance = int.MaxValue;
+
+        for (int i = 0; i < resolutionOptions.Count; i++)
+        {
+            int widthDelta = resolutionOptions[i].x - width;
+            int heightDelta = resolutionOptions[i].y - height;
+            int distance = widthDelta * widthDelta + heightDelta * heightDelta;
+
+            if (distance < closestDistance)
+            {
+                closestDistance = distance;
+                closestIndex = i;
+            }
+        }
+
+        return closestIndex;
+    }
+
+    private void ApplyResolution(string resolutionName, bool persist)
+    {
+        if (string.IsNullOrWhiteSpace(resolutionName))
+            return;
+
+        int index = resolutionDropdown != null ? resolutionDropdown.choices.IndexOf(resolutionName) : -1;
+        if (index < 0 || index >= resolutionOptions.Count)
+            return;
+
+        Vector2Int resolution = resolutionOptions[index];
+        ApplyResolution(resolution.x, resolution.y, Screen.fullScreen, persist);
+    }
+
+    private void ApplyResolution(int width, int height, bool fullscreen, bool persist)
+    {
+        int closestIndex = GetClosestResolutionIndex(width, height);
+        Vector2Int resolution = resolutionOptions.Count > 0
+            ? resolutionOptions[closestIndex]
+            : new Vector2Int(Mathf.Max(1, width), Mathf.Max(1, height));
+
+        Screen.SetResolution(resolution.x, resolution.y, fullscreen);
+
+        if (resolutionDropdown != null)
+            resolutionDropdown.SetValueWithoutNotify(FormatResolution(closestIndex));
 
         if (persist)
         {
-            PlayerPrefs.SetInt(PrefQualityIndex, clamped);
+            PlayerPrefs.SetInt(PrefResolutionWidth, resolution.x);
+            PlayerPrefs.SetInt(PrefResolutionHeight, resolution.y);
             PlayerPrefs.Save();
         }
     }

@@ -2834,10 +2834,12 @@ MonoBehaviour:
   automaticSpread: 5
   animator: {fileID: 0}
   animatorLayerIndex: 1
-  reloadTime: 1.2
+  reloadTime: 2
   canFireWhileReloading: 0
   reloadActionName: Reload
   requireMagazineItem: 1
+  reloadConsumableItem: {fileID: 11400000, guid: da64d87b17f1ce85e8e54c85fb6123eb, type: 2}
+  reloadConsumableAmount: 1
   rotateWeaponToAim: 1
   aimRotationTransform: {fileID: 0}
   aimRotationOffset: {x: 0, y: 0, z: 0}
@@ -2846,6 +2848,13 @@ MonoBehaviour:
   aimLayers:
     serializedVersion: 2
     m_Bits: 4294967295
+  gunshotNoiseRadius: 45
+  gunshotNoiseStrength: 1
+  shootClip: {fileID: 8300000, guid: 804bbbd89f531fcbd8a52823036e33ea, type: 3}
+  reloadClip: {fileID: 8300000, guid: ee4392f507cd0e35e9077defa9a3f1ad, type: 3}
+  audioVolume: 1
+  shootPlayDuration: 1
+  reloadPlayDuration: 2
   onReloadStarted:
     m_PersistentCalls:
       m_Calls: []

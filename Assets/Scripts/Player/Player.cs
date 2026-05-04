@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Events;
-using System.Collections.Generic;
 
 public class Player : MonoBehaviour
 {
@@ -28,23 +27,16 @@ public class Player : MonoBehaviour
     [SerializeField] private InputActionReference crouchAction;
     [SerializeField] private InputActionReference aimAction;
 
-    [Header("Brawl (Unarmed)")]
-    [SerializeField] private float punchDamage = 12f;
-    [SerializeField] private float punchRange = 1.6f;
-    [SerializeField] private float punchHitRadius = 0.55f;
-    [SerializeField] private float punchCooldown = 0.45f;
-    [SerializeField] private Transform punchOrigin;
-    [SerializeField] private LayerMask punchHitLayers = ~0;
+    [Header("Death Flow")]
+    [SerializeField] private string mainMenuSceneName = "MainMenu";
+    [SerializeField] private string saveFilePrefix = "save_slot_";
 
     private float timeSinceDamage = 0f;
     private bool isAlive = true;
     private bool isCrouching = false;
     private bool isAiming = false;
-    private bool isBrawling = false;
     private bool isCurrentlySprinting = false;
     private bool isSprintInputPressed = false;
-    private float lastPunchTime = -999f;
-    private InputAction attackAction;
 
     public UnityEvent<float, float> onHealthChanged; // Current, Max
     public UnityEvent<float> onDamageReceived; // Damage amount
@@ -61,6 +53,13 @@ public class Player : MonoBehaviour
     private InjurySystem injurySystem;
     private PlayerSkills playerSkills;
     private DayNightManager dayNightManager;
+    
+    [Header("Audio")]
+    [SerializeField] private AudioClip eatClip;
+    [SerializeField] private AudioClip drinkClip;
+    [SerializeField, Range(0f,1f)] private float audioVolume = 1f;
+
+    private Coroutine playerAudioCoroutine;
 
     private void Awake()
     {
@@ -74,10 +73,6 @@ public class Player : MonoBehaviour
         injurySystem = GetComponent<InjurySystem>();
         playerSkills = GetComponent<PlayerSkills>();
         dayNightManager = FindAnyObjectByType<DayNightManager>();
-
-        var playerInput = GetComponent<PlayerInput>();
-        if (playerInput != null)
-            attackAction = playerInput.actions.FindAction("Attack");
     }
 
     private void OnEnable()
@@ -112,7 +107,6 @@ public class Player : MonoBehaviour
         UpdateVitals();
         UpdateStamina();
         UpdateAimInput();
-        UpdateBrawlInput();
     }
 
     private void UpdateStamina()
@@ -169,18 +163,7 @@ public class Player : MonoBehaviour
     private void UpdateAimInput()
     {
         bool aimPressed = aimAction != null && aimAction.action.IsPressed();
-        bool hasWeaponInHand = HasWeaponInHand();
-
-        if (hasWeaponInHand)
-        {
-            isAiming = aimPressed;
-            isBrawling = false;
-        }
-        else
-        {
-            isAiming = false;
-            isBrawling = aimPressed;
-        }
+        isAiming = aimPressed && HasWeaponInHand();
     }
 
     private bool HasWeaponInHand()
@@ -189,59 +172,6 @@ public class Player : MonoBehaviour
             return false;
 
         return equipmentManager.GetCurrentWeapon() != null || equipmentManager.IsMeleeEquipped();
-    }
-
-    private void UpdateBrawlInput()
-    {
-        if (!isBrawling || attackAction == null)
-            return;
-
-        if (Time.time - lastPunchTime < punchCooldown)
-            return;
-
-        if (attackAction.WasPerformedThisFrame())
-        {
-            PerformPunch();
-            lastPunchTime = Time.time;
-        }
-    }
-
-    private void PerformPunch()
-    {
-        if (animationController != null)
-            animationController.TriggerBrawlPunch();
-
-        Vector3 origin = punchOrigin != null
-            ? punchOrigin.position
-            : transform.position + Vector3.up * 1.1f;
-
-        Vector3 center = origin + transform.forward * punchRange;
-        Collider[] hitColliders = Physics.OverlapSphere(center, punchHitRadius, punchHitLayers, QueryTriggerInteraction.Ignore);
-
-        HashSet<GameObject> hitTargets = new HashSet<GameObject>();
-        foreach (Collider col in hitColliders)
-        {
-            if (col == null)
-                continue;
-            if (col.CompareTag("Player") || col.transform.IsChildOf(transform))
-                continue;
-
-            GameObject target = col.attachedRigidbody != null ? col.attachedRigidbody.gameObject : col.gameObject;
-            if (hitTargets.Contains(target))
-                continue;
-            hitTargets.Add(target);
-
-            Zombie zombie = target.GetComponent<Zombie>();
-            if (zombie != null)
-            {
-                zombie.OnMeleeHit(punchDamage);
-                continue;
-            }
-
-            IDamageable damageable = target.GetComponent<IDamageable>();
-            if (damageable != null)
-                damageable.TakeDamage(punchDamage);
-        }
     }
 
     public void TakeDamage(float damage)
@@ -305,6 +235,8 @@ public class Player : MonoBehaviour
         isAlive = false;
         onDeath?.Invoke();
 
+        PlayerGameOverFlow.Show(mainMenuSceneName, saveFilePrefix);
+
         // Disable movement
         if (thirdPersonController != null)
             thirdPersonController.enabled = false;
@@ -332,7 +264,6 @@ public class Player : MonoBehaviour
     public bool IsAlive() => isAlive;
     public bool IsCrouching() => isCrouching;
     public bool IsAiming() => isAiming;
-    public bool IsBrawling() => isBrawling;
     public Inventory GetInventory() => inventory;
     public EquipmentManager GetEquipmentManager() => equipmentManager;
     public InjurySystem GetInjurySystem() => injurySystem;
@@ -344,12 +275,20 @@ public class Player : MonoBehaviour
     {
         currentHunger = Mathf.Min(currentHunger + amount, maxHunger);
         onHungerChanged?.Invoke(currentHunger, maxHunger);
+        if (eatClip != null)
+        {
+            PlayPlayerClipTemp(eatClip);
+        }
     }
 
     public void Drink(float amount)
     {
         currentThirst = Mathf.Min(currentThirst + amount, maxThirst);
         onThirstChanged?.Invoke(currentThirst, maxThirst);
+        if (drinkClip != null)
+        {
+            PlayPlayerClipTemp(drinkClip);
+        }
     }
 
     public void ApplySavedVitals(float health, float hunger, float thirst, float stamina, bool alive)
@@ -398,6 +337,34 @@ public class Player : MonoBehaviour
     public PlayerSkills GetPlayerSkills()
     {
         return playerSkills;
+    }
+
+    private void PlayPlayerClipTemp(AudioClip clip)
+    {
+        if (clip == null)
+            return;
+
+        StartCoroutine(PlayPlayerClipTempCoroutine(clip));
+    }
+
+    private System.Collections.IEnumerator PlayPlayerClipTempCoroutine(AudioClip clip)
+    {
+        GameObject temp = new GameObject("TempPlayerAudio");
+        temp.transform.position = transform.position;
+        AudioSource src = temp.AddComponent<AudioSource>();
+        src.playOnAwake = false;
+        src.spatialBlend = 0f;
+        src.volume = audioVolume;
+        src.clip = clip;
+        src.loop = false;
+        src.Play();
+
+        yield return new WaitForSeconds(clip.length);
+
+        if (src != null && src.isPlaying)
+            src.Stop();
+
+        Destroy(temp);
     }
 
 }

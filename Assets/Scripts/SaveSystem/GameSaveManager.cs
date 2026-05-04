@@ -8,6 +8,7 @@ using UnityEngine.InputSystem;
 public class GameSaveManager : MonoBehaviour
 {
     private const string PrefSelectedSlotIndex = "save.selectedSlotIndex";
+    private const int FixedSaveSlotCount = 3;
 
     [Serializable]
     public class SaveSlotInfo
@@ -33,15 +34,14 @@ public class GameSaveManager : MonoBehaviour
     [SerializeField] private int activeSlotIndex = 1;
     [SerializeField] private string saveFilePrefix = "save_slot_";
 
-    [Header("Save File")]
-    [SerializeField] private bool autoLoadOnStart = false;
-    [SerializeField] private bool loadActiveSlotOnStart = true;
-
-    [Header("Hotkeys")]
-    [SerializeField] private bool enableHotkeys = true;
-
     public int ActiveSlotIndex => activeSlotIndex;
-    public int SaveSlotCount => Mathf.Max(1, saveSlotCount);
+    public int SaveSlotCount => FixedSaveSlotCount;
+
+    private void OnValidate()
+    {
+        saveSlotCount = FixedSaveSlotCount;
+        activeSlotIndex = Mathf.Clamp(activeSlotIndex, 1, FixedSaveSlotCount);
+    }
 
     private string SaveDirectoryPath => Application.persistentDataPath;
 
@@ -56,22 +56,10 @@ public class GameSaveManager : MonoBehaviour
         PlayerPrefs.Save();
     }
 
-    private void Start()
-    {
-        if (loadActiveSlotOnStart && (autoLoadOnStart || PlayerPrefs.HasKey(PrefSelectedSlotIndex)))
-        {
-            if (File.Exists(GetSaveFilePath(activeSlotIndex)))
-                LoadGame();
-        }
-    }
-
     private void Update()
     {
-        if (!enableHotkeys || Keyboard.current == null)
+        if (Keyboard.current == null)
             return;
-
-        if (Keyboard.current.f5Key.wasPressedThisFrame)
-            SaveGame();
 
         if (Keyboard.current.f9Key.wasPressedThisFrame)
             LoadGame();
@@ -130,6 +118,7 @@ public class GameSaveManager : MonoBehaviour
         string path = GetSaveFilePath(slotIndex);
         if (!File.Exists(path))
         {
+            StorageContainer.ClearPersistentLootRuntimeState();
             Debug.LogWarning($"[GameSaveManager] No save file found for slot {slotIndex} at: {path}");
             return;
         }
@@ -193,11 +182,6 @@ public class GameSaveManager : MonoBehaviour
     public GameSaveManager.SaveSlotInfo GetSlotInfo(int slotIndex)
     {
         return ReadSlotInfo(ClampSlotIndex(slotIndex));
-    }
-
-    private void OnApplicationQuit()
-    {
-        SaveGame();
     }
 
     private GameSaveData BuildSaveData(int slotIndex)
@@ -470,11 +454,11 @@ public class GameSaveManager : MonoBehaviour
         if (stack == null)
             return null;
 
-        if (itemById != null && itemById.TryGetValue(stack.itemId, out Item byId) && byId != null)
-            return byId;
-
         if (!string.IsNullOrWhiteSpace(stack.itemName) && itemByName != null && itemByName.TryGetValue(stack.itemName, out Item byName))
             return byName;
+
+        if (itemById != null && itemById.TryGetValue(stack.itemId, out Item byId) && byId != null)
+            return byId;
 
         return null;
     }

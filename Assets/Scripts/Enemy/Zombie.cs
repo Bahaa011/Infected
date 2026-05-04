@@ -4,26 +4,31 @@ using UnityEngine.AI;
 
 public class Zombie : MonoBehaviour, IDamageable
 {
+    public event System.Action<Zombie> Died;
+
     [Header("Health")]
     [SerializeField] private float maxHealth = 30f;
     private float currentHealth;
 
     [Header("Detection")]
     [SerializeField] private float sightRange = 50f;
-    [SerializeField] private float fieldOfViewAngle = 110f;
+    [SerializeField] private float fieldOfViewAngle = 190f;
+    [SerializeField] private float proximityDetectionRange = 8f;
+    [SerializeField] private float peripheralVisionMultiplier = 0.55f;
     [SerializeField] private LayerMask visionObstructionLayers = ~0;
     [SerializeField] private float attackRange = 2f;
 
     [Header("Stealth Perception")]
-    [SerializeField] private float visionBuildPerSecond = 60f;
-    [SerializeField] private float visionDecayPerSecond = 12f;
-    [SerializeField] private float hearingDecayPerSecond = 14f;
-    [SerializeField] private float crouchVisibilityMultiplier = 0.55f;
-    [SerializeField] private float sprintVisibilityMultiplier = 1.25f;
-    [SerializeField] private float hearingGainScale = 55f;
-    [SerializeField] private float investigateThreshold = 15f;
-    [SerializeField] private float chaseThreshold = 60f;
-    [SerializeField] private float rememberTargetDuration = 5f;
+    [SerializeField] private float visionBuildPerSecond = 95f;
+    [SerializeField] private float visionDecayPerSecond = 8f;
+    [SerializeField] private float hearingDecayPerSecond = 10f;
+    [SerializeField] private float crouchVisibilityMultiplier = 0.8f;
+    [SerializeField] private float sprintVisibilityMultiplier = 1.8f;
+    [SerializeField] private float hearingGainScale = 70f;
+    [SerializeField] private float passiveProximityHearingPerSecond = 28f;
+    [SerializeField] private float investigateThreshold = 10f;
+    [SerializeField] private float chaseThreshold = 35f;
+    [SerializeField] private float rememberTargetDuration = 10f;
 
     [Header("Awareness Meters (Runtime)")]
     [SerializeField, Range(0f, 100f)] private float visionMeter = 0f;
@@ -31,7 +36,7 @@ public class Zombie : MonoBehaviour, IDamageable
 
     [Header("Movement")]
     [SerializeField] private float walkSpeed = 3.5f;
-    [SerializeField] private float chaseSpeed = 5f;
+    [SerializeField] private float chaseSpeed = 3.2f;
     private NavMeshAgent navMeshAgent;
 
     [Header("Attack")]
@@ -49,6 +54,11 @@ public class Zombie : MonoBehaviour, IDamageable
     [Header("Animation")]
     [SerializeField] private Animator animator;
 
+    [Header("Audio")]
+    [SerializeField] private AudioClip breathingClip;
+    [SerializeField] private AudioClip deathClip;
+    [SerializeField] private float audioVolume = 0.8f;
+
     private Transform playerTransform;
     private bool isChasing = false;
     private bool isAttacking = false;
@@ -57,6 +67,7 @@ public class Zombie : MonoBehaviour, IDamageable
     private Vector3 lastKnownTargetPosition;
     private float lastKnownTargetTime = -999f;
     private Player player;
+    private AudioSource audioSource;
 
     private void Awake()
     {
@@ -74,6 +85,13 @@ public class Zombie : MonoBehaviour, IDamageable
         {
             Debug.LogWarning("Player not found! Make sure Player is tagged as 'Player'");
         }
+
+        // Setup AudioSource
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+            audioSource = gameObject.AddComponent<AudioSource>();
+        audioSource.playOnAwake = false;
+        audioSource.spatialBlend = 1f; // 3D spatial audio
     }
 
     private void Start()
@@ -83,6 +101,9 @@ public class Zombie : MonoBehaviour, IDamageable
             navMeshAgent.speed = walkSpeed;
             navMeshAgent.stoppingDistance = attackRange + attackDistancePadding;
         }
+
+        // Start looping breathing audio
+        StartBreathing();
     }
 
     private void Update()
@@ -116,10 +137,10 @@ public class Zombie : MonoBehaviour, IDamageable
             return;
         }
 
-        bool canSeePlayer = CanSeePlayer(out float visionGainFactor);
-        UpdateAwarenessMeters(canSeePlayer, visionGainFactor);
-
         float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
+        bool canSeePlayer = CanSeePlayer(distanceToPlayer, out float visionGainFactor);
+        UpdateAwarenessMeters(canSeePlayer, visionGainFactor, distanceToPlayer);
+
         bool isAlerted = IsAlerted();
 
         if (canSeePlayer)
@@ -167,7 +188,7 @@ public class Zombie : MonoBehaviour, IDamageable
         }
     }
 
-    private void UpdateAwarenessMeters(bool canSeePlayer, float visionGainFactor)
+    private void UpdateAwarenessMeters(bool canSeePlayer, float visionGainFactor, float distanceToPlayer)
     {
         float dt = Time.deltaTime;
 
@@ -181,13 +202,20 @@ public class Zombie : MonoBehaviour, IDamageable
             visionMeter -= visionDecayPerSecond * dt;
         }
 
+        if (!canSeePlayer && distanceToPlayer <= proximityDetectionRange)
+        {
+            float proximityFactor = 1f - Mathf.Clamp01(distanceToPlayer / Mathf.Max(0.01f, proximityDetectionRange));
+            float crouchFactor = player != null && player.IsCrouching() ? 0.45f : 1f;
+            hearingMeter += passiveProximityHearingPerSecond * proximityFactor * crouchFactor * dt;
+        }
+
         hearingMeter -= hearingDecayPerSecond * dt;
 
         visionMeter = Mathf.Clamp(visionMeter, 0f, 100f);
         hearingMeter = Mathf.Clamp(hearingMeter, 0f, 100f);
     }
 
-    private bool CanSeePlayer(out float visionGainFactor)
+    private bool CanSeePlayer(float distance, out float visionGainFactor)
     {
         visionGainFactor = 0f;
 
@@ -195,24 +223,22 @@ public class Zombie : MonoBehaviour, IDamageable
             return false;
 
         Vector3 eyePosition = transform.position + Vector3.up * 1.55f;
-        Vector3 targetPosition = playerTransform.position + Vector3.up * 1.2f;
+        Vector3 targetPosition = GetBestVisiblePlayerPoint(eyePosition, out bool hasLineOfSight);
         Vector3 toTarget = targetPosition - eyePosition;
 
-        float distance = toTarget.magnitude;
         if (distance <= 0.001f || distance > sightRange)
             return false;
 
         Vector3 direction = toTarget / distance;
         float angleToTarget = Vector3.Angle(transform.forward, direction);
-        if (angleToTarget > fieldOfViewAngle * 0.5f)
+        bool isInPrimaryVision = angleToTarget <= fieldOfViewAngle * 0.5f;
+        bool isInCloseProximity = distance <= proximityDetectionRange;
+
+        if (!isInPrimaryVision && !isInCloseProximity)
             return false;
 
-        if (Physics.Raycast(eyePosition, direction, out RaycastHit hit, distance, visionObstructionLayers, QueryTriggerInteraction.Ignore))
-        {
-            Transform hitTransform = hit.transform;
-            if (hitTransform != playerTransform && !hitTransform.IsChildOf(playerTransform))
-                return false;
-        }
+        if (!hasLineOfSight)
+            return false;
 
         float distanceFactor = 1f - Mathf.Clamp01(distance / sightRange);
         float movementVisibility = 1f;
@@ -225,10 +251,51 @@ public class Zombie : MonoBehaviour, IDamageable
                 movementVisibility *= sprintVisibilityMultiplier;
         }
 
-        // Better vision gain: even at max range, there's a decent base gain (0.3 instead of 0.15)
-        // This makes detection faster and more consistent at distance
-        visionGainFactor = Mathf.Clamp01(distanceFactor * movementVisibility * 0.8f + 0.35f);
+        float angleFactor = isInPrimaryVision ? 1f : peripheralVisionMultiplier;
+        float proximityBoost = isInCloseProximity ? 0.45f : 0f;
+        visionGainFactor = Mathf.Clamp01((distanceFactor * 0.9f + 0.45f + proximityBoost) * movementVisibility * angleFactor);
         return true;
+    }
+
+    private Vector3 GetBestVisiblePlayerPoint(Vector3 eyePosition, out bool hasLineOfSight)
+    {
+        hasLineOfSight = false;
+
+        Vector3[] targetPoints =
+        {
+            playerTransform.position + Vector3.up * 1.45f,
+            playerTransform.position + Vector3.up * 0.95f,
+            playerTransform.position + Vector3.up * 0.35f
+        };
+
+        Vector3 fallback = targetPoints[1];
+        float closestVisibleDistance = float.MaxValue;
+        Vector3 bestPoint = fallback;
+
+        for (int i = 0; i < targetPoints.Length; i++)
+        {
+            Vector3 toPoint = targetPoints[i] - eyePosition;
+            float distance = toPoint.magnitude;
+            if (distance <= 0.01f)
+                continue;
+
+            Vector3 direction = toPoint / distance;
+            if (Physics.Raycast(eyePosition, direction, out RaycastHit hit, distance, visionObstructionLayers, QueryTriggerInteraction.Ignore))
+            {
+                Transform hitTransform = hit.transform;
+                if (hitTransform != playerTransform && !hitTransform.IsChildOf(playerTransform))
+                    continue;
+            }
+
+            if (distance < closestVisibleDistance)
+            {
+                closestVisibleDistance = distance;
+                bestPoint = targetPoints[i];
+                hasLineOfSight = true;
+            }
+        }
+
+        return bestPoint;
     }
 
     private bool IsAlerted()
@@ -422,6 +489,9 @@ public class Zombie : MonoBehaviour, IDamageable
 
     private void Die()
     {
+        if (isDead)
+            return;
+
         isDead = true;
         isAttacking = false;
 
@@ -443,6 +513,18 @@ public class Zombie : MonoBehaviour, IDamageable
             animator.SetBool("dead", true);
         }
 
+        // Stop breathing and play death sound
+        if (audioSource != null)
+        {
+            audioSource.Stop();
+            if (deathClip != null)
+            {
+                audioSource.clip = deathClip;
+                audioSource.volume = audioVolume;
+                audioSource.Play();
+            }
+        }
+
         // Disable colliders
         Collider[] colliders = GetComponents<Collider>();
         foreach (Collider col in colliders)
@@ -453,6 +535,7 @@ public class Zombie : MonoBehaviour, IDamageable
         // Destroy zombie after animation
         Destroy(gameObject, 2f);
 
+        Died?.Invoke(this);
         Debug.Log("Zombie died!");
     }
 
@@ -558,5 +641,16 @@ public class Zombie : MonoBehaviour, IDamageable
             navMeshAgent.isStopped = true;
             navMeshAgent.ResetPath();
         }
+    }
+
+    private void StartBreathing()
+    {
+        if (audioSource == null || breathingClip == null || isDead)
+            return;
+
+        audioSource.clip = breathingClip;
+        audioSource.volume = audioVolume;
+        audioSource.loop = true;
+        audioSource.Play();
     }
 }

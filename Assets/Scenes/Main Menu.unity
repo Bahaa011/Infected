@@ -407,9 +407,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MainMenuUIToolkit
   uiDocument: {fileID: 1871690503}
-  mainMenuBackgroundTexture: {fileID: 0}
+  mainMenuBackgroundTexture: {fileID: 2800000, guid: 716f1618ad844d3d8b5a3e80163b943d, type: 3}
   gameplaySceneName: Main
+  saveSlotCount: 3
+  saveFilePrefix: save_slot_
   defaultMasterVolume: 1
+  startupFadeDuration: 0.7
+  uiTransitionSpeed: 10
+  buttonHoverSpeed: 14
+  buttonHoverScale: 1.04
+  buttonPressedScale: 0.98
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

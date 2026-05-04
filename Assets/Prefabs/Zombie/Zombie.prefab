@@ -1954,25 +1954,28 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Zombie
   maxHealth: 100
-  sightRange: 15
-  fieldOfViewAngle: 110
+  sightRange: 45
+  fieldOfViewAngle: 190
+  proximityDetectionRange: 8
+  peripheralVisionMultiplier: 0.55
   visionObstructionLayers:
     serializedVersion: 2
     m_Bits: 4294967295
   attackRange: 0.7
-  visionBuildPerSecond: 48
-  visionDecayPerSecond: 18
-  hearingDecayPerSecond: 14
-  crouchVisibilityMultiplier: 0.55
-  sprintVisibilityMultiplier: 1.25
-  hearingGainScale: 55
-  investigateThreshold: 25
-  chaseThreshold: 60
-  rememberTargetDuration: 5
+  visionBuildPerSecond: 95
+  visionDecayPerSecond: 8
+  hearingDecayPerSecond: 10
+  crouchVisibilityMultiplier: 0.8
+  sprintVisibilityMultiplier: 1.8
+  hearingGainScale: 70
+  passiveProximityHearingPerSecond: 28
+  investigateThreshold: 10
+  chaseThreshold: 35
+  rememberTargetDuration: 10
   visionMeter: 0
   hearingMeter: 0
   walkSpeed: 1
-  chaseSpeed: 2
+  chaseSpeed: 3.2
   attackDamage: 10
   attackCooldown: 1.5
   attackWindup: 0.7
@@ -1981,6 +1984,9 @@ MonoBehaviour:
   meleeHitStunDuration: 1
   refreshStunOnHit: 1
   animator: {fileID: 546540402859356183}
+  breathingClip: {fileID: 8300000, guid: 0eb761e0f8088f23b97804bbd342ee95, type: 3}
+  deathClip: {fileID: 8300000, guid: b9d9a94ef75809219a2a55da274b2b58, type: 3}
+  audioVolume: 0.8
 --- !u!136 &5049585826378674003
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -1996,7 +2002,7 @@ CapsuleCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
@@ -2051,7 +2057,7 @@ NavMeshAgent:
   m_AutoRepath: 1
   m_Height: 2
   m_BaseOffset: 0
-  m_WalkableMask: 4294967295
+  m_WalkableMask: 5
   m_ObstacleAvoidanceType: 4
 --- !u!1 &5262475184011879672
 GameObject:

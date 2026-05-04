@@ -48,7 +48,6 @@ public class AnimationController : MonoBehaviour
         animator.SetBool("isPistol", false);
         animator.SetBool("isAssaultRifle", false);
         animator.SetBool("isCrouching", false);
-        animator.SetBool("isBrawling", false);
         animator.SetFloat("Speed", 0f);
         animator.SetFloat("AimBlend", 0f);
     }
@@ -89,19 +88,15 @@ public class AnimationController : MonoBehaviour
         bool hasMeleeInHand = equipmentManager.IsMeleeEquipped();
         bool hasWeaponInHand = hasGunInHand || hasMeleeInHand;
         bool isAiming = player.IsAiming() && hasWeaponInHand;
-        bool isBrawling = player.IsBrawling();
 
-        animator.SetBool("isBrawling", isBrawling);
-
-        // Keep upper-body/weapon layer active while brawling so unarmed animations are visible.
         if (weaponLayerIndex >= 0)
         {
-            float targetLayerWeight = (hasWeaponInHand || isBrawling) ? 1f : 0f;
+            float targetLayerWeight = hasWeaponInHand ? 1f : 0f;
             animator.SetLayerWeight(weaponLayerIndex, targetLayerWeight);
         }
 
         // Update weapon type booleans
-        bool allowWeaponPose = !isBrawling && hasGunInHand;
+        bool allowWeaponPose = hasGunInHand;
         animator.SetBool("isPistol", currentWeaponType == Gun.GunType.Pistol && allowWeaponPose);
         animator.SetBool("isAssaultRifle", currentWeaponType == Gun.GunType.AssaultRifle && allowWeaponPose);
         
@@ -117,14 +112,6 @@ public class AnimationController : MonoBehaviour
 
     public float GetSmoothVelocity() => smoothVelocity;
     public float GetAimBlend() => smoothAimBlend;
-
-    public void TriggerBrawlPunch()
-    {
-        if (animator == null || player == null || !player.IsBrawling())
-            return;
-
-        animator.SetTrigger("Punch");
-    }
 
     private void OnAnimatorIK(int layerIndex)
     {

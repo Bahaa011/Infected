@@ -206,6 +206,18 @@ public class StorageContainer : MonoBehaviour, IInteractionPromptSource
         if (storageWindow != null && storageWindow.IsOpenFor(storageInventory))
             return;
 
+        // Do not respawn if the container already contains items.
+        if (storageInventory != null)
+        {
+            var slots = storageInventory.GetAllItems();
+            for (int i = 0; i < slots.Count; i++)
+            {
+                var slot = slots[i];
+                if (slot != null && slot.isOccupied && slot.isAnchor && slot.item != null)
+                    return;
+            }
+        }
+
         GenerateFreshLoot();
     }
 
@@ -407,6 +419,12 @@ public class StorageContainer : MonoBehaviour, IInteractionPromptSource
             SavedLootByContainer[state.containerKey] = stacks;
             NextRespawnGameDayByContainer[state.containerKey] = Mathf.Max(0f, state.nextRespawnGameDay);
         }
+    }
+
+    public static void ClearPersistentLootRuntimeState()
+    {
+        SavedLootByContainer.Clear();
+        NextRespawnGameDayByContainer.Clear();
     }
 
     public static void RefreshLoadedContainersFromPersistentState()

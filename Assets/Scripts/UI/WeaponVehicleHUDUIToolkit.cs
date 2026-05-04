@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -8,7 +7,6 @@ public class WeaponVehicleHUDUIToolkit : MonoBehaviour
     [SerializeField] private UIDocument uiDocument;
     [SerializeField] private Player player;
     [SerializeField] private EquipmentManager equipmentManager;
-    [SerializeField] private AdvancedCarController carController;
 
     [Header("Visual")]
     [SerializeField] private Color accentColor = new Color(0.92f, 0.62f, 0.28f, 1f);
@@ -17,7 +15,6 @@ public class WeaponVehicleHUDUIToolkit : MonoBehaviour
 
     private VisualElement root;
     private VisualElement weaponPanel;
-    private VisualElement vehiclePanel;
 
     private Label weaponNameLabel;
     private Label weaponAmmoLabel;
@@ -26,11 +23,6 @@ public class WeaponVehicleHUDUIToolkit : MonoBehaviour
     private Label weaponHintLabel;
     private VisualElement weaponAmmoFill;
 
-    private Label vehicleNameLabel;
-    private Label vehicleSpeedLabel;
-    private Label vehicleSpeedUnitLabel;
-    private Label vehicleHintLabel;
-    private VisualElement vehicleSpeedFill;
     private int lastScreenWidth;
     private int lastScreenHeight;
 
@@ -82,28 +74,11 @@ public class WeaponVehicleHUDUIToolkit : MonoBehaviour
 
         if (equipmentManager == null)
             equipmentManager = FindAnyObjectByType<EquipmentManager>();
-
-        if (carController == null || !carController.HasDriver)
-            carController = FindActiveCarController();
-    }
-
-    private AdvancedCarController FindActiveCarController()
-    {
-        AdvancedCarController[] cars = FindObjectsByType<AdvancedCarController>();
-        for (int i = 0; i < cars.Length; i++)
-        {
-            AdvancedCarController car = cars[i];
-            if (car != null && car.HasDriver)
-                return car;
-        }
-
-        return null;
     }
 
     private void CacheUi()
     {
         weaponPanel = root.Q<VisualElement>("weapon-panel");
-        vehiclePanel = root.Q<VisualElement>("vehicle-panel");
 
         weaponNameLabel = root.Q<Label>("weapon-name-label");
         weaponAmmoLabel = root.Q<Label>("weapon-ammo-label");
@@ -111,12 +86,6 @@ public class WeaponVehicleHUDUIToolkit : MonoBehaviour
         weaponFireModeLabel = root.Q<Label>("weapon-firemode-label");
         weaponHintLabel = root.Q<Label>("weapon-hint-label");
         weaponAmmoFill = root.Q<VisualElement>("weapon-ammo-fill");
-
-        vehicleNameLabel = root.Q<Label>("vehicle-name-label");
-        vehicleSpeedLabel = root.Q<Label>("vehicle-speed-label");
-        vehicleSpeedUnitLabel = root.Q<Label>("vehicle-speed-unit-label");
-        vehicleHintLabel = root.Q<Label>("vehicle-hint-label");
-        vehicleSpeedFill = root.Q<VisualElement>("vehicle-speed-fill");
     }
 
     private void ApplyStaticTheme()
@@ -127,20 +96,10 @@ public class WeaponVehicleHUDUIToolkit : MonoBehaviour
             weaponPanel.style.display = DisplayStyle.None;
         }
 
-        if (vehiclePanel != null)
-        {
-            StyleCard(vehiclePanel);
-            vehiclePanel.style.display = DisplayStyle.None;
-        }
-
         ApplyAccent(weaponAmmoFill);
-        ApplyAccent(vehicleSpeedFill);
 
         if (weaponHintLabel != null)
             weaponHintLabel.style.color = new StyleColor(new Color(0.82f, 0.82f, 0.82f, 0.65f));
-
-        if (vehicleHintLabel != null)
-            vehicleHintLabel.style.color = new StyleColor(new Color(0.82f, 0.82f, 0.82f, 0.65f));
     }
 
     private void StyleCard(VisualElement panel)
@@ -176,39 +135,20 @@ public class WeaponVehicleHUDUIToolkit : MonoBehaviour
 
     private void UpdateHud()
     {
-        bool inVehicle = carController != null && carController.HasDriver;
         bool hasGun = equipmentManager != null && equipmentManager.GetCurrentWeapon() != null;
-        bool shouldShow = inVehicle || hasGun;
 
-        if (!shouldShow)
+        if (!hasGun)
         {
             SetRootVisible(false);
             if (weaponPanel != null)
                 weaponPanel.style.display = DisplayStyle.None;
-            if (vehiclePanel != null)
-                vehiclePanel.style.display = DisplayStyle.None;
             return;
         }
 
         SetRootVisible(true);
 
-        if (inVehicle)
-        {
-            UpdateVehicleHud(carController);
-            if (vehiclePanel != null)
-                vehiclePanel.style.display = DisplayStyle.Flex;
-            if (weaponPanel != null)
-                weaponPanel.style.display = DisplayStyle.None;
-            return;
-        }
-
         if (weaponPanel != null)
-            weaponPanel.style.display = hasGun ? DisplayStyle.Flex : DisplayStyle.None;
-        if (vehiclePanel != null)
-            vehiclePanel.style.display = DisplayStyle.None;
-
-        if (!hasGun)
-            return;
+            weaponPanel.style.display = DisplayStyle.Flex;
 
         UpdateWeaponHud(equipmentManager.GetCurrentWeapon());
     }
@@ -244,31 +184,6 @@ public class WeaponVehicleHUDUIToolkit : MonoBehaviour
 
         if (weaponAmmoFill != null)
             weaponAmmoFill.style.width = new Length(ammoPercent * 100f, LengthUnit.Percent);
-    }
-
-    private void UpdateVehicleHud(AdvancedCarController car)
-    {
-        if (car == null)
-            return;
-
-        float speed = car.SpeedKmh;
-        float maxSpeed = Mathf.Max(1f, car.MaxForwardSpeedKmh);
-        float speedPercent = Mathf.Clamp01(speed / maxSpeed);
-
-        if (vehicleNameLabel != null)
-            vehicleNameLabel.text = car.gameObject.name.ToUpperInvariant();
-
-        if (vehicleSpeedLabel != null)
-            vehicleSpeedLabel.text = Mathf.RoundToInt(speed).ToString("000");
-
-        if (vehicleSpeedUnitLabel != null)
-            vehicleSpeedUnitLabel.text = "KM/H";
-
-        if (vehicleHintLabel != null)
-            vehicleHintLabel.text = "WASD / Space / Brake";
-
-        if (vehicleSpeedFill != null)
-            vehicleSpeedFill.style.width = new Length(speedPercent * 100f, LengthUnit.Percent);
     }
 
     private void RefreshResponsiveScale(bool force = false)

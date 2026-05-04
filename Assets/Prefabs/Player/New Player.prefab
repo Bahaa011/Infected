@@ -1280,13 +1280,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2429504215436180641}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: -0.21204917, y: -0.6468293, z: 0.3395666, w: 0.64910823}
+  m_LocalPosition: {x: -0.15, y: 0.21, z: 0.24}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3087948811184444273}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 9.439, y: -85.739, z: 46.466}
 --- !u!1 &2560681888991796260
 GameObject:
   m_ObjectHideFlags: 0
@@ -2448,13 +2448,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5220367399597347321}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: 0.51592994, y: 0.46983978, z: 0.41243714, w: 0.58563006}
+  m_LocalPosition: {x: 0.1, y: -0.04, z: 0.015}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 931953195832522130}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 12.517, y: 88.466, z: 82.5}
 --- !u!1 &5328582951530708023
 GameObject:
   m_ObjectHideFlags: 0
@@ -2974,6 +2974,7 @@ GameObject:
   - component: {fileID: 5116746858374964001}
   - component: {fileID: 2824217353985998098}
   - component: {fileID: 950984332390476186}
+  - component: {fileID: 854230590682054965}
   m_Layer: 0
   m_Name: New Player
   m_TagString: Player
@@ -3028,8 +3029,8 @@ CharacterController:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Height: 2
-  m_Radius: 0.5
+  m_Height: 1.8
+  m_Radius: 0.3
   m_SlopeLimit: 45
   m_StepOffset: 0.3
   m_SkinWidth: 0.08
@@ -3086,14 +3087,8 @@ MonoBehaviour:
   sprintAction: {fileID: 0}
   crouchAction: {fileID: 0}
   aimAction: {fileID: 0}
-  punchDamage: 12
-  punchRange: 1.6
-  punchHitRadius: 0.55
-  punchCooldown: 0.45
-  punchOrigin: {fileID: 2926122518108453526}
-  punchHitLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
+  mainMenuSceneName: MainMenu
+  saveFilePrefix: save_slot_
   onHealthChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -3112,6 +3107,9 @@ MonoBehaviour:
   onStaminaChanged:
     m_PersistentCalls:
       m_Calls: []
+  eatClip: {fileID: 8300000, guid: decd72896c9b333b8bc7aaf9621adb6e, type: 3}
+  drinkClip: {fileID: 8300000, guid: 9027f8de66974f88eb690082b08feae0, type: 3}
+  audioVolume: 1
 --- !u!114 &4055079881912893135
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3124,7 +3122,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bb43f678c3686ac419a148e201aab723, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
-  lookAction: {fileID: -5630151704836100654, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  lookAction: {fileID: 0}
   cameraTarget: {fileID: 5014708393194720948}
   mouseSensitivity: 10
   minPitch: -40
@@ -3135,14 +3133,26 @@ MonoBehaviour:
   moveSpeed: 3
   runSpeedMultiplier: 2
   crouchSpeedMultiplier: 0.5
-  brawlSpeedMultiplier: 0.45
   rotationSpeed: 10
   aimTurnSpeed: 14
   aimTurnDeadZone: 1
   gravity: -9.81
   crouchHeight: 1
   normalHeight: 2
-  sprintAction: {fileID: -7471211009204490832, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  crouchCameraHeightOffset: 0.45
+  cameraHeightSmooth: 8
+  sprintAction: {fileID: 0}
+  walkNoiseRadius: 7
+  sprintNoiseRadius: 13
+  crouchNoiseRadius: 3
+  footstepNoiseInterval: 0.38
+  walkClips:
+  - {fileID: 8300000, guid: 615e2b57fcc6026a0893fe002dc3bbe0, type: 3}
+  runClips:
+  - {fileID: 8300000, guid: 6046f4609ae843773a03ee7d05fd0a80, type: 3}
+  crouchWalkClips:
+  - {fileID: 8300000, guid: 69cc3464680de8706aaf9afea24303e5, type: 3}
+  footstepVolume: 0.8
   mainCamera: {fileID: 0}
   aimingCamera: {fileID: 0}
 --- !u!114 &6708563334064712129
@@ -3188,6 +3198,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EquipmentManager
   weaponLayerName: Weapon
+  augHandSlot: {fileID: 4443622949537412533}
+  m4HandSlot: {fileID: 257529596972290151}
   assaultHandSlot: {fileID: 4443622949537412533}
   pistolHandSlot: {fileID: 2926122518108453526}
   primaryRestingSlot: {fileID: 4376206666124541816}
@@ -3247,6 +3259,10 @@ MonoBehaviour:
   dropForwardDistance: 1.4
   dropUpOffset: 0.4
   droppedPickupRadius: 2
+  debugItemToAdd: {fileID: 0}
+  debugItemQuantity: 1
+  debugAddImmediately: 0
+  debugClearBeforeAdd: 0
 --- !u!114 &2824217353985998098
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3336,6 +3352,23 @@ MonoBehaviour:
   onGeneralSkillProgressChanged:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &854230590682054965
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6886626361452485180}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e58541b8f14a5b41b1d40261bafbf1a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CraftingSystem
+  inventory: {fileID: 5116746858374964001}
+  craftingRecipes:
+  - {fileID: 11400000, guid: bd41136c8f28d90fabe5b47cd7d11c60, type: 2}
+  - {fileID: 11400000, guid: bcc505b770b00e276a999cf6165aa304, type: 2}
+  - {fileID: 11400000, guid: 9477e3bceae6c27008ee721e24587ac8, type: 2}
 --- !u!1 &7083359308047140268
 GameObject:
   m_ObjectHideFlags: 0
@@ -3443,7 +3476,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4443622949537412533}
   m_Layer: 0
-  m_Name: AssaultSlot
+  m_Name: AUG
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3457,13 +3490,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7195254272806860693}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: 0.43070427, y: 0.51454324, z: 0.5432736, w: 0.5045721}
+  m_LocalPosition: {x: 0.09, y: 0.006, z: 0.087}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 931953195832522130}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: -7.148, y: 84.246, z: 87.765}
 --- !u!1 &7235838616986179743
 GameObject:
   m_ObjectHideFlags: 0
@@ -3903,6 +3936,7 @@ Transform:
   - {fileID: 7501860282201019891}
   - {fileID: 2028855468408902968}
   - {fileID: 4443622949537412533}
+  - {fileID: 257529596972290151}
   - {fileID: 2926122518108453526}
   m_Father: {fileID: 7120778330494706626}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -4059,6 +4093,37 @@ SkinnedMeshRenderer:
     m_Center: {x: 0.0002072677, y: -0.013836369, z: 1.8295168}
     m_Extent: {x: 0.09079334, y: 0.14090718, z: 0.0658201}
   m_DirtyAABB: 0
+--- !u!1 &8567295207764450184
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 257529596972290151}
+  m_Layer: 0
+  m_Name: M4
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &257529596972290151
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8567295207764450184}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.43070427, y: 0.51454324, z: 0.5432736, w: 0.5045721}
+  m_LocalPosition: {x: 0.092, y: -0.016, z: -0.152}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 931953195832522130}
+  m_LocalEulerAnglesHint: {x: -7.148, y: 84.246, z: 87.765}
 --- !u!1 &8595310538258732948
 GameObject:
   m_ObjectHideFlags: 0

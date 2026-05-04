@@ -18,7 +18,7 @@ MonoBehaviour:
   maxStackSize: 1
   icon: {fileID: 21300000, guid: 7cc0e0eb5201317358afd686f1103509, type: 3}
   prefab: {fileID: 9812083240837565, guid: e234e479a018ca76984e0494ba65f3f5, type: 3}
-  id: 10
+  id: 13
   baseDamage: 25
   attackSpeed: 1
   attackRange: 2

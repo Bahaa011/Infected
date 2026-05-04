@@ -11,7 +11,8 @@ public class PauseMenuUIToolkit : MonoBehaviour
     private const string PrefMasterVolume = "settings.masterVolume";
     private const string PrefMouseSensitivity = "settings.mouseSensitivity";
     private const string PrefFullscreen = "settings.fullscreen";
-    private const string PrefQualityIndex = "settings.qualityIndex";
+    private const string PrefResolutionWidth = "settings.resolutionWidth";
+    private const string PrefResolutionHeight = "settings.resolutionHeight";
 
     [Header("References")]
     [SerializeField] private UIDocument uiDocument;
@@ -41,12 +42,13 @@ public class PauseMenuUIToolkit : MonoBehaviour
     private Slider masterVolumeSlider;
     private Slider mouseSensitivitySlider;
     private Toggle fullscreenToggle;
-    private DropdownField qualityDropdown;
+    private DropdownField resolutionDropdown;
 
     private Label activeSlotLabel;
 
     private readonly List<VisualElement> slotRows = new List<VisualElement>();
     private readonly List<int> slotRowIndexes = new List<int>();
+    private readonly List<Vector2Int> resolutionOptions = new List<Vector2Int>();
 
     private VisualElement saveConfirmOverlay;
     private Label saveConfirmMessageLabel;
@@ -77,6 +79,7 @@ public class PauseMenuUIToolkit : MonoBehaviour
 
         root = uiDocument.rootVisualElement;
         CacheUi();
+        ConfigureOverlayPicking();
         HookUi();
         InitializeOptionsUi();
 
@@ -143,7 +146,7 @@ public class PauseMenuUIToolkit : MonoBehaviour
         masterVolumeSlider = root.Q<Slider>("pause-master-volume-slider");
         mouseSensitivitySlider = root.Q<Slider>("pause-mouse-sensitivity-slider");
         fullscreenToggle = root.Q<Toggle>("pause-fullscreen-toggle");
-        qualityDropdown = root.Q<DropdownField>("pause-quality-dropdown");
+        resolutionDropdown = root.Q<DropdownField>("pause-resolution-dropdown");
     }
 
     private void HookUi()
@@ -152,13 +155,19 @@ public class PauseMenuUIToolkit : MonoBehaviour
             resumeButton.clicked += ResumeGame;
 
         if (saveButton != null)
-            saveButton.clicked += () => saveManager?.SaveGame();
+            saveButton.clicked += SaveCurrentSlot;
 
         if (saveSlotsButton != null)
-            saveSlotsButton.clicked += ShowSaveSlotsPanel;
+        {
+            saveSlotsButton.text = "Save";
+            saveSlotsButton.clicked += SaveCurrentSlot;
+        }
 
         if (optionsButton != null)
+        {
             optionsButton.clicked += ShowOptionsPanel;
+            optionsButton.RegisterCallback<ClickEvent>(HandleOptionsButtonClick);
+        }
 
         if (quitButton != null)
             quitButton.clicked += QuitGame;
@@ -178,35 +187,57 @@ public class PauseMenuUIToolkit : MonoBehaviour
         if (fullscreenToggle != null)
             fullscreenToggle.RegisterValueChangedCallback(evt => ApplyFullscreen(evt.newValue, true));
 
-        if (qualityDropdown != null)
-            qualityDropdown.RegisterValueChangedCallback(evt => ApplyQuality(evt.newValue, true));
+        if (resolutionDropdown != null)
+            resolutionDropdown.RegisterValueChangedCallback(evt => ApplyResolution(evt.newValue, true));
 
         StyleSaveSlotsScrollBar();
         BuildSaveConfirmDialog();
         BuildSaveSlotsList();
     }
 
+    private void ConfigureOverlayPicking()
+    {
+        if (overlay == null)
+            return;
+
+        for (int i = 0; i < overlay.childCount; i++)
+        {
+            VisualElement child = overlay[i];
+            if (child == mainPanel || child == saveSlotsPanel || child == optionsPanel)
+                continue;
+
+            child.pickingMode = PickingMode.Ignore;
+        }
+    }
+
+    private void HandleOptionsButtonClick(ClickEvent evt)
+    {
+        ShowOptionsPanel();
+        evt.StopPropagation();
+    }
+
+    private void SaveCurrentSlot()
+    {
+        if (saveManager == null)
+            saveManager = FindAnyObjectByType<GameSaveManager>();
+
+        saveManager?.SaveGame();
+        RefreshSaveSlotsUi();
+    }
+
     private void InitializeOptionsUi()
     {
-        if (qualityDropdown != null)
-            qualityDropdown.choices = new List<string>(QualitySettings.names);
+        BuildResolutionOptions();
 
         float masterVolume = PlayerPrefs.GetFloat(PrefMasterVolume, Mathf.Clamp01(defaultMasterVolume));
         float mouseSensitivity = PlayerPrefs.GetFloat(PrefMouseSensitivity, Mathf.Max(0.1f, defaultMouseSensitivity));
         bool fullscreen = PlayerPrefs.GetInt(PrefFullscreen, Screen.fullScreen ? 1 : 0) == 1;
-
-        int qualityCount = Mathf.Max(1, QualitySettings.names.Length);
-        int qualityIndex = Mathf.Clamp(PlayerPrefs.GetInt(PrefQualityIndex, QualitySettings.GetQualityLevel()), 0, qualityCount - 1);
+        int resolutionWidth = PlayerPrefs.GetInt(PrefResolutionWidth, Screen.width);
+        int resolutionHeight = PlayerPrefs.GetInt(PrefResolutionHeight, Screen.height);
 
         ApplyMasterVolume(masterVolume, false);
         ApplyMouseSensitivity(mouseSensitivity, false);
-        ApplyFullscreen(fullscreen, false);
-
-        if (qualityDropdown != null)
-        {
-            qualityDropdown.index = qualityIndex;
-            ApplyQualityByIndex(qualityIndex, false);
-        }
+        ApplyResolution(resolutionWidth, resolutionHeight, fullscreen, false);
 
         if (masterVolumeSlider != null)
             masterVolumeSlider.value = masterVolume;
@@ -216,6 +247,9 @@ public class PauseMenuUIToolkit : MonoBehaviour
 
         if (fullscreenToggle != null)
             fullscreenToggle.value = fullscreen;
+
+        if (resolutionDropdown != null)
+            resolutionDropdown.SetValueWithoutNotify(FormatResolution(GetClosestResolutionIndex(resolutionWidth, resolutionHeight)));
 
         RefreshSaveSlotsUi();
     }
@@ -294,7 +328,10 @@ public class PauseMenuUIToolkit : MonoBehaviour
     private void ShowMainPanel()
     {
         if (mainPanel != null)
+        {
             mainPanel.style.display = DisplayStyle.Flex;
+            mainPanel.BringToFront();
+        }
 
         if (optionsPanel != null)
             optionsPanel.style.display = DisplayStyle.None;
@@ -312,7 +349,10 @@ public class PauseMenuUIToolkit : MonoBehaviour
             saveSlotsPanel.style.display = DisplayStyle.None;
 
         if (optionsPanel != null)
+        {
             optionsPanel.style.display = DisplayStyle.Flex;
+            optionsPanel.BringToFront();
+        }
     }
 
     private void ShowSaveSlotsPanel()
@@ -324,7 +364,10 @@ public class PauseMenuUIToolkit : MonoBehaviour
             optionsPanel.style.display = DisplayStyle.None;
 
         if (saveSlotsPanel != null)
+        {
             saveSlotsPanel.style.display = DisplayStyle.Flex;
+            saveSlotsPanel.BringToFront();
+        }
 
         StyleSaveSlotsScrollBar();
         RefreshSaveSlotsUi();
@@ -676,7 +719,9 @@ public class PauseMenuUIToolkit : MonoBehaviour
 
     private void ApplyFullscreen(bool enabled, bool persist)
     {
-        Screen.fullScreen = enabled;
+        int width = PlayerPrefs.GetInt(PrefResolutionWidth, Screen.width);
+        int height = PlayerPrefs.GetInt(PrefResolutionHeight, Screen.height);
+        ApplyResolution(width, height, enabled, false);
 
         if (persist)
         {
@@ -685,37 +730,110 @@ public class PauseMenuUIToolkit : MonoBehaviour
         }
     }
 
-    private void ApplyQuality(string qualityName, bool persist)
+    private void BuildResolutionOptions()
     {
-        if (string.IsNullOrWhiteSpace(qualityName))
+        resolutionOptions.Clear();
+
+        Resolution[] supportedResolutions = Screen.resolutions;
+        for (int i = 0; i < supportedResolutions.Length; i++)
+            AddResolutionOption(supportedResolutions[i].width, supportedResolutions[i].height);
+
+        AddResolutionOption(Screen.currentResolution.width, Screen.currentResolution.height);
+        AddResolutionOption(Screen.width, Screen.height);
+
+        resolutionOptions.Sort((a, b) =>
+        {
+            int widthCompare = a.x.CompareTo(b.x);
+            return widthCompare != 0 ? widthCompare : a.y.CompareTo(b.y);
+        });
+
+        if (resolutionDropdown != null)
+        {
+            List<string> choices = new List<string>();
+            for (int i = 0; i < resolutionOptions.Count; i++)
+                choices.Add(FormatResolution(i));
+
+            resolutionDropdown.choices = choices;
+        }
+    }
+
+    private void AddResolutionOption(int width, int height)
+    {
+        if (width <= 0 || height <= 0)
             return;
 
-        int index = -1;
-        string[] qualityNames = QualitySettings.names;
-        for (int i = 0; i < qualityNames.Length; i++)
+        for (int i = 0; i < resolutionOptions.Count; i++)
         {
-            if (qualityNames[i] == qualityName)
+            if (resolutionOptions[i].x == width && resolutionOptions[i].y == height)
+                return;
+        }
+
+        resolutionOptions.Add(new Vector2Int(width, height));
+    }
+
+    private string FormatResolution(int index)
+    {
+        if (resolutionOptions.Count == 0)
+            return $"{Screen.width} x {Screen.height}";
+
+        int safeIndex = Mathf.Clamp(index, 0, resolutionOptions.Count - 1);
+        Vector2Int resolution = resolutionOptions[safeIndex];
+        return $"{resolution.x} x {resolution.y}";
+    }
+
+    private int GetClosestResolutionIndex(int width, int height)
+    {
+        if (resolutionOptions.Count == 0)
+            return 0;
+
+        int closestIndex = 0;
+        int closestDistance = int.MaxValue;
+
+        for (int i = 0; i < resolutionOptions.Count; i++)
+        {
+            int widthDelta = resolutionOptions[i].x - width;
+            int heightDelta = resolutionOptions[i].y - height;
+            int distance = widthDelta * widthDelta + heightDelta * heightDelta;
+
+            if (distance < closestDistance)
             {
-                index = i;
-                break;
+                closestDistance = distance;
+                closestIndex = i;
             }
         }
 
-        if (index >= 0)
-            ApplyQualityByIndex(index, persist);
+        return closestIndex;
     }
 
-    private void ApplyQualityByIndex(int index, bool persist)
+    private void ApplyResolution(string resolutionName, bool persist)
     {
-        int safeIndex = Mathf.Clamp(index, 0, Mathf.Max(0, QualitySettings.names.Length - 1));
-        QualitySettings.SetQualityLevel(safeIndex, true);
+        if (string.IsNullOrWhiteSpace(resolutionName))
+            return;
 
-        if (qualityDropdown != null)
-            qualityDropdown.index = safeIndex;
+        int index = resolutionDropdown != null ? resolutionDropdown.choices.IndexOf(resolutionName) : -1;
+        if (index < 0 || index >= resolutionOptions.Count)
+            return;
+
+        Vector2Int resolution = resolutionOptions[index];
+        ApplyResolution(resolution.x, resolution.y, Screen.fullScreen, persist);
+    }
+
+    private void ApplyResolution(int width, int height, bool fullscreen, bool persist)
+    {
+        int closestIndex = GetClosestResolutionIndex(width, height);
+        Vector2Int resolution = resolutionOptions.Count > 0
+            ? resolutionOptions[closestIndex]
+            : new Vector2Int(Mathf.Max(1, width), Mathf.Max(1, height));
+
+        Screen.SetResolution(resolution.x, resolution.y, fullscreen);
+
+        if (resolutionDropdown != null)
+            resolutionDropdown.SetValueWithoutNotify(FormatResolution(closestIndex));
 
         if (persist)
         {
-            PlayerPrefs.SetInt(PrefQualityIndex, safeIndex);
+            PlayerPrefs.SetInt(PrefResolutionWidth, resolution.x);
+            PlayerPrefs.SetInt(PrefResolutionHeight, resolution.y);
             PlayerPrefs.Save();
         }
     }

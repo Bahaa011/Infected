@@ -298,6 +298,7 @@ MonoBehaviour:
   player: {fileID: 0}
   toggleInventoryAction: {fileID: 0}
   craftingSystem: {fileID: 0}
+  uiBaseScale: 1
 --- !u!114 &8052267367803385364
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -313,6 +314,79 @@ MonoBehaviour:
   uiDocument: {fileID: 1024993260888369345}
   inventoryUI: {fileID: 5151288680711410906}
   playerInventory: {fileID: 0}
+--- !u!1 &5186986707567389026
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5436369157139179325}
+  - component: {fileID: 7444393821343877135}
+  - component: {fileID: 5513333385955843938}
+  m_Layer: 0
+  m_Name: Pause
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5436369157139179325
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5186986707567389026}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4259486151678239736}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7444393821343877135
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5186986707567389026}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
+  m_PanelSettings: {fileID: 11400000, guid: a4f67f1d2bbfd2de5b554be6e15f1947, type: 2}
+  m_ParentUI: {fileID: 0}
+  sourceAsset: {fileID: 9197481963319205126, guid: acbf74073c0c51244ba1175c193ed6d0, type: 3}
+  m_SortingOrder: 0
+  m_Position: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+  m_PivotReferenceSize: 0
+  m_Pivot: 0
+  m_WorldSpaceCollider: {fileID: 0}
+--- !u!114 &5513333385955843938
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5186986707567389026}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dfe3b1f8455fac564811f6ffe35cdf62, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PauseMenuUIToolkit
+  uiDocument: {fileID: 7444393821343877135}
+  saveManager: {fileID: 0}
+  thirdPersonController: {fileID: 0}
+  defaultMasterVolume: 1
+  defaultMouseSensitivity: 2
 --- !u!1 &5497441161906784872
 GameObject:
   m_ObjectHideFlags: 0
@@ -503,6 +577,7 @@ Transform:
   - {fileID: 410317602780508585}
   - {fileID: 8636466927844016471}
   - {fileID: 7132227777777777772}
+  - {fileID: 5436369157139179325}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6647691627800723774

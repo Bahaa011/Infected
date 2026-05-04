@@ -8,6 +8,10 @@ public class EquipmentManager : MonoBehaviour
     [Header("Weapon Layer Switching")]
     [SerializeField] private string weaponLayerName = "Weapon";
     private int weaponLayer = -1;
+    [Header("Weapon Hand Slots")]
+    [SerializeField] private Transform augHandSlot;
+    [SerializeField] private Transform m4HandSlot;
+    [Tooltip("Fallback hand slot for assault rifles without a weapon-specific slot.")]
     [SerializeField] private Transform assaultHandSlot;
     [SerializeField] private Transform pistolHandSlot;
     [SerializeField] private Transform primaryRestingSlot;
@@ -45,12 +49,16 @@ public class EquipmentManager : MonoBehaviour
 
     private void InitializeEquipment()
     {
-        if (assaultHandSlot == null && pistolHandSlot == null) return;
+        if (augHandSlot == null && m4HandSlot == null && assaultHandSlot == null && pistolHandSlot == null) return;
 
         // Check for gun in either hand slot
         Gun gunInHand = null;
         if (pistolHandSlot != null)
             gunInHand = pistolHandSlot.GetComponentInChildren<Gun>();
+        if (gunInHand == null && augHandSlot != null)
+            gunInHand = augHandSlot.GetComponentInChildren<Gun>();
+        if (gunInHand == null && m4HandSlot != null)
+            gunInHand = m4HandSlot.GetComponentInChildren<Gun>();
         if (gunInHand == null && assaultHandSlot != null)
             gunInHand = assaultHandSlot.GetComponentInChildren<Gun>();
 
@@ -68,6 +76,10 @@ public class EquipmentManager : MonoBehaviour
             meleeInHand = meleeRestingSlot.GetComponentInChildren<MeleeWeapon>();
         if (pistolHandSlot != null)
             meleeInHand = meleeInHand ?? pistolHandSlot.GetComponentInChildren<MeleeWeapon>();
+        if (meleeInHand == null && augHandSlot != null)
+            meleeInHand = augHandSlot.GetComponentInChildren<MeleeWeapon>();
+        if (meleeInHand == null && m4HandSlot != null)
+            meleeInHand = m4HandSlot.GetComponentInChildren<MeleeWeapon>();
         if (meleeInHand == null && assaultHandSlot != null)
             meleeInHand = assaultHandSlot.GetComponentInChildren<MeleeWeapon>();
 
@@ -498,16 +510,18 @@ public class EquipmentManager : MonoBehaviour
     private Transform GetDefaultHandSlot()
     {
         if (pistolHandSlot != null) return pistolHandSlot;
+        if (m4HandSlot != null) return m4HandSlot;
+        if (augHandSlot != null) return augHandSlot;
         if (assaultHandSlot != null) return assaultHandSlot;
         return null;
     }
 
-    private Transform GetHandSlotForGunType(Gun.GunType gunType)
+    private Transform GetHandSlotForGunType(Gun.GunType gunType, string weaponName = null)
     {
         if (gunType == Gun.GunType.AssaultRifle)
-            return assaultHandSlot != null ? assaultHandSlot : pistolHandSlot;
+            return GetAssaultHandSlot(weaponName);
 
-        return pistolHandSlot != null ? pistolHandSlot : assaultHandSlot;
+        return pistolHandSlot != null ? pistolHandSlot : GetAssaultHandSlot(weaponName);
     }
 
     private Transform GetHandSlotForGun(Gun gun)
@@ -515,7 +529,9 @@ public class EquipmentManager : MonoBehaviour
         if (gun == null)
             return GetDefaultHandSlot();
 
-        return GetHandSlotForGunType(gun.GetGunType());
+        GunItem gunItem = gun.GetGunItem();
+        string weaponName = gunItem != null ? gunItem.ItemName : gun.gameObject.name;
+        return GetHandSlotForGunType(gun.GetGunType(), weaponName);
     }
 
     private Transform GetHandSlotForGunItem(GunItem gunItem)
@@ -527,7 +543,36 @@ public class EquipmentManager : MonoBehaviour
         if (gunPrefabComponent == null)
             return GetDefaultHandSlot();
 
-        return GetHandSlotForGunType(gunPrefabComponent.GetGunType());
+        return GetHandSlotForGunType(gunPrefabComponent.GetGunType(), gunItem.ItemName);
+    }
+
+    private Transform GetAssaultHandSlot(string weaponName)
+    {
+        if (IsM4Weapon(weaponName) && m4HandSlot != null)
+            return m4HandSlot;
+
+        if (IsAugWeapon(weaponName) && augHandSlot != null)
+            return augHandSlot;
+
+        if (assaultHandSlot != null) return assaultHandSlot;
+        if (m4HandSlot != null) return m4HandSlot;
+        if (augHandSlot != null) return augHandSlot;
+        return pistolHandSlot;
+    }
+
+    private static bool IsAugWeapon(string weaponName)
+    {
+        return !string.IsNullOrWhiteSpace(weaponName)
+            && weaponName.ToUpperInvariant().Contains("AUG");
+    }
+
+    private static bool IsM4Weapon(string weaponName)
+    {
+        if (string.IsNullOrWhiteSpace(weaponName))
+            return false;
+
+        string normalizedName = weaponName.ToUpperInvariant();
+        return normalizedName.Contains("M4") || normalizedName.Contains("M4A1");
     }
 
     private void HolsterMeleeToRestingSlot()

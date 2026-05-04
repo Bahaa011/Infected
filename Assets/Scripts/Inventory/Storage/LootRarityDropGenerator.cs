@@ -56,6 +56,7 @@ public static class LootRarityDropGenerator
         int attempts = 0;
         int createdEntries = 0;
         int maxAttemptsSafe = Mathf.Max(targetEntries * 4, settings.maxRollAttempts);
+        bool gunAlreadyAdded = false;
 
         while (createdEntries < targetEntries && attempts < maxAttemptsSafe)
         {
@@ -66,11 +67,21 @@ public static class LootRarityDropGenerator
             if (chosenItem == null)
                 continue;
 
+            // Enforce at most one spawned gun per loot generation.
+            if (chosenItem is GunItem)
+            {
+                if (gunAlreadyAdded)
+                    continue;
+            }
+
             int quantity = RollQuantity(rolledRarity, chosenItem, settings);
             if (!inventory.AddItem(chosenItem, quantity))
                 break;
 
             createdEntries++;
+
+            if (chosenItem is GunItem)
+                gunAlreadyAdded = true;
         }
 
         return createdEntries;

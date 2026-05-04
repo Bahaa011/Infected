@@ -63,6 +63,36 @@ MonoBehaviour:
   automaticSpread: 5
   animator: {fileID: 0}
   animatorLayerIndex: 1
+  reloadTime: 1.8
+  canFireWhileReloading: 0
+  reloadActionName: Reload
+  requireMagazineItem: 1
+  reloadConsumableItem: {fileID: 11400000, guid: 7aeb6e36de72fc5ea828690a92a9e419, type: 2}
+  reloadConsumableAmount: 1
+  rotateWeaponToAim: 1
+  aimRotationTransform: {fileID: 0}
+  aimRotationOffset: {x: 0, y: 0, z: 0}
+  aimRotationSpeed: 20
+  maxAimDistance: 250
+  aimLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  gunshotNoiseRadius: 45
+  gunshotNoiseStrength: 1
+  shootClip: {fileID: 8300000, guid: aaf64f4ed5ec7b2beac4ff7576187e81, type: 3}
+  reloadClip: {fileID: 8300000, guid: 37be78ccfcda1d99bad67ccd3075f2ff, type: 3}
+  audioVolume: 1
+  shootPlayDuration: 1
+  reloadPlayDuration: 1.8
+  onReloadStarted:
+    m_PersistentCalls:
+      m_Calls: []
+  onReloadProgress:
+    m_PersistentCalls:
+      m_Calls: []
+  onReloadCompleted:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &1946128834189724187
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -78,7 +108,6 @@ MonoBehaviour:
   itemToPickup: {fileID: 11400000, guid: 9958e453fb84b475a81730316d00c5b4, type: 2}
   quantity: 1
   pickupRadius: 2
-  pickupAction: {fileID: 0}
 --- !u!1 &2046256027016918875
 GameObject:
   m_ObjectHideFlags: 0

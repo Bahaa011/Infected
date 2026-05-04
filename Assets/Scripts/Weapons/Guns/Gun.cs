@@ -23,6 +23,9 @@ public class Gun : MonoBehaviour
     [SerializeField] private bool canFireWhileReloading = false;
     [SerializeField] private string reloadActionName = "Reload";
     [SerializeField] private bool requireMagazineItem = true;
+    [Tooltip("Optional: specific inventory item to consume when reloading. If empty, gun will consume a MagazineItem matching Gun Type.")]
+    [SerializeField] private Item reloadConsumableItem;
+    [SerializeField, Min(1)] private int reloadConsumableAmount = 1;
     [Header("Aim Alignment")]
     [Tooltip("Rotate weapon visuals to point toward aim point while aiming.")]
     [SerializeField] private bool rotateWeaponToAim = true;
@@ -41,11 +44,10 @@ public class Gun : MonoBehaviour
     private InputAction fireAction;
     private InputAction reloadAction;
     
-    private float lastFireTime = 0f;
+    private float lastFireTime = -999f;
     private int burstCounter = 0;
     private Camera mainCamera;
     private bool isEquipped = false;
-    private bool isBurstFiring = false;
     private GunItem gunItem;
     private PlayerSkills playerSkills;
     private Inventory inventory;
@@ -54,6 +56,18 @@ public class Gun : MonoBehaviour
     private Player ownerPlayer;
     private Quaternion defaultAimLocalRotation;
     private bool hasDefaultAimRotation;
+    private Coroutine burstCoroutine;
+
+    [Header("Audio")]
+    [SerializeField] private AudioClip shootClip;
+    [SerializeField] private AudioClip reloadClip;
+    [SerializeField, Range(0f, 1f)] private float audioVolume = 1f;
+    private AudioSource audioSource;
+    [SerializeField, Tooltip("If <= 0, play full clip. Otherwise play only this many seconds of the shoot clip.")]
+    private float shootPlayDuration = 0f;
+    [SerializeField, Tooltip("If <= 0, play full clip. Otherwise play only this many seconds of the reload clip.")]
+    private float reloadPlayDuration = 0f;
+    private Coroutine audioCoroutine;
 
     [Header("Reload Events")]
     public UnityEvent onReloadStarted;
@@ -62,6 +76,84 @@ public class Gun : MonoBehaviour
 
     private void Awake()
     {
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+        }
+        audioSource.playOnAwake = false;
+        audioSource.spatialBlend = 1f;
+        audioSource.volume = 1f;
+    }
+
+    private void PlayClipForDuration(AudioClip clip, float duration)
+    {
+        if (clip == null || audioSource == null)
+            return;
+
+        if (duration <= 0f)
+        {
+            audioSource.PlayOneShot(clip, audioVolume);
+            return;
+        }
+
+        if (audioCoroutine != null)
+        {
+            StopCoroutine(audioCoroutine);
+            audioCoroutine = null;
+        }
+        audioCoroutine = StartCoroutine(PlayClipForDurationCoroutine(clip, duration));
+    }
+
+    private System.Collections.IEnumerator PlayClipForDurationCoroutine(AudioClip clip, float duration)
+    {
+        if (clip == null || audioSource == null)
+            yield break;
+
+        audioSource.clip = clip;
+        audioSource.loop = false;
+        audioSource.Play();
+
+        yield return new WaitForSeconds(duration);
+
+        if (audioSource.clip == clip)
+            audioSource.Stop();
+
+        audioCoroutine = null;
+    }
+
+    private void PlayClipTemp(AudioClip clip, float duration)
+    {
+        if (clip == null)
+            return;
+
+        StartCoroutine(PlayClipTempCoroutine(clip, duration));
+    }
+
+    private System.Collections.IEnumerator PlayClipTempCoroutine(AudioClip clip, float duration)
+    {
+        GameObject temp = new GameObject("TempGunAudio");
+        temp.transform.position = firePoint != null ? firePoint.position : transform.position;
+        AudioSource src = temp.AddComponent<AudioSource>();
+        src.playOnAwake = false;
+        src.spatialBlend = 0.35f;
+        src.rolloffMode = AudioRolloffMode.Linear;
+        src.minDistance = 3f;
+        src.maxDistance = 80f;
+        src.volume = audioVolume;
+        src.clip = clip;
+        src.loop = false;
+        src.Play();
+
+        if (duration <= 0f)
+            yield return new WaitForSeconds(clip.length);
+        else
+            yield return new WaitForSeconds(Mathf.Min(duration, clip.length));
+
+        if (src != null && src.isPlaying)
+            src.Stop();
+
+        Destroy(temp);
     }
 
     void Start()
@@ -125,22 +217,8 @@ public class Gun : MonoBehaviour
         }
         else if (fireMode == FireMode.Burst)
         {
-            if (fireAction.WasPerformedThisFrame() && !isBurstFiring)
-            {
-                burstCounter = 0;
-                isBurstFiring = true;
-            }
-
-            if (isBurstFiring)
-            {
-                if (burstCounter < burstCount)
-                    Fire();
-                else
-                {
-                    isBurstFiring = false;
-                    burstCounter = 0;
-                }
-            }
+            if (fireAction.WasPerformedThisFrame() && burstCoroutine == null)
+                burstCoroutine = StartCoroutine(FireBurstRoutine());
         }
         else
         {
@@ -159,13 +237,18 @@ public class Gun : MonoBehaviour
 
     public void Fire()
     {
+        TryFireShot(true);
+    }
+
+    private bool TryFireShot(bool playAudio, float audioDurationOverride = -1f)
+    {
         if (!isEquipped || !gameObject.activeInHierarchy || !CanFire())
-            return;
+            return false;
 
         if (gunItem != null && !gunItem.UseAmmo(1))
         {
             // No ammo in magazine
-            return;
+            return false;
         }
 
         // Register shot with skill system
@@ -195,10 +278,47 @@ public class Gun : MonoBehaviour
                 break;
         }
 
-            Vector3 noisePosition = firePoint != null ? firePoint.position : transform.position;
-            ZombieNoiseSystem.EmitNoise(noisePosition, gunshotNoiseRadius, gunshotNoiseStrength, ZombieNoiseSystem.NoiseType.Gunshot);
+        if (playAudio && audioSource != null && shootClip != null)
+        {
+            float audioDuration = audioDurationOverride >= 0f ? audioDurationOverride : shootPlayDuration;
+            PlayClipTemp(shootClip, audioDuration);
+        }
+
+        Vector3 noisePosition = firePoint != null ? firePoint.position : transform.position;
+        ZombieNoiseSystem.EmitNoise(noisePosition, gunshotNoiseRadius, gunshotNoiseStrength, ZombieNoiseSystem.NoiseType.Gunshot);
 
         lastFireTime = Time.time;
+        return true;
+    }
+
+    private System.Collections.IEnumerator FireBurstRoutine()
+    {
+        burstCounter = 0;
+
+        int shotsToFire = Mathf.Max(1, Mathf.RoundToInt(burstCount));
+        bool playedBurstAudio = false;
+        float burstAudioDuration = shootPlayDuration;
+        if (burstAudioDuration > 0f)
+            burstAudioDuration = Mathf.Min(burstAudioDuration, Mathf.Max(0.08f, fireRate * shotsToFire));
+
+        while (burstCounter < shotsToFire)
+        {
+            if (!isEquipped || !gameObject.activeInHierarchy || (isReloading && !canFireWhileReloading))
+                break;
+
+            bool shotFired = TryFireShot(!playedBurstAudio, burstAudioDuration);
+            if (!shotFired)
+                break;
+
+            playedBurstAudio = true;
+            burstCounter++;
+
+            if (burstCounter < shotsToFire)
+                yield return new WaitForSeconds(Mathf.Max(0.01f, fireRate));
+        }
+
+        burstCounter = 0;
+        burstCoroutine = null;
     }
 
     bool CanFire()
@@ -223,8 +343,16 @@ public class Gun : MonoBehaviour
     void FireBurst()
     {
         Vector3 aimDirection = GetAimDirection();
-        SpawnBullet(aimDirection);
-        burstCounter++;
+
+        if (burstCounter <= 0)
+        {
+            SpawnBullet(aimDirection);
+            return;
+        }
+
+        float spread = GetAdjustedSpread(automaticSpread);
+        Vector3 spreadDirection = GetSpreadDirection(aimDirection, spread);
+        SpawnBullet(spreadDirection);
     }
 
     void FireShotgun()
@@ -240,6 +368,18 @@ public class Gun : MonoBehaviour
 
     void SpawnBullet(Vector3 direction)
     {
+        if (bulletPrefab == null)
+        {
+            Debug.LogWarning($"Gun {gameObject.name} cannot fire because bulletPrefab is not assigned.");
+            return;
+        }
+
+        if (firePoint == null)
+        {
+            Debug.LogWarning($"Gun {gameObject.name} cannot fire because firePoint is not assigned.");
+            return;
+        }
+
         GameObject bulletObject = Instantiate(bulletPrefab, firePoint.position, Quaternion.identity);
         Bullet bullet = bulletObject.GetComponent<Bullet>();
         if (bullet != null)
@@ -337,7 +477,11 @@ public class Gun : MonoBehaviour
     {
         fireMode = mode;
         burstCounter = 0;
-        isBurstFiring = false;
+        if (burstCoroutine != null)
+        {
+            StopCoroutine(burstCoroutine);
+            burstCoroutine = null;
+        }
     }
 
     public FireMode GetFireMode()
@@ -424,8 +568,12 @@ public class Gun : MonoBehaviour
     {
         isEquipped = false;
         burstCounter = 0;
-        isBurstFiring = false;
         isReloading = false;
+        if (burstCoroutine != null)
+        {
+            StopCoroutine(burstCoroutine);
+            burstCoroutine = null;
+        }
         if (aimRotationTransform != null && hasDefaultAimRotation)
             aimRotationTransform.localRotation = defaultAimLocalRotation;
         if (animator != null)
@@ -480,6 +628,11 @@ public class Gun : MonoBehaviour
         reloadProgress = 0f;
         onReloadStarted?.Invoke();
 
+        if (audioSource != null && reloadClip != null)
+        {
+            PlayClipForDuration(reloadClip, reloadPlayDuration);
+        }
+
         if (animator != null)
         {
             animator.SetTrigger("reload");
@@ -505,6 +658,9 @@ public class Gun : MonoBehaviour
     {
         if (inventory == null)
             return false;
+
+        if (reloadConsumableItem != null)
+            return inventory.RemoveItem(reloadConsumableItem, reloadConsumableAmount);
 
         MagazineItem magazine = FindMagazineForGunType();
         if (magazine == null)

@@ -9,7 +9,7 @@ OcclusionCullingSettings:
     smallestHole: 0.25
     backfaceThreshold: 100
   m_SceneGUID: b5897f04ce46777b882d448177214f78
-  m_OcclusionCullingData: {fileID: 36300000, guid: 36643fdec40899737a297f63111befa8, type: 2}
+  m_OcclusionCullingData: {fileID: 36300000, guid: ef0e60a3e67c2b78e9652c681baa84c6, type: 2}
 --- !u!104 &2
 RenderSettings:
   m_ObjectHideFlags: 0
@@ -175,6 +175,66 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 153.356
       objectReference: {fileID: 0}
+    - target: {fileID: 6785873094057729296, guid: 3b40e9d9c95e0eaa2accc04ce9a1a69c, type: 3}
+      propertyPath: lootDropSettings.lootItemPool.Array.size
+      value: 13
+      objectReference: {fileID: 0}
+    - target: {fileID: 6785873094057729296, guid: 3b40e9d9c95e0eaa2accc04ce9a1a69c, type: 3}
+      propertyPath: 'lootDropSettings.lootItemPool.Array.data[0]'
+      value: 
+      objectReference: {fileID: 11400000, guid: a262a3547f07b2f7f9d4f46b6d848b90, type: 2}
+    - target: {fileID: 6785873094057729296, guid: 3b40e9d9c95e0eaa2accc04ce9a1a69c, type: 3}
+      propertyPath: 'lootDropSettings.lootItemPool.Array.data[1]'
+      value: 
+      objectReference: {fileID: 11400000, guid: c210c2b8428a308d99bd73f3ac47d8ef, type: 2}
+    - target: {fileID: 6785873094057729296, guid: 3b40e9d9c95e0eaa2accc04ce9a1a69c, type: 3}
+      propertyPath: 'lootDropSettings.lootItemPool.Array.data[2]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 152785809b06e2fc69388bb75746a665, type: 2}
+    - target: {fileID: 6785873094057729296, guid: 3b40e9d9c95e0eaa2accc04ce9a1a69c, type: 3}
+      propertyPath: 'lootDropSettings.lootItemPool.Array.data[3]'
+      value: 
+      objectReference: {fileID: 11400000, guid: da3d08ac4705497d3abf1777ebf94633, type: 2}
+    - target: {fileID: 6785873094057729296, guid: 3b40e9d9c95e0eaa2accc04ce9a1a69c, type: 3}
+      propertyPath: 'lootDropSettings.lootItemPool.Array.data[4]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 7400b9c62ef48132bae5e4ccdebdbd20, type: 2}
+    - target: {fileID: 6785873094057729296, guid: 3b40e9d9c95e0eaa2accc04ce9a1a69c, type: 3}
+      propertyPath: 'lootDropSettings.lootItemPool.Array.data[5]'
+      value: 
+      objectReference: {fileID: 11400000, guid: d394fa018c4fa1f14b0c702fba863aba, type: 2}
+    - target: {fileID: 6785873094057729296, guid: 3b40e9d9c95e0eaa2accc04ce9a1a69c, type: 3}
+      propertyPath: 'lootDropSettings.lootItemPool.Array.data[6]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 67049edda9d6c27e4b10b528a6efadc8, type: 2}
+    - target: {fileID: 6785873094057729296, guid: 3b40e9d9c95e0eaa2accc04ce9a1a69c, type: 3}
+      propertyPath: 'lootDropSettings.lootItemPool.Array.data[7]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 009b8ce3a1b4aa5c09efa111ecb8c80b, type: 2}
+    - target: {fileID: 6785873094057729296, guid: 3b40e9d9c95e0eaa2accc04ce9a1a69c, type: 3}
+      propertyPath: 'lootDropSettings.lootItemPool.Array.data[8]'
+      value: 
+      objectReference: {fileID: 11400000, guid: da64d87b17f1ce85e8e54c85fb6123eb, type: 2}
+    - target: {fileID: 6785873094057729296, guid: 3b40e9d9c95e0eaa2accc04ce9a1a69c, type: 3}
+      propertyPath: 'lootDropSettings.lootItemPool.Array.data[9]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 87eda0e933686a1b6b51d738cb73f24c, type: 2}
+    - target: {fileID: 6785873094057729296, guid: 3b40e9d9c95e0eaa2accc04ce9a1a69c, type: 3}
+      propertyPath: 'lootDropSettings.lootItemPool.Array.data[10]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 9958e453fb84b475a81730316d00c5b4, type: 2}
+    - target: {fileID: 6785873094057729296, guid: 3b40e9d9c95e0eaa2accc04ce9a1a69c, type: 3}
+      propertyPath: 'lootDropSettings.lootItemPool.Array.data[11]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 225a3acae05af2927ad383600f82857d, type: 2}
+    - target: {fileID: 6785873094057729296, guid: 3b40e9d9c95e0eaa2accc04ce9a1a69c, type: 3}
+      propertyPath: 'lootDropSettings.lootItemPool.Array.data[12]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 7aeb6e36de72fc5ea828690a92a9e419, type: 2}
+    - target: {fileID: 6785873094057729296, guid: 3b40e9d9c95e0eaa2accc04ce9a1a69c, type: 3}
+      propertyPath: lootDropSettings.autoDiscoverLoadedItemAssets
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7791041517430600243, guid: 3b40e9d9c95e0eaa2accc04ce9a1a69c, type: 3}
       propertyPath: m_Name
       value: House2 (1)
@@ -200,7 +260,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 125
   m_IsActive: 1
 --- !u!154 &274723404
 TerrainCollider:

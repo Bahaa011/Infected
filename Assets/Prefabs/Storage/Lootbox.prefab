@@ -131,6 +131,10 @@ MonoBehaviour:
   dropForwardDistance: 1.4
   dropUpOffset: 0.4
   droppedPickupRadius: 2
+  debugItemToAdd: {fileID: 0}
+  debugItemQuantity: 1
+  debugAddImmediately: 0
+  debugClearBeforeAdd: 0
 --- !u!114 &6197165567540789342
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -145,10 +149,27 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::StorageContainer
   storageDisplayName: Loot Box
   containerIdOverride: 
+  interactionDistance: 2.5
   autoGenerateLoot: 1
   lootDropSettings:
     autoDiscoverLoadedItemAssets: 1
-    lootItemPool: []
+    lootItemPool:
+    - {fileID: 11400000, guid: a262a3547f07b2f7f9d4f46b6d848b90, type: 2}
+    - {fileID: 11400000, guid: c210c2b8428a308d99bd73f3ac47d8ef, type: 2}
+    - {fileID: 11400000, guid: 152785809b06e2fc69388bb75746a665, type: 2}
+    - {fileID: 11400000, guid: da3d08ac4705497d3abf1777ebf94633, type: 2}
+    - {fileID: 11400000, guid: 7400b9c62ef48132bae5e4ccdebdbd20, type: 2}
+    - {fileID: 11400000, guid: d394fa018c4fa1f14b0c702fba863aba, type: 2}
+    - {fileID: 11400000, guid: 67049edda9d6c27e4b10b528a6efadc8, type: 2}
+    - {fileID: 11400000, guid: 009b8ce3a1b4aa5c09efa111ecb8c80b, type: 2}
+    - {fileID: 11400000, guid: da64d87b17f1ce85e8e54c85fb6123eb, type: 2}
+    - {fileID: 11400000, guid: 87eda0e933686a1b6b51d738cb73f24c, type: 2}
+    - {fileID: 11400000, guid: 9958e453fb84b475a81730316d00c5b4, type: 2}
+    - {fileID: 11400000, guid: 225a3acae05af2927ad383600f82857d, type: 2}
+    - {fileID: 11400000, guid: 7aeb6e36de72fc5ea828690a92a9e419, type: 2}
+    - {fileID: 11400000, guid: 38ba6799bc4a5866587999923340dd2e, type: 2}
+    - {fileID: 11400000, guid: 26f38fc33887b3923a39f35bef9e269f, type: 2}
+    - {fileID: 11400000, guid: e17664a773451f12aa419dccd219cbfa, type: 2}
     minLootEntries: 2
     maxLootEntries: 6
     maxRollAttempts: 40

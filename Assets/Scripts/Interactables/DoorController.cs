@@ -1,8 +1,11 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class DoorController : MonoBehaviour, IInteractionPromptSource
 {
+    private static readonly List<DoorController> activeDoors = new List<DoorController>();
+
     [Header("Door Settings")]
     [SerializeField] private float openAngle = 90f;
     [SerializeField] private float closeAngle = 0f;
@@ -17,10 +20,18 @@ public class DoorController : MonoBehaviour, IInteractionPromptSource
     [SerializeField] private bool includeChildMeshColliders = true;
 
     [Header("Audio")]
-    [SerializeField] private AudioClip openSound;
-    [SerializeField] private AudioClip closeSound;
-    [SerializeField] private float audioVolume = 1f;
-
+    [Tooltip("Single clip containing both open and close segments.")]
+    [SerializeField] private AudioClip doorClip;
+    [SerializeField, Tooltip("Volume multiplier for door audio. Values above 1 make it louder.")]
+    private float audioVolume = 3f;
+    [SerializeField, Tooltip("Open segment start time in seconds")]
+    private float openStart = 0f;
+    [SerializeField, Tooltip("Open segment duration in seconds")]
+    private float openDuration = 1f;
+    [SerializeField, Tooltip("Close segment start time in seconds")]
+    private float closeStart = 4.5f;
+    [SerializeField, Tooltip("Close segment duration in seconds")]
+    private float closeDuration = 1f;
     private AudioSource audioSource;
     private Quaternion targetRotation;
     private Quaternion closedRotation;
@@ -30,6 +41,12 @@ public class DoorController : MonoBehaviour, IInteractionPromptSource
     private InputAction interactAction;
     private MeshCollider[] doorMeshColliders;
 
+    private void OnEnable()
+    {
+        if (!activeDoors.Contains(this))
+            activeDoors.Add(this);
+    }
+
     private void Start()
     {
         audioSource = GetComponent<AudioSource>();
@@ -37,6 +54,10 @@ public class DoorController : MonoBehaviour, IInteractionPromptSource
         {
             audioSource = gameObject.AddComponent<AudioSource>();
         }
+        audioSource.playOnAwake = false;
+        audioSource.spatialBlend = 0f;
+        audioSource.volume = 1f;
+        audioSource.rolloffMode = AudioRolloffMode.Linear;
 
         // Find player
         player = GameObject.FindGameObjectWithTag("Player")?.transform;
@@ -85,20 +106,30 @@ public class DoorController : MonoBehaviour, IInteractionPromptSource
         }
     }
 
-    private void OnDestroy()
+    private void OnDisable()
     {
+        activeDoors.Remove(this);
+
         if (interactAction != null)
         {
             interactAction.performed -= OnInteract;
         }
     }
 
+    private void OnDestroy()
+    {
+        activeDoors.Remove(this);
+    }
+
     private void OnInteract(InputAction.CallbackContext context)
     {
-        if (isPlayerNearby)
-        {
-            ToggleDoor();
-        }
+        if (!isPlayerNearby || player == null)
+            return;
+
+        if (!IsNearestInteractableDoor())
+            return;
+
+        ToggleDoor();
     }
 
     private void Update()
@@ -137,7 +168,10 @@ public class DoorController : MonoBehaviour, IInteractionPromptSource
         targetRotation = closedRotation * Quaternion.Euler(0, 0, openAngle);
         UpdateDoorCollisionState();
 
-        PlaySound(openSound);
+        if (doorClip != null)
+            PlayClipSegment(doorClip, openStart, openDuration);
+        else
+            PlaySound(doorClip);
     }
 
     public void CloseDoor()
@@ -149,7 +183,10 @@ public class DoorController : MonoBehaviour, IInteractionPromptSource
         targetRotation = closedRotation;
         UpdateDoorCollisionState();
 
-        PlaySound(closeSound);
+        if (doorClip != null)
+            PlayClipSegment(doorClip, closeStart, closeDuration);
+        else
+            PlaySound(doorClip);
     }
 
     public void ToggleDoor()
@@ -183,12 +220,76 @@ public class DoorController : MonoBehaviour, IInteractionPromptSource
         return true;
     }
 
+    private bool IsNearestInteractableDoor()
+    {
+        if (player == null)
+            return false;
+
+        float myDistance = Vector3.Distance(transform.position, player.position);
+        if (myDistance > interactionRange)
+            return false;
+
+        DoorController closestDoor = null;
+        float closestDistance = float.MaxValue;
+
+        for (int i = 0; i < activeDoors.Count; i++)
+        {
+            DoorController door = activeDoors[i];
+            if (door == null || !door.isActiveAndEnabled || door.player == null || !door.isPlayerNearby)
+                continue;
+
+            float distance = Vector3.Distance(door.transform.position, player.position);
+            if (distance > door.interactionRange)
+                continue;
+
+            if (distance < closestDistance)
+            {
+                closestDistance = distance;
+                closestDoor = door;
+            }
+        }
+
+        return closestDoor == this;
+    }
+
     private void PlaySound(AudioClip clip)
     {
-        if (clip != null && audioSource != null)
-        {
-            audioSource.PlayOneShot(clip, audioVolume);
-        }
+        if (clip == null || audioSource == null)
+            return;
+
+        // Default: play full clip via one-shot
+        audioSource.PlayOneShot(clip, audioVolume);
+    }
+
+    private void PlayClipSegment(AudioClip clip, float startTime, float duration)
+    {
+        if (clip == null)
+            return;
+
+        StopAllCoroutines();
+        StartCoroutine(PlayClipSegmentCoroutine(clip, startTime, duration));
+    }
+
+    private System.Collections.IEnumerator PlayClipSegmentCoroutine(AudioClip clip, float startTime, float duration)
+    {
+        if (clip == null || audioSource == null)
+            yield break;
+
+        float clampedStart = Mathf.Clamp(startTime, 0f, Mathf.Max(0f, clip.length - 0.01f));
+        float clampedDuration = Mathf.Clamp(duration, 0f, Mathf.Max(0f, clip.length - clampedStart));
+        int startSamples = Mathf.Clamp((int)(clampedStart * clip.frequency), 0, Mathf.Max(0, clip.samples - 1));
+
+        audioSource.Stop();
+        audioSource.clip = clip;
+        audioSource.timeSamples = startSamples;
+        audioSource.volume = audioVolume;
+        audioSource.loop = false;
+        audioSource.Play();
+
+        yield return new WaitForSeconds(clampedDuration);
+
+        if (audioSource != null && audioSource.isPlaying)
+            audioSource.Stop();
     }
 
     private void UpdateDoorCollisionState()
@@ -206,4 +307,6 @@ public class DoorController : MonoBehaviour, IInteractionPromptSource
             mesh.enabled = meshEnabled;
         }
     }
+
+
 }

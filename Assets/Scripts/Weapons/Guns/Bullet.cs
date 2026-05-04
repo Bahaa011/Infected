@@ -16,12 +16,17 @@ public class Bullet : MonoBehaviour
     private Vector3 direction;
     private Rigidbody rb;
     private float spawnTime;
+    private Vector3 spawnPosition;
     private LineRenderer tracerLine;
 
     void Start()
     {
         rb = GetComponent<Rigidbody>();
         spawnTime = Time.time;
+        spawnPosition = transform.position;
+
+        if (direction.sqrMagnitude < 0.0001f)
+            direction = transform.forward;
 
         // Setup tracer line renderer
         if (useTracer)
@@ -43,8 +48,8 @@ public class Bullet : MonoBehaviour
             Destroy(gameObject);
         }
 
-        // Destroy if too far from origin
-        if (Vector3.Distance(transform.position, Vector3.zero) > destroyDistance)
+        // Destroy after traveling too far from where this bullet was fired.
+        if (Vector3.Distance(transform.position, spawnPosition) > destroyDistance)
         {
             Destroy(gameObject);
         }
@@ -64,7 +69,8 @@ public class Bullet : MonoBehaviour
 
     public void Initialize(Vector3 shootDirection)
     {
-        direction = shootDirection.normalized;
+        direction = shootDirection.sqrMagnitude > 0.0001f ? shootDirection.normalized : transform.forward;
+        spawnPosition = transform.position;
         transform.rotation = Quaternion.LookRotation(direction);
     }
 
@@ -96,7 +102,7 @@ public class Bullet : MonoBehaviour
     {
         // Create a child game object for the line renderer
         GameObject tracerObject = new GameObject("Tracer");
-        tracerObject.transform.SetParent(transform);
+        tracerObject.transform.SetParent(transform, false);
         tracerObject.transform.localPosition = Vector3.zero;
 
         // Add LineRenderer component
@@ -104,6 +110,9 @@ public class Bullet : MonoBehaviour
         tracerLine.positionCount = 2;
         tracerLine.startWidth = tracerWidth;
         tracerLine.endWidth = tracerWidth;
+        tracerLine.useWorldSpace = true;
+        tracerLine.alignment = LineAlignment.View;
+        tracerLine.numCapVertices = 2;
 
         // Set material
         if (tracerMaterial != null)
@@ -112,8 +121,19 @@ public class Bullet : MonoBehaviour
         }
         else
         {
-            // Default material with glow
-            tracerLine.material = new Material(Shader.Find("Sprites/Default"));
+            Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
+            if (shader == null)
+                shader = Shader.Find("Sprites/Default");
+
+            if (shader != null)
+            {
+                Material material = new Material(shader);
+                if (material.HasProperty("_BaseColor"))
+                    material.SetColor("_BaseColor", new Color(1f, 0.75f, 0.05f, 1f));
+                if (material.HasProperty("_Color"))
+                    material.SetColor("_Color", new Color(1f, 0.75f, 0.05f, 1f));
+                tracerLine.material = material;
+            }
         }
 
         // Set colors (white with fade)

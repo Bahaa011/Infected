@@ -19,13 +19,14 @@ public class ThirdPersonController : MonoBehaviour
     [SerializeField] private float moveSpeed = 3f;
     [SerializeField] private float runSpeedMultiplier = 2f;
     [SerializeField] private float crouchSpeedMultiplier = 0.5f;
-    [SerializeField] private float brawlSpeedMultiplier = 0.45f;
     [SerializeField] private float rotationSpeed = 10f;
     [SerializeField] private float aimTurnSpeed = 14f;
     [SerializeField] private float aimTurnDeadZone = 1f;
     [SerializeField] private float gravity = -9.81f;
     [SerializeField] private float crouchHeight = 1f;
     [SerializeField] private float normalHeight = 2f;
+    [SerializeField] private float crouchCameraHeightOffset = 0.45f;
+    [SerializeField] private float cameraHeightSmooth = 8f;
     [SerializeField] private InputActionReference sprintAction;
 
     [Header("Stealth Noise")]
@@ -33,6 +34,12 @@ public class ThirdPersonController : MonoBehaviour
     [SerializeField] private float sprintNoiseRadius = 13f;
     [SerializeField] private float crouchNoiseRadius = 3f;
     [SerializeField] private float footstepNoiseInterval = 0.38f;
+
+    [Header("Footstep Audio")]
+    [SerializeField] private AudioClip[] walkClips;
+    [SerializeField] private AudioClip[] runClips;
+    [SerializeField] private AudioClip[] crouchWalkClips;
+    [SerializeField] private float footstepVolume = 0.8f;
 
     [Header("Cameras")]
     [SerializeField] private CinemachineCamera mainCamera;
@@ -67,6 +74,8 @@ public class ThirdPersonController : MonoBehaviour
     private AnimationController animationController;
     private EquipmentManager equipmentManager;
     private bool isActuallySprinting = false;
+    private bool wasMoving = false;
+    private AudioSource footstepAudioSource;
 
     // Camera
     private float yaw;
@@ -75,6 +84,7 @@ public class ThirdPersonController : MonoBehaviour
     private bool cameraYawLocked = false;
     private Vector3 cameraLocalPosition;
     private float baseCameraHeight;
+    private float currentCameraHeight;
     private float runShakeTimer;
     private float currentShakeAmplitude;
     private float currentShakeOffsetY;
@@ -89,6 +99,13 @@ public class ThirdPersonController : MonoBehaviour
         equipmentManager = GetComponent<EquipmentManager>();
         hasSprintAction = sprintAction != null;
         originalMouseSensitivity = mouseSensitivity;
+        
+        // Create AudioSource for footsteps
+        footstepAudioSource = GetComponent<AudioSource>();
+        if (footstepAudioSource == null)
+            footstepAudioSource = gameObject.AddComponent<AudioSource>();
+        footstepAudioSource.playOnAwake = false;
+        footstepAudioSource.spatialBlend = 0f;
     }
 
     private void Start()
@@ -101,7 +118,12 @@ public class ThirdPersonController : MonoBehaviour
         }
 
         if (cameraTarget != null)
+        {
             baseCameraHeight = cameraTarget.localPosition.y;
+            currentCameraHeight = baseCameraHeight;
+        }
+
+        ResolveCameraReferences();
     }
 
     private void OnValidate()
@@ -356,11 +378,16 @@ public class ThirdPersonController : MonoBehaviour
         pitch -= lookInput.y * (mouseSensitivity / 100f);
         pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
 
+        float targetCameraHeight = baseCameraHeight;
+        if (player != null && player.IsCrouching())
+            targetCameraHeight = Mathf.Max(0.2f, baseCameraHeight - crouchCameraHeightOffset);
+        currentCameraHeight = Mathf.Lerp(currentCameraHeight, targetCameraHeight, cameraHeightSmooth * Time.deltaTime);
+
         // Follow player XZ position, keep original Y position
         Vector3 targetPos = cameraTarget.position;
         targetPos.x = transform.position.x;
         targetPos.z = transform.position.z;
-        targetPos.y = transform.position.y + baseCameraHeight + currentShakeOffsetY;
+        targetPos.y = transform.position.y + currentCameraHeight + currentShakeOffsetY;
         cameraTarget.position = targetPos;
         
         // Only rotate camera target on both axes (independent of player rotation)
@@ -393,7 +420,6 @@ public class ThirdPersonController : MonoBehaviour
         // Check if sprint button is being pressed
         bool sprintInputPressed = sprintAction != null && sprintAction.action.IsPressed();
         player.SetSprintInputPressed(sprintInputPressed);
-        bool isBrawling = player != null && player.IsBrawling();
 
         // Calculate XZ movement
         if (isMoving)
@@ -404,7 +430,7 @@ public class ThirdPersonController : MonoBehaviour
             Vector3 moveDir = (camForward * moveInput.y) + (camRight * moveInput.x);
             moveDir.Normalize();
 
-            bool shouldFaceCamera = player != null && (player.IsAiming() || player.IsBrawling());
+            bool shouldFaceCamera = player != null && player.IsAiming();
             if (shouldFaceCamera)
             {
                 Quaternion targetAimRotation = Quaternion.Euler(0f, yaw, 0f);
@@ -417,7 +443,7 @@ public class ThirdPersonController : MonoBehaviour
             }
 
             // Check if can sprint (has stamina remaining)
-            bool canSprint = !isBrawling && sprintInputPressed && player.GetStamina() > 0.1f;
+            bool canSprint = sprintInputPressed && player.GetStamina() > 0.1f;
             
             // Update player's sprint state and track actual sprint state
             player.SetIsCurrentlySprinting(canSprint);
@@ -426,7 +452,6 @@ public class ThirdPersonController : MonoBehaviour
             float currentSpeed = moveSpeed;
             if (canSprint) currentSpeed *= runSpeedMultiplier;
             if (player.IsCrouching()) currentSpeed *= crouchSpeedMultiplier;
-            if (isBrawling) currentSpeed *= brawlSpeedMultiplier;
 
             move = moveDir * currentSpeed;
         }
@@ -452,18 +477,30 @@ public class ThirdPersonController : MonoBehaviour
         controller.Move(finalMove);
 
         EmitMovementNoise(isMoving);
+        
+        // Stop audio when movement stops
+        if (!isMoving && wasMoving)
+        {
+            if (footstepAudioSource != null)
+                footstepAudioSource.Stop();
+        }
+        wasMoving = isMoving;
     }
 
     private void EmitMovementNoise(bool isMoving)
     {
         if (!isMoving || controller == null || !controller.isGrounded)
+        {
             return;
+        }
 
         if (Time.time < nextFootstepNoiseTime)
             return;
 
         float radius = walkNoiseRadius;
         float strength = 0.75f;
+        bool isCrouching = false;
+        bool isRunning = false;
 
         if (player != null)
         {
@@ -471,20 +508,57 @@ public class ThirdPersonController : MonoBehaviour
             {
                 radius = crouchNoiseRadius;
                 strength = 0.35f;
+                isCrouching = true;
             }
             else if (player.IsCurrentlySprinting())
             {
                 radius = sprintNoiseRadius;
                 strength = 1f;
+                isRunning = true;
             }
         }
 
         ZombieNoiseSystem.EmitNoise(transform.position, radius, strength, ZombieNoiseSystem.NoiseType.Footstep);
+        
+        // Play footstep audio based on movement mode
+        PlayFootstepAudio(isCrouching, isRunning);
+        
         nextFootstepNoiseTime = Time.time + footstepNoiseInterval;
+    }
+
+    private void PlayFootstepAudio(bool isCrouching, bool isRunning)
+    {
+        if (footstepAudioSource == null)
+            return;
+
+        AudioClip clip = null;
+
+        if (isCrouching && crouchWalkClips != null && crouchWalkClips.Length > 0)
+        {
+            clip = crouchWalkClips[Random.Range(0, crouchWalkClips.Length)];
+        }
+        else if (isRunning && runClips != null && runClips.Length > 0)
+        {
+            clip = runClips[Random.Range(0, runClips.Length)];
+        }
+        else if (walkClips != null && walkClips.Length > 0)
+        {
+            clip = walkClips[Random.Range(0, walkClips.Length)];
+        }
+
+        if (clip != null)
+        {
+            footstepAudioSource.clip = clip;
+            footstepAudioSource.volume = footstepVolume;
+            footstepAudioSource.Play();
+        }
     }
 
     void UpdateAiming()
     {
+        if (mainCamera == null || aimingCamera == null)
+            ResolveCameraReferences();
+
         // Only allow aiming if a weapon is equipped
         if (equipmentManager == null || equipmentManager.GetCurrentWeapon() == null)
         {
@@ -513,6 +587,25 @@ public class ThirdPersonController : MonoBehaviour
         }
     }
 
+    private void ResolveCameraReferences()
+    {
+        if (mainCamera != null && aimingCamera != null)
+            return;
+
+        CinemachineCamera[] cameras = FindObjectsByType<CinemachineCamera>(FindObjectsSortMode.None);
+        for (int i = 0; i < cameras.Length; i++)
+        {
+            CinemachineCamera cam = cameras[i];
+            if (cam == null)
+                continue;
+
+            if (mainCamera == null && cam.name.Contains("Third Person Camera"))
+                mainCamera = cam;
+            else if (aimingCamera == null && cam.name.Contains("Aiming Camera"))
+                aimingCamera = cam;
+        }
+    }
+
     void UpdateCrouch()
     {
         float targetHeight = player.IsCrouching() ? crouchHeight : normalHeight;
@@ -530,7 +623,7 @@ public class ThirdPersonController : MonoBehaviour
         if (player == null)
             return;
 
-        bool shouldFaceCamera = player.IsAiming() || player.IsBrawling();
+        bool shouldFaceCamera = player.IsAiming();
         if (!shouldFaceCamera)
             return;
 
