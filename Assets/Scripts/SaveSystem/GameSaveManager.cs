@@ -68,7 +68,12 @@ public class GameSaveManager : MonoBehaviour
     [ContextMenu("Save Game")]
     public void SaveGame()
     {
-        SaveGameToSlot(activeSlotIndex);
+        TrySaveGame();
+    }
+
+    public bool TrySaveGame()
+    {
+        return SaveGameToSlot(activeSlotIndex);
     }
 
     [ContextMenu("Load Game")]
@@ -77,7 +82,7 @@ public class GameSaveManager : MonoBehaviour
         LoadGameFromSlot(activeSlotIndex);
     }
 
-    public void SaveGameToSlot(int slotIndex)
+    public bool SaveGameToSlot(int slotIndex)
     {
         ResolveReferences();
         slotIndex = ClampSlotIndex(slotIndex);
@@ -89,7 +94,7 @@ public class GameSaveManager : MonoBehaviour
         if (data == null)
         {
             Debug.LogWarning("[GameSaveManager] Save aborted. Missing required references.");
-            return;
+            return false;
         }
 
         string json = JsonUtility.ToJson(data, true);
@@ -100,10 +105,12 @@ public class GameSaveManager : MonoBehaviour
             string path = GetSaveFilePath(slotIndex);
             File.WriteAllText(path, json);
             Debug.Log($"[GameSaveManager] Saved slot {slotIndex} to: {path}");
+            return true;
         }
         catch (Exception ex)
         {
             Debug.LogError($"[GameSaveManager] Save failed for slot {slotIndex}: {ex.Message}");
+            return false;
         }
     }
 
@@ -186,8 +193,14 @@ public class GameSaveManager : MonoBehaviour
 
     private GameSaveData BuildSaveData(int slotIndex)
     {
-        if (player == null || playerInventory == null)
+        if (player == null)
+        {
+            Debug.LogWarning("[GameSaveManager] Cannot build save data because Player was not found.");
             return null;
+        }
+
+        if (playerInventory == null)
+            Debug.LogWarning("[GameSaveManager] Player inventory was not found. Saving player data with an empty inventory.");
 
         GameSaveData data = new GameSaveData();
         data.slotIndex = slotIndex;
@@ -236,7 +249,8 @@ public class GameSaveManager : MonoBehaviour
                     {
                         itemId = stack.item.ID,
                         itemName = stack.item.name,
-                        quantity = Mathf.Max(1, stack.quantity)
+                        quantity = Mathf.Max(1, stack.quantity),
+                        currentAmmo = GetSavedCurrentAmmo(stack.item)
                     });
                 }
             }
@@ -256,6 +270,9 @@ public class GameSaveManager : MonoBehaviour
 
         if (dayNightManager != null)
             dayNightManager.SetTotalGameDays(Mathf.Max(0f, data.totalGameDays));
+
+        if (playerSkills != null && data.player.skills != null)
+            playerSkills.ApplySaveData(data.player.skills);
 
         if (player != null)
         {
@@ -279,9 +296,6 @@ public class GameSaveManager : MonoBehaviour
             playerInventory.ClearInventory();
             RestoreInventoryStacks(playerInventory, data.player.inventoryItems, itemById, itemByName);
         }
-
-        if (playerSkills != null && data.player.skills != null)
-            playerSkills.ApplySaveData(data.player.skills);
 
         if (injurySystem != null)
             injurySystem.ApplySaveData(data.player.injuries);
@@ -310,6 +324,7 @@ public class GameSaveManager : MonoBehaviour
                         if (item == null)
                             continue;
 
+                        ApplySavedItemState(item, stack);
                         runtime.lootStacks.Add(new StorageContainer.LootStackRuntimeData
                         {
                             item = item,
@@ -329,7 +344,7 @@ public class GameSaveManager : MonoBehaviour
     private void ResolveReferences()
     {
         if (player == null)
-            player = FindAnyObjectByType<Player>();
+            player = FindRuntimeObject<Player>();
 
         if (playerInventory == null && player != null)
             playerInventory = player.GetComponent<Inventory>();
@@ -341,7 +356,26 @@ public class GameSaveManager : MonoBehaviour
             injurySystem = player.GetComponent<InjurySystem>();
 
         if (dayNightManager == null)
-            dayNightManager = FindAnyObjectByType<DayNightManager>();
+            dayNightManager = FindRuntimeObject<DayNightManager>();
+    }
+
+    private static T FindRuntimeObject<T>() where T : UnityEngine.Object
+    {
+        T[] objects = FindObjectsByType<T>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        for (int i = 0; i < objects.Length; i++)
+        {
+            T obj = objects[i];
+            if (obj == null)
+                continue;
+
+            if (obj is Component component && component.gameObject.scene.IsValid())
+                return obj;
+
+            if (obj is GameObject gameObject && gameObject.scene.IsValid())
+                return obj;
+        }
+
+        return null;
     }
 
     private string GetSaveFilePath(int slotIndex)
@@ -419,7 +453,8 @@ public class GameSaveManager : MonoBehaviour
             {
                 itemId = slot.item.ID,
                 itemName = slot.item.name,
-                quantity = Mathf.Max(1, slot.quantity)
+                quantity = Mathf.Max(1, slot.quantity),
+                currentAmmo = GetSavedCurrentAmmo(slot.item)
             });
         }
 
@@ -442,6 +477,7 @@ public class GameSaveManager : MonoBehaviour
             if (item == null)
                 continue;
 
+            ApplySavedItemState(item, stack);
             inventory.AddItem(item, Mathf.Max(1, stack.quantity));
         }
     }
@@ -461,6 +497,17 @@ public class GameSaveManager : MonoBehaviour
             return byId;
 
         return null;
+    }
+
+    private static int GetSavedCurrentAmmo(Item item)
+    {
+        return item is GunItem gunItem ? gunItem.CurrentAmmo : -1;
+    }
+
+    private static void ApplySavedItemState(Item item, ItemStackSaveData stack)
+    {
+        if (item is GunItem gunItem && stack != null && stack.currentAmmo >= 0)
+            gunItem.SetAmmo(stack.currentAmmo);
     }
 
     private static Dictionary<int, Item> BuildItemLookupById()

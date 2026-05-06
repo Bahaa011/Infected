@@ -44,6 +44,7 @@ public class ItemStackSaveData
     public int itemId;
     public string itemName;
     public int quantity;
+    public int currentAmmo = -1;
 }
 
 [Serializable]

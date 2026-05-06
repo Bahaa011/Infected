@@ -89,6 +89,7 @@ public class Inventory : MonoBehaviour
         // Find empty slot for remaining items
         while (quantity > 0)
         {
+            Item itemToPlace = CreateRuntimeItemInstance(item);
             int emptySlot = usesLargeFootprint
                 ? FindEmptyFootprintSlot(footprintWidth, footprintHeight)
                 : FindEmptySlot();
@@ -104,11 +105,11 @@ public class Inventory : MonoBehaviour
 
             if (usesLargeFootprint)
             {
-                PlaceItemWithFootprint(emptySlot, item, toAdd, footprintWidth, footprintHeight);
+                PlaceItemWithFootprint(emptySlot, itemToPlace, toAdd, footprintWidth, footprintHeight);
             }
             else
             {
-                var slot = new InventorySlot(item, toAdd)
+                var slot = new InventorySlot(itemToPlace, toAdd)
                 {
                     isOccupied = true,
                     isAnchor = true,
@@ -245,7 +246,7 @@ public class Inventory : MonoBehaviour
         if (!CanPlaceAt(slotIndex, width, height))
             return false;
 
-        PlaceItemWithFootprint(slotIndex, item, quantity, width, height);
+        PlaceItemWithFootprint(slotIndex, CreateRuntimeItemInstance(item), quantity, width, height);
         OnInventoryChanged?.Invoke();
         return true;
     }
@@ -425,6 +426,18 @@ public class Inventory : MonoBehaviour
     private bool UsesLargeFootprint(Item item)
     {
         return item is GunItem || item is MeleeWeaponItem;
+    }
+
+    private static Item CreateRuntimeItemInstance(Item item)
+    {
+        if (item is GunItem)
+        {
+            Item clone = Instantiate(item);
+            clone.name = item.name;
+            return clone;
+        }
+
+        return item;
     }
 
     private bool CanPlaceAt(int anchorIndex, int width, int height)

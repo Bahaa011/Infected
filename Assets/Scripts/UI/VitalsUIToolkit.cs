@@ -17,8 +17,11 @@ public class VitalsUIToolkit : MonoBehaviour
     private RadialProgressElement hungerWheel;
     private RadialProgressElement thirstWheel;
     private RadialProgressElement staminaWheel;
+    private VisualElement vitalsPanel;
     private int lastScreenWidth;
     private int lastScreenHeight;
+    private float lastPanelWidth;
+    private float lastPanelHeight;
     private float uiScale = 1f;
 
     private void Awake()
@@ -26,13 +29,20 @@ public class VitalsUIToolkit : MonoBehaviour
         if (uiDocument == null)
             uiDocument = GetComponent<UIDocument>();
 
+        if (uiDocument == null)
+        {
+            Debug.LogWarning("[VitalsUIToolkit] UIDocument is missing.");
+            enabled = false;
+            return;
+        }
+
         var root = uiDocument.rootVisualElement;
+        vitalsPanel = root.Q<VisualElement>(className: "vitals-panel");
+        if (vitalsPanel == null)
+            vitalsPanel = root;
 
-        var panel = root.Q<VisualElement>(className: "vitals-panel");
-        if (panel == null)
-            panel = root;
-
-        RebuildCircularVitals(panel);
+        RebuildCircularVitals(vitalsPanel);
+        root.schedule.Execute(() => RebuildCircularVitals(vitalsPanel)).ExecuteLater(1);
     }
 
     private void OnEnable()
@@ -131,6 +141,7 @@ public class VitalsUIToolkit : MonoBehaviour
         uiScale = CalculateUiScale();
         lastScreenWidth = Screen.width;
         lastScreenHeight = Screen.height;
+        CachePanelSize();
 
         // Keep vitals floating, no background card.
         panel.style.backgroundColor = new StyleColor(new Color(0f, 0f, 0f, 0f));
@@ -318,23 +329,58 @@ public class VitalsUIToolkit : MonoBehaviour
 
     private void RefreshResponsiveScale()
     {
-        if (Screen.width == lastScreenWidth && Screen.height == lastScreenHeight)
+        float currentPanelWidth = GetPanelWidth();
+        float currentPanelHeight = GetPanelHeight();
+
+        if (Screen.width == lastScreenWidth
+            && Screen.height == lastScreenHeight
+            && Mathf.Abs(currentPanelWidth - lastPanelWidth) < 0.5f
+            && Mathf.Abs(currentPanelHeight - lastPanelHeight) < 0.5f)
+        {
             return;
+        }
 
         lastScreenWidth = Screen.width;
         lastScreenHeight = Screen.height;
+        lastPanelWidth = currentPanelWidth;
+        lastPanelHeight = currentPanelHeight;
 
-        var root = uiDocument != null ? uiDocument.rootVisualElement : null;
-        var panel = root != null ? root.Q<VisualElement>(className: "vitals-panel") ?? root : null;
-        if (panel != null)
-            RebuildCircularVitals(panel);
+        if (vitalsPanel != null)
+            RebuildCircularVitals(vitalsPanel);
     }
 
     private float CalculateUiScale()
     {
-        float widthScale = Screen.width / ReferenceWidth;
-        float heightScale = Screen.height / ReferenceHeight;
+        float panelWidth = GetPanelWidth();
+        float panelHeight = GetPanelHeight();
+
+        float widthScale = panelWidth / ReferenceWidth;
+        float heightScale = panelHeight / ReferenceHeight;
         return Mathf.Clamp(Mathf.Min(widthScale, heightScale), 0.75f, 1.35f);
+    }
+
+    private void CachePanelSize()
+    {
+        lastPanelWidth = GetPanelWidth();
+        lastPanelHeight = GetPanelHeight();
+    }
+
+    private float GetPanelWidth()
+    {
+        VisualElement root = uiDocument != null ? uiDocument.rootVisualElement : null;
+        if (root != null && root.resolvedStyle.width > 0f)
+            return root.resolvedStyle.width;
+
+        return Screen.width;
+    }
+
+    private float GetPanelHeight()
+    {
+        VisualElement root = uiDocument != null ? uiDocument.rootVisualElement : null;
+        if (root != null && root.resolvedStyle.height > 0f)
+            return root.resolvedStyle.height;
+
+        return Screen.height;
     }
 
     private float Scale(float value)

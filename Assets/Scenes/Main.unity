@@ -411,10 +411,6 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4055079881912893135, guid: 74afa64270ca347e0939c5e65dada0df, type: 3}
-      propertyPath: lookAction
-      value: 
-      objectReference: {fileID: -5630151704836100654, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-    - target: {fileID: 4055079881912893135, guid: 74afa64270ca347e0939c5e65dada0df, type: 3}
       propertyPath: mainCamera
       value: 
       objectReference: {fileID: 4195528198056494419}
@@ -422,22 +418,6 @@ PrefabInstance:
       propertyPath: aimingCamera
       value: 
       objectReference: {fileID: 4182051077889721874}
-    - target: {fileID: 4055079881912893135, guid: 74afa64270ca347e0939c5e65dada0df, type: 3}
-      propertyPath: sprintAction
-      value: 
-      objectReference: {fileID: -7471211009204490832, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-    - target: {fileID: 6146910388212260706, guid: 74afa64270ca347e0939c5e65dada0df, type: 3}
-      propertyPath: aimAction
-      value: 
-      objectReference: {fileID: -2598159374109571327, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-    - target: {fileID: 6146910388212260706, guid: 74afa64270ca347e0939c5e65dada0df, type: 3}
-      propertyPath: crouchAction
-      value: 
-      objectReference: {fileID: 7040659881675835329, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-    - target: {fileID: 6146910388212260706, guid: 74afa64270ca347e0939c5e65dada0df, type: 3}
-      propertyPath: sprintAction
-      value: 
-      objectReference: {fileID: -7471211009204490832, guid: 052faaac586de48259a63d0c4782560b, type: 3}
     - target: {fileID: 6886626361452485180, guid: 74afa64270ca347e0939c5e65dada0df, type: 3}
       propertyPath: m_Name
       value: New Player
@@ -791,7 +771,7 @@ MonoBehaviour:
   player: {fileID: 1190915592}
   playerTagFallback: {fileID: 0}
   zombiePrefab: {fileID: 5163675635462333038, guid: 408dc3a042cd8d06f87a24e79ad0f83d, type: 3}
-  spawnIntervalSeconds: 5
+  spawnIntervalSeconds: 4
   respawnDelayAfterKillSeconds: 30
   spawnBatchCount: 1
   maxAliveZombies: 50

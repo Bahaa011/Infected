@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
 
 [DisallowMultipleComponent]
@@ -22,6 +23,7 @@ public class PauseMenuUIToolkit : MonoBehaviour
     [Header("Defaults")]
     [SerializeField] private float defaultMasterVolume = 1f;
     [SerializeField] private float defaultMouseSensitivity = 2f;
+    [SerializeField] private string mainMenuSceneName = "Main Menu";
 
     private VisualElement root;
     private VisualElement overlay;
@@ -33,7 +35,7 @@ public class PauseMenuUIToolkit : MonoBehaviour
     private Button saveButton;
     private Button saveSlotsButton;
     private Button optionsButton;
-    private Button quitButton;
+    private Button mainMenuButton;
     private Button backButton;
     private Button saveSlotsBackButton;
 
@@ -136,7 +138,7 @@ public class PauseMenuUIToolkit : MonoBehaviour
         saveButton = root.Q<Button>("pause-save-btn");
         saveSlotsButton = root.Q<Button>("pause-save-slots-btn");
         optionsButton = root.Q<Button>("pause-options-btn");
-        quitButton = root.Q<Button>("pause-quit-btn");
+        mainMenuButton = root.Q<Button>("pause-main-menu-btn");
         backButton = root.Q<Button>("pause-options-back-btn");
         saveSlotsBackButton = root.Q<Button>("pause-save-slots-back-btn");
 
@@ -169,8 +171,8 @@ public class PauseMenuUIToolkit : MonoBehaviour
             optionsButton.RegisterCallback<ClickEvent>(HandleOptionsButtonClick);
         }
 
-        if (quitButton != null)
-            quitButton.clicked += QuitGame;
+        if (mainMenuButton != null)
+            mainMenuButton.clicked += QuitToMainMenu;
 
         if (backButton != null)
             backButton.clicked += ShowMainPanel;
@@ -219,9 +221,17 @@ public class PauseMenuUIToolkit : MonoBehaviour
     private void SaveCurrentSlot()
     {
         if (saveManager == null)
-            saveManager = FindAnyObjectByType<GameSaveManager>();
+            saveManager = FindRuntimeObject<GameSaveManager>();
 
-        saveManager?.SaveGame();
+        if (saveManager == null)
+        {
+            Debug.LogWarning("[PauseMenuUIToolkit] Save button pressed, but no GameSaveManager was found in the loaded scenes.");
+            return;
+        }
+
+        if (!saveManager.TrySaveGame())
+            Debug.LogWarning("[PauseMenuUIToolkit] Save button pressed, but GameSaveManager could not write the save. Check the player log for the GameSaveManager warning/error above this one.");
+
         RefreshSaveSlotsUi();
     }
 
@@ -587,10 +597,31 @@ public class PauseMenuUIToolkit : MonoBehaviour
             return;
 
         saveManager?.SetActiveSlot(pendingSaveSlotIndex);
-        saveManager?.SaveGameToSlot(pendingSaveSlotIndex);
+        if (saveManager == null || !saveManager.SaveGameToSlot(pendingSaveSlotIndex))
+            Debug.LogWarning($"[PauseMenuUIToolkit] Could not save to slot {pendingSaveSlotIndex}.");
+
         pendingSaveSlotIndex = -1;
         HideSaveConfirmDialog();
         RefreshSaveSlotsUi();
+    }
+
+    private static T FindRuntimeObject<T>() where T : UnityEngine.Object
+    {
+        T[] objects = FindObjectsByType<T>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        for (int i = 0; i < objects.Length; i++)
+        {
+            T obj = objects[i];
+            if (obj == null)
+                continue;
+
+            if (obj is Component component && component.gameObject.scene.IsValid())
+                return obj;
+
+            if (obj is GameObject gameObject && gameObject.scene.IsValid())
+                return obj;
+        }
+
+        return null;
     }
 
     private void ShowSaveConfirmDialog(int slotIndex, bool hasExistingSave)
@@ -838,12 +869,41 @@ public class PauseMenuUIToolkit : MonoBehaviour
         }
     }
 
-    private static void QuitGame()
+    private void QuitToMainMenu()
     {
-#if UNITY_EDITOR
-        UnityEditor.EditorApplication.isPlaying = false;
-#else
-        Application.Quit();
-#endif
+        SaveCurrentSlot();
+
+        IsPaused = false;
+        Time.timeScale = 1f;
+        AudioListener.pause = false;
+        RestorePlayerInputs();
+
+        UnityEngine.Cursor.lockState = CursorLockMode.None;
+        UnityEngine.Cursor.visible = true;
+
+        SetVisible(false);
+        LoadMainMenuScene();
+    }
+
+    private void LoadMainMenuScene()
+    {
+        string[] sceneNames =
+        {
+            mainMenuSceneName,
+            "Main Menu",
+            "MainMenu"
+        };
+
+        for (int i = 0; i < sceneNames.Length; i++)
+        {
+            string sceneName = sceneNames[i];
+            if (string.IsNullOrWhiteSpace(sceneName) || !Application.CanStreamedLevelBeLoaded(sceneName))
+                continue;
+
+            SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
+            return;
+        }
+
+        Debug.LogError($"[PauseMenuUIToolkit] Could not load main menu scene. Tried: '{mainMenuSceneName}', 'Main Menu', 'MainMenu'. Add the menu scene to Build Settings or set PauseMenuUIToolkit.mainMenuSceneName correctly.");
     }
 }

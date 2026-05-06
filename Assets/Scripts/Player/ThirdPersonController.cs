@@ -516,6 +516,10 @@ public class ThirdPersonController : MonoBehaviour
                 strength = 1f;
                 isRunning = true;
             }
+
+            float stealthMultiplier = player.GetStealthPerceptionMultiplier();
+            radius *= stealthMultiplier;
+            strength *= stealthMultiplier;
         }
 
         ZombieNoiseSystem.EmitNoise(transform.position, radius, strength, ZombieNoiseSystem.NoiseType.Footstep);

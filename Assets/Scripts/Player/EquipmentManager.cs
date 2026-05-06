@@ -16,7 +16,6 @@ public class EquipmentManager : MonoBehaviour
     [SerializeField] private Transform pistolHandSlot;
     [SerializeField] private Transform primaryRestingSlot;
     [SerializeField] private Transform secondaryRestingSlot;
-    [SerializeField] private Transform meleeRestingSlot;
     [SerializeField] private InputActionReference switchWeaponAction;
     [Header("Weapon Hand Placement")]
     [Tooltip("Local rotation (in degrees) to apply to weapon when equipped in hand.")]
@@ -72,8 +71,6 @@ public class EquipmentManager : MonoBehaviour
 
         // Check for melee weapon in either hand slot
         MeleeWeapon meleeInHand = null;
-        if (meleeRestingSlot != null)
-            meleeInHand = meleeRestingSlot.GetComponentInChildren<MeleeWeapon>();
         if (pistolHandSlot != null)
             meleeInHand = meleeInHand ?? pistolHandSlot.GetComponentInChildren<MeleeWeapon>();
         if (meleeInHand == null && augHandSlot != null)
@@ -197,7 +194,7 @@ public class EquipmentManager : MonoBehaviour
 
         // Holster melee if it is currently in hand
         if (isMeleeEquipped)
-            HolsterMeleeToRestingSlot();
+            HideMeleeWeapon();
 
         // Instantiate new primary weapon in hand slot (not resting slot)
         GameObject weaponInstance = Instantiate(gunItem.Prefab, targetHandSlot);
@@ -298,7 +295,7 @@ public class EquipmentManager : MonoBehaviour
 
         // Holster melee if it is currently in hand
         if (isMeleeEquipped)
-            HolsterMeleeToRestingSlot();
+            HideMeleeWeapon();
 
         // Instantiate new secondary weapon in hand slot (not resting slot)
         GameObject weaponInstance = Instantiate(gunItem.Prefab, targetHandSlot);
@@ -374,7 +371,7 @@ public class EquipmentManager : MonoBehaviour
             return; // Already equipped
 
         if (isMeleeEquipped)
-            HolsterMeleeToRestingSlot();
+            HideMeleeWeapon();
 
         // Holster current weapon
         if (currentWeaponInHand != null)
@@ -408,7 +405,7 @@ public class EquipmentManager : MonoBehaviour
             return; // Already equipped
 
         if (isMeleeEquipped)
-            HolsterMeleeToRestingSlot();
+            HideMeleeWeapon();
 
         // Holster current weapon
         if (currentWeaponInHand != null)
@@ -451,7 +448,7 @@ public class EquipmentManager : MonoBehaviour
 
         if (isMeleeEquipped)
         {
-            HolsterMeleeToRestingSlot();
+            HideMeleeWeapon();
             onWeaponSwitched?.Invoke(null);
         }
     }
@@ -575,20 +572,18 @@ public class EquipmentManager : MonoBehaviour
         return normalizedName.Contains("M4") || normalizedName.Contains("M4A1");
     }
 
-    private void HolsterMeleeToRestingSlot()
+    private void HideMeleeWeapon()
     {
         if (equippedMeleeWeapon == null)
             return;
 
-        Transform restingSlot = meleeRestingSlot != null ? meleeRestingSlot : GetDefaultHandSlot();
-        if (restingSlot == null)
-            return;
-
-        equippedMeleeWeapon.transform.SetParent(restingSlot);
+        Transform handSlot = GetDefaultHandSlot();
+        if (handSlot != null)
+            equippedMeleeWeapon.transform.SetParent(handSlot);
         equippedMeleeWeapon.transform.localPosition = Vector3.zero;
         equippedMeleeWeapon.transform.localRotation = Quaternion.identity;
-        equippedMeleeWeapon.gameObject.SetActive(true);
         equippedMeleeWeapon.Unequip();
+        equippedMeleeWeapon.gameObject.SetActive(false);
         if (weaponLayer >= 0) SetLayerRecursively(equippedMeleeWeapon.gameObject, 0);
         isMeleeEquipped = false;
     }
@@ -641,7 +636,7 @@ public class EquipmentManager : MonoBehaviour
             return false;
         }
 
-        Transform meleeSlot = meleeRestingSlot != null ? meleeRestingSlot : GetDefaultHandSlot();
+        Transform meleeSlot = GetDefaultHandSlot();
         if (meleeSlot == null)
         {
             Debug.LogError("[EquipmentManager] Cannot equip: no hand slot is assigned!");

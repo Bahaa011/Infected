@@ -317,6 +317,18 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4312738467798819212, guid: 53228eb794e1944ec9af8c20aa87f805, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 400.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4312738467798819212, guid: 53228eb794e1944ec9af8c20aa87f805, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 125.204
+      objectReference: {fileID: 0}
+    - target: {fileID: 4312738467798819212, guid: 53228eb794e1944ec9af8c20aa87f805, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 895.6
+      objectReference: {fileID: 0}
     - target: {fileID: 6455185105959836189, guid: 53228eb794e1944ec9af8c20aa87f805, type: 3}
       propertyPath: m_Name
       value: House1 (2)

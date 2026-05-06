@@ -206,7 +206,8 @@ public class Zombie : MonoBehaviour, IDamageable
         {
             float proximityFactor = 1f - Mathf.Clamp01(distanceToPlayer / Mathf.Max(0.01f, proximityDetectionRange));
             float crouchFactor = player != null && player.IsCrouching() ? 0.45f : 1f;
-            hearingMeter += passiveProximityHearingPerSecond * proximityFactor * crouchFactor * dt;
+            float stealthFactor = player != null ? player.GetStealthPerceptionMultiplier() : 1f;
+            hearingMeter += passiveProximityHearingPerSecond * proximityFactor * crouchFactor * stealthFactor * dt;
         }
 
         hearingMeter -= hearingDecayPerSecond * dt;
@@ -245,6 +246,8 @@ public class Zombie : MonoBehaviour, IDamageable
 
         if (player != null)
         {
+            movementVisibility *= player.GetStealthPerceptionMultiplier();
+
             if (player.IsCrouching())
                 movementVisibility *= crouchVisibilityMultiplier;
             if (player.IsCurrentlySprinting())

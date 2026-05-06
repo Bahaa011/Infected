@@ -19,6 +19,6 @@ MonoBehaviour:
   icon: {fileID: 21300000, guid: 10062fb4c62c8da28b60128fe179466f, type: 3}
   prefab: {fileID: 5288757898809187638, guid: 2e9e702900ddf353182ae09fe09c4c75, type: 3}
   id: 7
-  ammoCapacity: 20
-  currentAmmo: 20
+  ammoCapacity: 25
+  currentAmmo: 25
   gunType: 1

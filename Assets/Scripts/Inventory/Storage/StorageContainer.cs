@@ -183,11 +183,18 @@ public class StorageContainer : MonoBehaviour, IInteractionPromptSource
 
         float nowGameDays = GetCurrentGameDays();
 
-        if (NextRespawnGameDayByContainer.TryGetValue(containerKey, out float nextRespawnDay)
-            && nowGameDays < nextRespawnDay
-            && SavedLootByContainer.TryGetValue(containerKey, out List<SavedLootStack> savedLoot))
+        bool hasRespawnDay = NextRespawnGameDayByContainer.TryGetValue(containerKey, out float nextRespawnDay);
+        bool hasSavedLoot = SavedLootByContainer.TryGetValue(containerKey, out List<SavedLootStack> savedLoot);
+
+        if (hasRespawnDay && hasSavedLoot)
         {
-            RestoreLootSnapshot(savedLoot);
+            if (nowGameDays < nextRespawnDay || !CanRespawnWithSavedContents(savedLoot))
+            {
+                RestoreLootSnapshot(savedLoot);
+                return;
+            }
+
+            GenerateFreshLoot();
             return;
         }
 
@@ -206,19 +213,52 @@ public class StorageContainer : MonoBehaviour, IInteractionPromptSource
         if (storageWindow != null && storageWindow.IsOpenFor(storageInventory))
             return;
 
-        // Do not respawn if the container already contains items.
-        if (storageInventory != null)
-        {
-            var slots = storageInventory.GetAllItems();
-            for (int i = 0; i < slots.Count; i++)
-            {
-                var slot = slots[i];
-                if (slot != null && slot.isOccupied && slot.isAnchor && slot.item != null)
-                    return;
-            }
-        }
+        // Respawn empty containers and containers where the only remaining items are guns.
+        if (!CanRespawnWithCurrentContents())
+            return;
 
         GenerateFreshLoot();
+    }
+
+    private bool CanRespawnWithCurrentContents()
+    {
+        if (storageInventory == null)
+            return true;
+
+        List<InventorySlot> slots = storageInventory.GetAllItems();
+        for (int i = 0; i < slots.Count; i++)
+        {
+            InventorySlot slot = slots[i];
+            if (slot == null || !slot.isOccupied || !slot.isAnchor || slot.item == null)
+                continue;
+
+            if (slot.item is GunItem)
+                continue;
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool CanRespawnWithSavedContents(List<SavedLootStack> savedLoot)
+    {
+        if (savedLoot == null)
+            return true;
+
+        for (int i = 0; i < savedLoot.Count; i++)
+        {
+            Item item = savedLoot[i].item;
+            if (item == null)
+                continue;
+
+            if (item is GunItem)
+                continue;
+
+            return false;
+        }
+
+        return true;
     }
 
     private void GenerateFreshLoot()

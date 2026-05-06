@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 4924692241125882826}
   - component: {fileID: 1004128954647358196}
   - component: {fileID: 6197165567540789342}
+  - component: {fileID: 7537104227898549179}
   m_Layer: 0
   m_Name: Lootbox
   m_TagString: Untagged
@@ -108,12 +109,12 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.5719528, y: 0.843353, z: 0.5124129}
-  m_Center: {x: 0.018100739, y: 0.0033835173, z: 0.099907726}
+  m_Size: {x: 0.29531538, y: 0.6520164, z: 0.20159018}
+  m_Center: {x: 0.0020399988, y: -0.010646373, z: 0.11171406}
 --- !u!114 &1004128954647358196
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -149,7 +150,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::StorageContainer
   storageDisplayName: Loot Box
   containerIdOverride: 
-  interactionDistance: 2.5
+  interactionDistance: 10
   autoGenerateLoot: 1
   lootDropSettings:
     autoDiscoverLoadedItemAssets: 1
@@ -186,3 +187,24 @@ MonoBehaviour:
   fallbackDayLengthInSeconds: 1200
   fillStartingItemsOnStart: 0
   startingItems: []
+--- !u!65 &7537104227898549179
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2102971186118455891}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.61, y: 0.58945465, z: 0.42}
+  m_Center: {x: -0.0014902353, y: 0.0000014752153, z: 0.10046236}

@@ -14,6 +14,7 @@ public class MainMenuUIToolkit : MonoBehaviour
     private const string PrefFullscreen = "settings.fullscreen";
     private const string PrefResolutionWidth = "settings.resolutionWidth";
     private const string PrefResolutionHeight = "settings.resolutionHeight";
+    private const string MainMenuBackgroundResourcePath = "Art/MainBG";
 
     [Header("References")]
     [SerializeField] private UIDocument uiDocument;
@@ -180,12 +181,12 @@ public class MainMenuUIToolkit : MonoBehaviour
         if (resourceTexture != null)
             return resourceTexture;
 
-        resourceTexture = Resources.Load<Texture2D>("Art/MainBG");
+        resourceTexture = Resources.Load<Texture2D>(MainMenuBackgroundResourcePath);
         if (resourceTexture != null)
             return resourceTexture;
 
 #if UNITY_EDITOR
-        Texture2D assetTexture = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Art/MainBG.png");
+        Texture2D assetTexture = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Resources/Art/MainBG.png");
         if (assetTexture != null)
         {
             mainMenuBackgroundTexture = assetTexture;
@@ -193,7 +194,7 @@ public class MainMenuUIToolkit : MonoBehaviour
         }
 #endif
 
-        Debug.LogWarning("[MainMenuUIToolkit] Could not find main menu background texture. Assign it in the inspector.");
+        Debug.LogWarning($"[MainMenuUIToolkit] Could not find main menu background texture. Assign it in the inspector or place it at Resources/{MainMenuBackgroundResourcePath}.");
         return null;
     }
 

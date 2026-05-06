@@ -59,6 +59,7 @@ public class PlayerSkills : MonoBehaviour
     [SerializeField] private float stealthXPPerSecondCrouching = 0.5f;
     [SerializeField] private float stealthMaxLevel = 10f;
     [SerializeField] private float stealthXPPerLevel = 120f;
+    [SerializeField] private float maxStealthPerceptionReduction = 0.5f;
     
     [Header("Metabolism Skill Settings")]
     [SerializeField] private float metabolismXPPerMinute = 1f;
@@ -108,7 +109,8 @@ public class PlayerSkills : MonoBehaviour
         
         public float GetSpreadReduction(float maxLevel, float maxImprovement)
         {
-            return (level - 1) / maxLevel * maxImprovement;
+            float denominator = Mathf.Max(1f, maxLevel - 1f);
+            return Mathf.Clamp01((level - 1f) / denominator) * maxImprovement;
         }
         
         public float GetXPNeeded(float shotsPerLevel)
@@ -232,6 +234,7 @@ public class PlayerSkills : MonoBehaviour
             return;
 
         GeneralSkill skill = generalSkills[skillType];
+        int previousLevel = skill.level;
         float maxLevel = GetMaxLevelForSkill(skillType);
         float xpPerLevel = GetXPPerLevelForSkill(skillType);
         
@@ -249,6 +252,9 @@ public class PlayerSkills : MonoBehaviour
         
         if (skill.level >= maxLevel)
             skill.currentXP = 0f;
+
+        if (skillType == SkillType.Vitality && skill.level != previousLevel && player != null)
+            player.RefreshSkillDerivedStats();
         
         onGeneralSkillProgressChanged?.Invoke(skillType, skill.currentXP, skill.GetXPNeeded(xpPerLevel));
     }
@@ -371,28 +377,37 @@ public class PlayerSkills : MonoBehaviour
     
     public float GetStaminaDrainMultiplier()
     {
-        int level = GetGeneralSkillLevel(SkillType.Stamina);
-        float reduction = (level - 1) / staminaMaxLevel * maxStaminaDrainReduction;
+        float reduction = GetSkillBonusRatio(SkillType.Stamina) * maxStaminaDrainReduction;
         return 1f - reduction;
     }
 
     public float GetMetabolismMultiplier()
     {
-        int level = GetGeneralSkillLevel(SkillType.Metabolism);
-        float reduction = (level - 1) / metabolismMaxLevel * maxHungerThirstReduction;
+        float reduction = GetSkillBonusRatio(SkillType.Metabolism) * maxHungerThirstReduction;
         return 1f - reduction;
     }
 
     public float GetVitalityHealthBonus()
     {
-        int level = GetGeneralSkillLevel(SkillType.Vitality);
-        return (level - 1) / vitalityMaxLevel * maxHealthBonus;
+        return GetSkillBonusRatio(SkillType.Vitality) * maxHealthBonus;
+    }
+
+    public float GetStealthPerceptionMultiplier()
+    {
+        float reduction = GetSkillBonusRatio(SkillType.Stealth) * maxStealthPerceptionReduction;
+        return 1f - reduction;
     }
 
     public float GetStrengthDamageBonus()
     {
-        int level = GetGeneralSkillLevel(SkillType.Strength);
-        return (level - 1) / strengthMaxLevel * maxDamageBonus;
+        return GetSkillBonusRatio(SkillType.Strength) * maxDamageBonus;
+    }
+
+    private float GetSkillBonusRatio(SkillType skillType)
+    {
+        float maxLevel = Mathf.Max(1f, GetMaxLevelForSkill(skillType));
+        float denominator = Mathf.Max(1f, maxLevel - 1f);
+        return Mathf.Clamp01((GetGeneralSkillLevel(skillType) - 1f) / denominator);
     }
 
     public void RegisterMeleeAttack()
@@ -515,5 +530,8 @@ public class PlayerSkills : MonoBehaviour
                 skill.totalXP = Mathf.Max(0f, save.totalXP);
             }
         }
+
+        if (player != null)
+            player.RefreshSkillDerivedStats();
     }
 }

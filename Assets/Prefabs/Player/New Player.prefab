@@ -718,13 +718,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1819944641334327947}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: -0.7009806, y: 0.16488937, z: -0.63362646, w: 0.28276345}
+  m_LocalPosition: {x: -0.465, y: 0.211, z: -0.146}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 7381590951428112504}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: -10.805, y: 92.166, z: -143.12}
 --- !u!1 &1847142943285782087
 GameObject:
   m_ObjectHideFlags: 0
@@ -3076,17 +3076,17 @@ MonoBehaviour:
   regenDelay: 3
   maxHunger: 100
   currentHunger: 100
-  hungerDecayRate: 5
+  hungerDecayRate: 3
   maxThirst: 100
   currentThirst: 100
-  thirstDecayRate: 8
+  thirstDecayRate: 6
   maxStamina: 100
   currentStamina: 100
-  staminaDrainRate: 20
-  staminaRegenRate: 20
-  sprintAction: {fileID: 0}
-  crouchAction: {fileID: 0}
-  aimAction: {fileID: 0}
+  staminaDrainRate: 15
+  staminaRegenRate: 15
+  sprintAction: {fileID: -7471211009204490832, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  crouchAction: {fileID: 7040659881675835329, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  aimAction: {fileID: -2598159374109571327, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   mainMenuSceneName: MainMenu
   saveFilePrefix: save_slot_
   onHealthChanged:
@@ -3122,7 +3122,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bb43f678c3686ac419a148e201aab723, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
-  lookAction: {fileID: 0}
+  lookAction: {fileID: -5630151704836100654, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   cameraTarget: {fileID: 5014708393194720948}
   mouseSensitivity: 10
   minPitch: -40
@@ -3141,7 +3141,7 @@ MonoBehaviour:
   normalHeight: 2
   crouchCameraHeightOffset: 0.45
   cameraHeightSmooth: 8
-  sprintAction: {fileID: 0}
+  sprintAction: {fileID: -7471211009204490832, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   walkNoiseRadius: 7
   sprintNoiseRadius: 13
   crouchNoiseRadius: 3
@@ -3204,7 +3204,6 @@ MonoBehaviour:
   pistolHandSlot: {fileID: 2926122518108453526}
   primaryRestingSlot: {fileID: 4376206666124541816}
   secondaryRestingSlot: {fileID: 2909443195916972190}
-  meleeRestingSlot: {fileID: 0}
   switchWeaponAction: {fileID: 0}
   weaponHandRotation: {x: 0, y: 0, z: 0}
   onPrimaryEquipped:

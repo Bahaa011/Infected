@@ -182,7 +182,7 @@ public class Player : MonoBehaviour
         timeSinceDamage = 0f; // Reset regen timer
 
         onDamageReceived?.Invoke(damage);
-        onHealthChanged?.Invoke(currentHealth, maxHealth);
+        onHealthChanged?.Invoke(currentHealth, GetMaxHealth());
 
         // Award Vitality XP for surviving damage
         if (currentHealth > 0 && playerSkills != null)
@@ -224,8 +224,8 @@ public class Player : MonoBehaviour
     {
         if (!isAlive) return;
 
-        currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
-        onHealthChanged?.Invoke(currentHealth, maxHealth);
+        currentHealth = Mathf.Min(currentHealth + amount, GetMaxHealth());
+        onHealthChanged?.Invoke(currentHealth, GetMaxHealth());
     }
 
     public void Die()
@@ -250,8 +250,12 @@ public class Player : MonoBehaviour
     }
 
     public float GetHealth() => currentHealth;
-    public float GetMaxHealth() => maxHealth;
-    public float GetHealthPercent() => currentHealth / maxHealth;
+    public float GetMaxHealth()
+    {
+        float vitalityBonus = playerSkills != null ? playerSkills.GetVitalityHealthBonus() : 0f;
+        return maxHealth + vitalityBonus;
+    }
+    public float GetHealthPercent() => currentHealth / GetMaxHealth();
     public float GetHunger() => currentHunger;
     public float GetMaxHunger() => maxHunger;
     public float GetHungerPercent() => currentHunger / maxHunger;
@@ -293,16 +297,27 @@ public class Player : MonoBehaviour
 
     public void ApplySavedVitals(float health, float hunger, float thirst, float stamina, bool alive)
     {
-        currentHealth = Mathf.Clamp(health, 0f, maxHealth);
+        currentHealth = Mathf.Clamp(health, 0f, GetMaxHealth());
         currentHunger = Mathf.Clamp(hunger, 0f, maxHunger);
         currentThirst = Mathf.Clamp(thirst, 0f, maxThirst);
         currentStamina = Mathf.Clamp(stamina, 0f, maxStamina);
         isAlive = alive;
 
-        onHealthChanged?.Invoke(currentHealth, maxHealth);
+        onHealthChanged?.Invoke(currentHealth, GetMaxHealth());
         onHungerChanged?.Invoke(currentHunger, maxHunger);
         onThirstChanged?.Invoke(currentThirst, maxThirst);
         onStaminaChanged?.Invoke(currentStamina, maxStamina);
+    }
+
+    public void RefreshSkillDerivedStats()
+    {
+        currentHealth = Mathf.Clamp(currentHealth, 0f, GetMaxHealth());
+        onHealthChanged?.Invoke(currentHealth, GetMaxHealth());
+    }
+
+    public float GetStealthPerceptionMultiplier()
+    {
+        return playerSkills != null ? playerSkills.GetStealthPerceptionMultiplier() : 1f;
     }
 
     public void SetIsCurrentlySprinting(bool isSprinting)
