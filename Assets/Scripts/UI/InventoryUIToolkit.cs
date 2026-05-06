@@ -114,7 +114,7 @@ public class InventoryUIToolkit : MonoBehaviour
         Debug.Log("[InventoryUIToolkit] Initialized. Panel: " + (inventoryPanel != null) + ", Root: " + (rootVisual != null));
     }
 
-    private static void EnsureRuntimeUIInput()
+    public static void EnsureRuntimeUIInput()
     {
         var eventSystem = EventSystem.current;
         if (eventSystem == null)
@@ -267,6 +267,9 @@ public class InventoryUIToolkit : MonoBehaviour
 
     private void OnToggleInventory(InputAction.CallbackContext _)
     {
+        if (PauseMenuUIToolkit.IsPaused)
+            return;
+
         Debug.Log("[InventoryUIToolkit] OnToggleInventory called");
         ToggleInventory();
     }

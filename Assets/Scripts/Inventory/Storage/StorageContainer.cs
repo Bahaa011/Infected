@@ -89,16 +89,7 @@ public class StorageContainer : MonoBehaviour, IInteractionPromptSource
             return;
         }
 
-        if (!fillStartingItemsOnStart || startingItems == null)
-            return;
-
-        for (int i = 0; i < startingItems.Length; i++)
-        {
-            Item item = startingItems[i].item;
-            int qty = Mathf.Max(1, startingItems[i].quantity);
-            if (item != null)
-                storageInventory.AddItem(item, qty);
-        }
+        InitializeOrRestoreStorageOnly();
     }
 
     private void OnDisable()
@@ -199,6 +190,23 @@ public class StorageContainer : MonoBehaviour, IInteractionPromptSource
         }
 
         GenerateFreshLoot();
+    }
+
+    private void InitializeOrRestoreStorageOnly()
+    {
+        if (storageInventory == null)
+            return;
+
+        if (SavedLootByContainer.TryGetValue(containerKey, out List<SavedLootStack> savedLoot))
+        {
+            RestoreLootSnapshot(savedLoot);
+            return;
+        }
+
+        if (fillStartingItemsOnStart)
+            FillFromStartingItems();
+
+        SaveCurrentLootSnapshot();
     }
 
     private void TryRespawnLootIfDue()

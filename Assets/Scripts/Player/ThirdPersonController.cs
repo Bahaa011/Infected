@@ -304,6 +304,23 @@ public class ThirdPersonController : MonoBehaviour
         if (!WorldLoadingState.IsWorldReady)
             return;
 
+        if (PauseMenuUIToolkit.IsPaused)
+        {
+            if (player != null)
+            {
+                player.SetIsCurrentlySprinting(false);
+                player.SetSprintInputPressed(false);
+            }
+
+            isActuallySprinting = false;
+            wasMoving = false;
+
+            if (footstepAudioSource != null && footstepAudioSource.isPlaying)
+                footstepAudioSource.Stop();
+
+            return;
+        }
+
         // Lock yaw when inventory opens to prevent camera from rotating
         if (InventoryUIToolkit.IsInventoryOpen)
         {
@@ -336,6 +353,9 @@ public class ThirdPersonController : MonoBehaviour
     private void LateUpdate()
     {
         if (!WorldLoadingState.IsWorldReady)
+            return;
+
+        if (PauseMenuUIToolkit.IsPaused)
             return;
 
         // Detach camera from player when inventory is open to prevent rotation

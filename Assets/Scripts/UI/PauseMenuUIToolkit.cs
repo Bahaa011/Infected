@@ -58,11 +58,14 @@ public class PauseMenuUIToolkit : MonoBehaviour
     private Button saveConfirmNoButton;
     private int pendingSaveSlotIndex = -1;
 
-    private readonly List<PlayerInput> pausedInputs = new List<PlayerInput>();
-    private readonly List<bool> pausedInputStates = new List<bool>();
+    private readonly Dictionary<UIDocument, PickingMode> suppressedOtherDocumentPickingModes = new Dictionary<UIDocument, PickingMode>();
+    private float originalDocumentSortingOrder;
+    private bool hasCapturedDocumentSortingOrder;
 
     private void Awake()
     {
+        InventoryUIToolkit.EnsureRuntimeUIInput();
+
         if (uiDocument == null)
             uiDocument = GetComponent<UIDocument>();
 
@@ -90,6 +93,14 @@ public class PauseMenuUIToolkit : MonoBehaviour
 
     private void Update()
     {
+        if (IsPaused)
+        {
+            if (UnityEngine.Cursor.lockState != CursorLockMode.None)
+                UnityEngine.Cursor.lockState = CursorLockMode.None;
+            if (!UnityEngine.Cursor.visible)
+                UnityEngine.Cursor.visible = true;
+        }
+
         if (Keyboard.current == null)
             return;
 
@@ -266,17 +277,19 @@ public class PauseMenuUIToolkit : MonoBehaviour
 
     private void PauseGame()
     {
+        CloseInventoryIfOpen();
+
         IsPaused = true;
         Time.timeScale = 0f;
         AudioListener.pause = true;
-
-        StoreAndDisablePlayerInputs();
 
         UnityEngine.Cursor.lockState = CursorLockMode.None;
         UnityEngine.Cursor.visible = true;
 
         ShowMainPanel();
         SetVisible(true);
+        SetPauseDocumentPriority(true);
+        SuppressOtherUIDocumentPicking(true);
     }
 
     private void ResumeGame()
@@ -285,54 +298,24 @@ public class PauseMenuUIToolkit : MonoBehaviour
         Time.timeScale = 1f;
         AudioListener.pause = false;
 
-        RestorePlayerInputs();
-
         UnityEngine.Cursor.lockState = CursorLockMode.Locked;
         UnityEngine.Cursor.visible = false;
 
+        SuppressOtherUIDocumentPicking(false);
+        SetPauseDocumentPriority(false);
         SetVisible(false);
-    }
-
-    private void StoreAndDisablePlayerInputs()
-    {
-        pausedInputs.Clear();
-        pausedInputStates.Clear();
-
-        PlayerInput[] allInputs = FindObjectsByType<PlayerInput>();
-        for (int i = 0; i < allInputs.Length; i++)
-        {
-            PlayerInput input = allInputs[i];
-            if (input == null)
-                continue;
-
-            pausedInputs.Add(input);
-            pausedInputStates.Add(input.enabled);
-
-            if (input.enabled)
-                input.enabled = false;
-        }
-    }
-
-    private void RestorePlayerInputs()
-    {
-        for (int i = 0; i < pausedInputs.Count; i++)
-        {
-            PlayerInput input = pausedInputs[i];
-            if (input == null)
-                continue;
-
-            bool wasEnabled = i < pausedInputStates.Count && pausedInputStates[i];
-            input.enabled = wasEnabled;
-        }
-
-        pausedInputs.Clear();
-        pausedInputStates.Clear();
     }
 
     private void SetVisible(bool visible)
     {
         if (overlay != null)
+        {
             overlay.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
+            overlay.pickingMode = visible ? PickingMode.Position : PickingMode.Ignore;
+        }
+
+        if (root != null)
+            root.pickingMode = visible ? PickingMode.Position : PickingMode.Ignore;
     }
 
     private void ShowMainPanel()
@@ -341,42 +324,63 @@ public class PauseMenuUIToolkit : MonoBehaviour
         {
             mainPanel.style.display = DisplayStyle.Flex;
             mainPanel.BringToFront();
+            mainPanel.pickingMode = PickingMode.Position;
         }
 
         if (optionsPanel != null)
+        {
             optionsPanel.style.display = DisplayStyle.None;
+            optionsPanel.pickingMode = PickingMode.Ignore;
+        }
 
         if (saveSlotsPanel != null)
+        {
             saveSlotsPanel.style.display = DisplayStyle.None;
+            saveSlotsPanel.pickingMode = PickingMode.Ignore;
+        }
     }
 
     private void ShowOptionsPanel()
     {
         if (mainPanel != null)
+        {
             mainPanel.style.display = DisplayStyle.None;
+            mainPanel.pickingMode = PickingMode.Ignore;
+        }
 
         if (saveSlotsPanel != null)
+        {
             saveSlotsPanel.style.display = DisplayStyle.None;
+            saveSlotsPanel.pickingMode = PickingMode.Ignore;
+        }
 
         if (optionsPanel != null)
         {
             optionsPanel.style.display = DisplayStyle.Flex;
             optionsPanel.BringToFront();
+            optionsPanel.pickingMode = PickingMode.Position;
         }
     }
 
     private void ShowSaveSlotsPanel()
     {
         if (mainPanel != null)
+        {
             mainPanel.style.display = DisplayStyle.None;
+            mainPanel.pickingMode = PickingMode.Ignore;
+        }
 
         if (optionsPanel != null)
+        {
             optionsPanel.style.display = DisplayStyle.None;
+            optionsPanel.pickingMode = PickingMode.Ignore;
+        }
 
         if (saveSlotsPanel != null)
         {
             saveSlotsPanel.style.display = DisplayStyle.Flex;
             saveSlotsPanel.BringToFront();
+            saveSlotsPanel.pickingMode = PickingMode.Position;
         }
 
         StyleSaveSlotsScrollBar();
@@ -603,6 +607,77 @@ public class PauseMenuUIToolkit : MonoBehaviour
         pendingSaveSlotIndex = -1;
         HideSaveConfirmDialog();
         RefreshSaveSlotsUi();
+    }
+
+    private void CloseInventoryIfOpen()
+    {
+        if (!InventoryUIToolkit.IsInventoryOpen)
+            return;
+
+        InventoryUIToolkit inventoryUi = FindAnyObjectByType<InventoryUIToolkit>();
+        if (inventoryUi != null)
+            inventoryUi.CloseFromExternal();
+    }
+
+    private void SetPauseDocumentPriority(bool pauseOpen)
+    {
+        if (uiDocument == null)
+            return;
+
+        if (pauseOpen)
+        {
+            if (!hasCapturedDocumentSortingOrder)
+            {
+                originalDocumentSortingOrder = uiDocument.sortingOrder;
+                hasCapturedDocumentSortingOrder = true;
+            }
+
+            uiDocument.sortingOrder = Mathf.Max(uiDocument.sortingOrder, 10000);
+            root?.BringToFront();
+            overlay?.BringToFront();
+        }
+        else if (hasCapturedDocumentSortingOrder)
+        {
+            uiDocument.sortingOrder = originalDocumentSortingOrder;
+        }
+    }
+
+    private void SuppressOtherUIDocumentPicking(bool suppress)
+    {
+        if (suppress)
+        {
+            suppressedOtherDocumentPickingModes.Clear();
+            UIDocument[] allDocuments = FindObjectsByType<UIDocument>(FindObjectsSortMode.None);
+            for (int i = 0; i < allDocuments.Length; i++)
+            {
+                UIDocument doc = allDocuments[i];
+                if (doc == null || doc == uiDocument)
+                    continue;
+
+                VisualElement documentRoot = doc.rootVisualElement;
+                if (documentRoot == null)
+                    continue;
+
+                suppressedOtherDocumentPickingModes[doc] = documentRoot.pickingMode;
+                documentRoot.pickingMode = PickingMode.Ignore;
+            }
+
+            return;
+        }
+
+        foreach (var kvp in suppressedOtherDocumentPickingModes)
+        {
+            if (kvp.Key == null)
+                continue;
+
+            VisualElement documentRoot = kvp.Key.rootVisualElement;
+            if (documentRoot == null)
+                continue;
+
+            documentRoot.pickingMode = kvp.Value;
+        }
+
+        suppressedOtherDocumentPickingModes.Clear();
     }
 
     private static T FindRuntimeObject<T>() where T : UnityEngine.Object
@@ -876,11 +951,12 @@ public class PauseMenuUIToolkit : MonoBehaviour
         IsPaused = false;
         Time.timeScale = 1f;
         AudioListener.pause = false;
-        RestorePlayerInputs();
 
         UnityEngine.Cursor.lockState = CursorLockMode.None;
         UnityEngine.Cursor.visible = true;
 
+        SuppressOtherUIDocumentPicking(false);
+        SetPauseDocumentPriority(false);
         SetVisible(false);
         LoadMainMenuScene();
     }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -33,6 +34,9 @@ public class GameSaveManager : MonoBehaviour
     [SerializeField] private int saveSlotCount = 3;
     [SerializeField] private int activeSlotIndex = 1;
     [SerializeField] private string saveFilePrefix = "save_slot_";
+    [SerializeField] private bool loadSelectedSlotOnStart = true;
+
+    private bool hasAutoLoadedSelectedSlot;
 
     public int ActiveSlotIndex => activeSlotIndex;
     public int SaveSlotCount => FixedSaveSlotCount;
@@ -47,7 +51,7 @@ public class GameSaveManager : MonoBehaviour
 
     private void Awake()
     {
-        ResolveReferences();
+        ResolveReferences(true);
         if (PlayerPrefs.HasKey(PrefSelectedSlotIndex))
             activeSlotIndex = PlayerPrefs.GetInt(PrefSelectedSlotIndex, activeSlotIndex);
 
@@ -63,6 +67,12 @@ public class GameSaveManager : MonoBehaviour
 
         if (Keyboard.current.f9Key.wasPressedThisFrame)
             LoadGame();
+    }
+
+    private void Start()
+    {
+        if (loadSelectedSlotOnStart)
+            StartCoroutine(LoadSelectedSlotOnStartRoutine());
     }
 
     [ContextMenu("Save Game")]
@@ -84,7 +94,7 @@ public class GameSaveManager : MonoBehaviour
 
     public bool SaveGameToSlot(int slotIndex)
     {
-        ResolveReferences();
+        ResolveReferences(true);
         slotIndex = ClampSlotIndex(slotIndex);
         activeSlotIndex = slotIndex;
         PlayerPrefs.SetInt(PrefSelectedSlotIndex, activeSlotIndex);
@@ -116,7 +126,7 @@ public class GameSaveManager : MonoBehaviour
 
     public void LoadGameFromSlot(int slotIndex)
     {
-        ResolveReferences();
+        ResolveReferences(true);
         slotIndex = ClampSlotIndex(slotIndex);
         activeSlotIndex = slotIndex;
         PlayerPrefs.SetInt(PrefSelectedSlotIndex, activeSlotIndex);
@@ -141,12 +151,36 @@ public class GameSaveManager : MonoBehaviour
             }
 
             ApplySaveData(data);
+            RefreshTerrainStreamingAroundLoadedPlayer();
             Debug.Log($"[GameSaveManager] Loaded slot {slotIndex} from: {path}");
         }
         catch (Exception ex)
         {
             Debug.LogError($"[GameSaveManager] Load failed for slot {slotIndex}: {ex.Message}");
         }
+    }
+
+    private IEnumerator LoadSelectedSlotOnStartRoutine()
+    {
+        if (hasAutoLoadedSelectedSlot)
+            yield break;
+
+        hasAutoLoadedSelectedSlot = true;
+
+        // Let scene Awake/Start finish so references like DayNightManager and Player are initialized first.
+        yield return null;
+
+        ResolveReferences(true);
+
+        string path = GetSaveFilePath(activeSlotIndex);
+        if (!File.Exists(path))
+        {
+            StorageContainer.ClearPersistentLootRuntimeState();
+            Debug.Log($"[GameSaveManager] No save found for selected slot {activeSlotIndex}. Starting fresh at: {path}");
+            yield break;
+        }
+
+        LoadGameFromSlot(activeSlotIndex);
     }
 
     public void DeleteSlot(int slotIndex)
@@ -210,6 +244,7 @@ public class GameSaveManager : MonoBehaviour
 
         data.player.position = new SerializableVector3(player.transform.position);
         data.player.rotation = new SerializableQuaternion(player.transform.rotation);
+        Debug.Log($"[GameSaveManager] Capturing player transform for slot {slotIndex}: position={player.transform.position}, rotation={player.transform.rotation.eulerAngles}");
         data.player.health = player.GetHealth();
         data.player.hunger = player.GetHunger();
         data.player.thirst = player.GetThirst();
@@ -266,7 +301,7 @@ public class GameSaveManager : MonoBehaviour
         if (data == null)
             return;
 
-        ResolveReferences();
+        ResolveReferences(true);
 
         if (dayNightManager != null)
             dayNightManager.SetTotalGameDays(Mathf.Max(0f, data.totalGameDays));
@@ -276,9 +311,11 @@ public class GameSaveManager : MonoBehaviour
 
         if (player != null)
         {
-            player.transform.SetPositionAndRotation(
+            ApplyPlayerTransform(
+                player,
                 data.player.position.ToVector3(),
                 data.player.rotation.ToQuaternion());
+            Debug.Log($"[GameSaveManager] Applied saved player transform: position={player.transform.position}, rotation={player.transform.rotation.eulerAngles}");
 
             player.ApplySavedVitals(
                 data.player.health,
@@ -322,7 +359,10 @@ public class GameSaveManager : MonoBehaviour
                         ItemStackSaveData stack = saveContainer.items[s];
                         Item item = ResolveItem(stack, itemById, itemByName);
                         if (item == null)
+                        {
+                            Debug.LogWarning($"[GameSaveManager] Could not restore loot item '{stack?.itemName}' with ID {stack?.itemId} in container '{saveContainer.containerKey}'. Make sure the Item asset is included in the build or referenced by a loaded scene/resource.");
                             continue;
+                        }
 
                         ApplySavedItemState(item, stack);
                         runtime.lootStacks.Add(new StorageContainer.LootStackRuntimeData
@@ -341,22 +381,109 @@ public class GameSaveManager : MonoBehaviour
         StorageContainer.RefreshLoadedContainersFromPersistentState();
     }
 
-    private void ResolveReferences()
+    private void ResolveReferences(bool forceRefresh = false)
     {
-        if (player == null)
-            player = FindRuntimeObject<Player>();
+        if (forceRefresh || player == null)
+            player = FindRuntimePlayer();
 
-        if (playerInventory == null && player != null)
+        if ((forceRefresh || playerInventory == null) && player != null)
             playerInventory = player.GetComponent<Inventory>();
 
-        if (playerSkills == null && player != null)
+        if ((forceRefresh || playerSkills == null) && player != null)
             playerSkills = player.GetComponent<PlayerSkills>();
 
-        if (injurySystem == null && player != null)
+        if ((forceRefresh || injurySystem == null) && player != null)
             injurySystem = player.GetComponent<InjurySystem>();
 
-        if (dayNightManager == null)
+        if (forceRefresh || dayNightManager == null)
             dayNightManager = FindRuntimeObject<DayNightManager>();
+    }
+
+    private static void RefreshTerrainStreamingAroundLoadedPlayer()
+    {
+        TerrainChunkStreamer streamer = FindRuntimeObject<TerrainChunkStreamer>();
+        if (streamer != null)
+            streamer.ForceRefresh();
+    }
+
+    private static void ApplyPlayerTransform(Player targetPlayer, Vector3 position, Quaternion rotation)
+    {
+        if (targetPlayer == null)
+            return;
+
+        CharacterController characterController = targetPlayer.GetComponent<CharacterController>();
+        Rigidbody rigidbody = targetPlayer.GetComponent<Rigidbody>();
+
+        bool controllerWasEnabled = characterController != null && characterController.enabled;
+        if (controllerWasEnabled)
+            characterController.enabled = false;
+
+        if (rigidbody != null)
+        {
+            rigidbody.linearVelocity = Vector3.zero;
+            rigidbody.angularVelocity = Vector3.zero;
+            rigidbody.position = position;
+            rigidbody.rotation = rotation;
+        }
+
+        targetPlayer.transform.SetPositionAndRotation(position, rotation);
+        Physics.SyncTransforms();
+
+        if (controllerWasEnabled)
+            characterController.enabled = true;
+    }
+
+    private static Player FindRuntimePlayer()
+    {
+        GameObject taggedPlayer = null;
+        try
+        {
+            taggedPlayer = GameObject.FindGameObjectWithTag("Player");
+        }
+        catch (UnityException)
+        {
+            taggedPlayer = null;
+        }
+
+        if (taggedPlayer != null)
+        {
+            Player playerComponent = taggedPlayer.GetComponent<Player>();
+            if (playerComponent != null && IsSceneObject(playerComponent))
+                return playerComponent;
+        }
+
+        Player[] activePlayers = FindObjectsByType<Player>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        Player activePlayer = FindBestRuntimePlayer(activePlayers);
+        if (activePlayer != null)
+            return activePlayer;
+
+        Player[] allPlayers = FindObjectsByType<Player>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        return FindBestRuntimePlayer(allPlayers);
+    }
+
+    private static Player FindBestRuntimePlayer(Player[] players)
+    {
+        if (players == null)
+            return null;
+
+        for (int i = 0; i < players.Length; i++)
+        {
+            Player candidate = players[i];
+            if (candidate == null || !IsSceneObject(candidate))
+                continue;
+
+            if (candidate.gameObject.activeInHierarchy)
+                return candidate;
+        }
+
+        for (int i = 0; i < players.Length; i++)
+        {
+            Player candidate = players[i];
+            if (candidate != null && IsSceneObject(candidate))
+                return candidate;
+        }
+
+        return null;
     }
 
     private static T FindRuntimeObject<T>() where T : UnityEngine.Object
@@ -376,6 +503,17 @@ public class GameSaveManager : MonoBehaviour
         }
 
         return null;
+    }
+
+    private static bool IsSceneObject(UnityEngine.Object obj)
+    {
+        if (obj is Component component)
+            return component.gameObject.scene.IsValid();
+
+        if (obj is GameObject gameObject)
+            return gameObject.scene.IsValid();
+
+        return false;
     }
 
     private string GetSaveFilePath(int slotIndex)
@@ -475,7 +613,10 @@ public class GameSaveManager : MonoBehaviour
             ItemStackSaveData stack = stacks[i];
             Item item = ResolveItem(stack, itemById, itemByName);
             if (item == null)
+            {
+                Debug.LogWarning($"[GameSaveManager] Could not restore inventory item '{stack?.itemName}' with ID {stack?.itemId}. Make sure the Item asset is included in the build or referenced by a loaded scene/resource.");
                 continue;
+            }
 
             ApplySavedItemState(item, stack);
             inventory.AddItem(item, Mathf.Max(1, stack.quantity));
@@ -513,9 +654,9 @@ public class GameSaveManager : MonoBehaviour
     private static Dictionary<int, Item> BuildItemLookupById()
     {
         Dictionary<int, Item> dict = new Dictionary<int, Item>();
-        Item[] items = Resources.FindObjectsOfTypeAll<Item>();
+        List<Item> items = GetKnownItemAssets();
 
-        for (int i = 0; i < items.Length; i++)
+        for (int i = 0; i < items.Count; i++)
         {
             Item item = items[i];
             if (item == null)
@@ -531,9 +672,9 @@ public class GameSaveManager : MonoBehaviour
     private static Dictionary<string, Item> BuildItemLookupByName()
     {
         Dictionary<string, Item> dict = new Dictionary<string, Item>(StringComparer.Ordinal);
-        Item[] items = Resources.FindObjectsOfTypeAll<Item>();
+        List<Item> items = GetKnownItemAssets();
 
-        for (int i = 0; i < items.Length; i++)
+        for (int i = 0; i < items.Count; i++)
         {
             Item item = items[i];
             if (item == null)
@@ -544,5 +685,26 @@ public class GameSaveManager : MonoBehaviour
         }
 
         return dict;
+    }
+
+    private static List<Item> GetKnownItemAssets()
+    {
+        HashSet<Item> uniqueItems = new HashSet<Item>();
+        AddKnownItems(uniqueItems, Resources.FindObjectsOfTypeAll<Item>());
+        AddKnownItems(uniqueItems, Resources.LoadAll<Item>(string.Empty));
+        return new List<Item>(uniqueItems);
+    }
+
+    private static void AddKnownItems(HashSet<Item> uniqueItems, Item[] items)
+    {
+        if (uniqueItems == null || items == null)
+            return;
+
+        for (int i = 0; i < items.Length; i++)
+        {
+            Item item = items[i];
+            if (item != null)
+                uniqueItems.Add(item);
+        }
     }
 }

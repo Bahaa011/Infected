@@ -91,6 +91,9 @@ public class MeleeWeapon : MonoBehaviour
 
     private void Update()
     {
+        if (PauseMenuUIToolkit.IsPaused)
+            return;
+
         if (!isEquipped || !gameObject.activeInHierarchy || attackAction == null)
             return;
 

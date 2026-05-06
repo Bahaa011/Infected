@@ -196,6 +196,9 @@ public class Gun : MonoBehaviour
 
     void Update()
     {
+        if (PauseMenuUIToolkit.IsPaused)
+            return;
+
         if (InventoryUIToolkit.IsInventoryOpen)
             return;
 
