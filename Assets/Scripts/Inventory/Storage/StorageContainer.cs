@@ -58,17 +58,42 @@ public class StorageContainer : MonoBehaviour, IInteractionPromptSource
     [SerializeField] private bool fillStartingItemsOnStart = false;
     [SerializeField] private StartingStack[] startingItems;
 
+    [Header("Audio")]
+    [Tooltip("Single clip containing both open and close segments.")]
+    [SerializeField] private AudioClip lootBoxClip;
+    [SerializeField, Tooltip("Volume multiplier for loot box audio. Values above 1 make it louder.")]
+    private float audioVolume = 1f;
+    [SerializeField, Tooltip("Open segment start time in seconds")]
+    private float openStart = 0f;
+    [SerializeField, Tooltip("Open segment duration in seconds")]
+    private float openDuration = 1.5f;
+    [SerializeField, Tooltip("Close segment start time in seconds")]
+    private float closeStart = 2.5f;
+    [SerializeField, Tooltip("Close segment duration in seconds")]
+    private float closeDuration = 1f;
+
     private Inventory storageInventory;
     private StorageWindowUIToolkit storageWindow;
     private Player playerInRange;
     private DayNightManager dayNightManager;
     private string containerKey;
     private bool suppressSnapshotUpdates;
+    private AudioSource audioSource;
+    private Coroutine audioCoroutine;
 
     private void Awake()
     {
         if (lootDropSettings == null)
             lootDropSettings = new LootRarityDropSettings();
+
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+            audioSource = gameObject.AddComponent<AudioSource>();
+
+        audioSource.playOnAwake = false;
+        audioSource.spatialBlend = 0f;
+        audioSource.volume = 1f;
+        audioSource.rolloffMode = AudioRolloffMode.Linear;
 
         storageInventory = GetComponent<Inventory>();
         storageWindow = FindAnyObjectByType<StorageWindowUIToolkit>();
@@ -126,6 +151,7 @@ public class StorageContainer : MonoBehaviour, IInteractionPromptSource
             if (storageWindow != null && storageWindow.IsOpenFor(storageInventory))
             {
                 storageWindow.CloseStorage();
+                PlayCloseSound();
                 if (activeContainer == this)
                     activeContainer = null;
             }
@@ -157,12 +183,14 @@ public class StorageContainer : MonoBehaviour, IInteractionPromptSource
         if (isThisContainerOpen)
         {
             storageWindow.CloseStorage();
+            PlayCloseSound();
             if (activeContainer == this)
                 activeContainer = null;
         }
         else
         {
             storageWindow.OpenStorage(storageInventory, storageDisplayName);
+            PlayOpenSound();
             activeContainer = this;
         }
     }
@@ -535,6 +563,7 @@ public class StorageContainer : MonoBehaviour, IInteractionPromptSource
         if (storageWindow != null && storageWindow.IsOpenFor(storageInventory))
         {
             storageWindow.CloseStorage();
+            PlayCloseSound();
             if (activeContainer == this)
                 activeContainer = null;
         }
@@ -594,5 +623,50 @@ public class StorageContainer : MonoBehaviour, IInteractionPromptSource
             return false;
 
         return hit.collider.GetComponentInParent<StorageContainer>() == this;
+    }
+
+    private void PlayOpenSound()
+    {
+        PlayClipSegment(lootBoxClip, openStart, openDuration);
+    }
+
+    private void PlayCloseSound()
+    {
+        PlayClipSegment(lootBoxClip, closeStart, closeDuration);
+    }
+
+    private void PlayClipSegment(AudioClip clip, float startTime, float duration)
+    {
+        if (clip == null)
+            return;
+
+        if (audioCoroutine != null)
+            StopCoroutine(audioCoroutine);
+
+        audioCoroutine = StartCoroutine(PlayClipSegmentCoroutine(clip, startTime, duration));
+    }
+
+    private System.Collections.IEnumerator PlayClipSegmentCoroutine(AudioClip clip, float startTime, float duration)
+    {
+        if (clip == null || audioSource == null)
+            yield break;
+
+        float clampedStart = Mathf.Clamp(startTime, 0f, Mathf.Max(0f, clip.length - 0.01f));
+        float clampedDuration = Mathf.Clamp(duration, 0f, Mathf.Max(0f, clip.length - clampedStart));
+        int startSamples = Mathf.Clamp((int)(clampedStart * clip.frequency), 0, Mathf.Max(0, clip.samples - 1));
+
+        audioSource.Stop();
+        audioSource.clip = clip;
+        audioSource.timeSamples = startSamples;
+        audioSource.volume = audioVolume;
+        audioSource.loop = false;
+        audioSource.Play();
+
+        yield return new WaitForSeconds(clampedDuration);
+
+        if (audioSource != null && audioSource.isPlaying)
+            audioSource.Stop();
+
+        audioCoroutine = null;
     }
 }
